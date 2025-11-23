@@ -1,0 +1,15 @@
+
+--- Testing Hashing ---
+Password: testpassword123
+Hashed: $2b$12$9/.xGnh9oG.79TBrnbeNa.2hyadDvVCWcTr7Y3SRcwCR04jqTyWQS
+Verification result: True
+✅ Hash format looks correct (bcrypt).
+
+--- Testing API Flow ---
+Checking if email exists: 2003031240999@paruluniversity.ac.in
+❌ Email check failed: 404
+Registering user: 2003031240999@paruluniversity.ac.in
+User already exists, proceeding to login...
+Attempting login...
+✅ Login successful, token received.
+✅ ALL TESTS PASSED

@@ -1,0 +1,41 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>API Test</title>
+</head>
+<body>
+    <h1>Backend API Test</h1>
+    <button onclick="testAPI()">Test Registration API</button>
+    <pre id="result"></pre>
+
+    <script>
+        async function testAPI() {
+            const resultEl = document.getElementById('result');
+            resultEl.textContent = 'Testing...';
+            
+            try {
+                const response = await fetch('http://127.0.0.1:8000/auth/signup/student', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        name: 'Test User',
+                        contact: '1234567890',
+                        email: '1234567890123@paruluniversity.ac.in',
+                        department: 'PICA',
+                        enrollment_number: '1234567890123',
+                        password: 'test123456'
+                    })
+                });
+                
+                const data = await response.json();
+                resultEl.textContent = `Success!\nStatus: ${response.status}\nResponse: ${JSON.stringify(data, null, 2)}`;
+            } catch (error) {
+                resultEl.textContent = `Error: ${error.message}\n\nThis likely means CORS is blocking the request.`;
+                console.error('Full error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
