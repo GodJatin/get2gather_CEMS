@@ -1,0 +1,41 @@
+@import "tailwindcss";
+
+:root {
+  --background: #ffffff;
+  --foreground: #171717;
+  --primary: #3b82f6;
+  --secondary: #a855f7;
+  --accent: #10b981;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #0a0a0a;
+    --foreground: #ededed;
+    --primary: #60a5fa;
+    --secondary: #c084fc;
+    --accent: #34d399;
+  }
+}
+
+body {
+  color: var(--foreground);
+  background: var(--background);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+@layer utilities {
+  .text-balance {
+    text-wrap: balance;
+  }
+
+  .neon-text {
+    text-shadow: 0 0 5px theme('colors.blue.400'),
+      0 0 10px theme('colors.blue.300');
+  }
+
+  .neon-border {
+    box-shadow: 0 0 5px theme('colors.purple.500'),
+      inset 0 0 5px theme('colors.purple.500');
+  }
+}
