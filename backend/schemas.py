@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr, constr, validator
-from typing import Optional
+from typing import Optional, List
 from models import UserRole
 
 class UserBase(BaseModel):
@@ -19,7 +19,6 @@ class StudentCreate(BaseModel):
 
     @validator('password')
     def truncate_password(cls, v):
-        # Bcrypt has a 72-character limit, truncate to prevent errors
         if len(v) > 72:
             return v[:72]
         return v
@@ -106,6 +105,12 @@ class EventBase(BaseModel):
     time: str
     venue: str
     image_url: Optional[str] = None
+    images: Optional[str] = None # JSON string
+    department: Optional[str] = None
+    open_for: Optional[str] = None
+    outcomes: Optional[str] = None
+    is_paid: Optional[bool] = False
+    price: Optional[int] = 0
 
 class EventCreate(EventBase):
     pass
@@ -119,6 +124,20 @@ class EventResponse(EventBase):
     class Config:
         orm_mode = True
 
+class WaitlistBase(BaseModel):
+    event_id: int
+
+class WaitlistCreate(WaitlistBase):
+    pass
+
+class WaitlistResponse(WaitlistBase):
+    id: int
+    user_id: int
+    created_at: str
+
+    class Config:
+        orm_mode = True
+
 class BookingCreate(BaseModel):
     event_id: int
 
@@ -128,6 +147,12 @@ class BookingResponse(BaseModel):
     student_id: int
     status: str
     booking_date: str
+    event_title: Optional[str] = None
+    event_date: Optional[str] = None
+    event_time: Optional[str] = None
+    event_venue: Optional[str] = None
+    student_name: Optional[str] = None
+    student_email: Optional[str] = None
 
     class Config:
         orm_mode = True
@@ -151,5 +176,70 @@ class MediaResponse(BaseModel):
     class Config:
         orm_mode = True
 
+class FeedPostCreate(BaseModel):
+    content: Optional[str] = None
+    media_url: Optional[str] = None
+    media_type: Optional[str] = None
+    event_id: Optional[int] = None
+    location: Optional[str] = None
+    feeling: Optional[str] = None
+    tagged_users: Optional[List[int]] = None
 
+class FeedCommentCreate(BaseModel):
+    content: str
 
+class FeedLikeResponse(BaseModel):
+    id: int
+    user_id: int
+    post_id: int
+
+    class Config:
+        orm_mode = True
+
+class FeedCommentResponse(BaseModel):
+    id: int
+    user_id: int
+    content: str
+    created_at: str
+    user_name: Optional[str] = None
+
+    class Config:
+        orm_mode = True
+
+class FeedPostResponse(BaseModel):
+    id: int
+    user_id: int
+    content: Optional[str]
+    media_url: Optional[str]
+    media_type: Optional[str]
+    event_id: Optional[int]
+    location: Optional[str]
+    feeling: Optional[str]
+    tagged_users: Optional[str] # JSON string
+    created_at: str
+    user_name: Optional[str] = None
+    user_role: Optional[str] = None
+    event_title: Optional[str] = None
+    likes_count: int
+    comments_count: int
+    is_liked: bool = False
+    comments: List[FeedCommentResponse] = []
+
+    class Config:
+        orm_mode = True
+
+class VolunteerCreate(BaseModel):
+    pass
+
+class VolunteerUpdate(BaseModel):
+    status: str
+
+class VolunteerResponse(BaseModel):
+    id: int
+    user_id: int
+    event_id: int
+    status: str
+    created_at: str
+
+    class Config:
+        orm_mode = True

@@ -38,6 +38,74 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
         raise credentials_exception
     return user
 
+@router.get("/auth/me")
+async def read_users_me(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+    """
+    Get current user details including profile information
+    """
+    user_data = {
+        "id": current_user.id,
+        "email": current_user.email,
+        "role": current_user.role,
+        "is_active": current_user.is_active
+    }
+
+    if current_user.role == UserRole.STUDENT:
+        # Fetch student profile
+        result = await db.execute(select(Student).where(Student.user_id == current_user.id))
+        student = result.scalar_one_or_none()
+        if student:
+            user_data["name"] = student.name
+            user_data["department"] = student.department
+            user_data["enrollment_number"] = student.enrollment_number
+            
+            # Get Stats
+            from models import Booking, FeedPost
+            from sqlalchemy import func
+            
+            # Bookings Count
+            bookings_res = await db.execute(select(func.count()).select_from(Booking).where(Booking.student_id == student.id))
+            user_data["bookings_count"] = bookings_res.scalar()
+            
+            # Posts Count
+            posts_res = await db.execute(select(func.count()).select_from(FeedPost).where(FeedPost.user_id == current_user.id))
+            user_data["posts_count"] = posts_res.scalar()
+            
+    elif current_user.role == UserRole.ORGANIZER:
+        # Fetch organizer profile
+        result = await db.execute(select(Organizer).where(Organizer.user_id == current_user.id))
+        organizer = result.scalar_one_or_none()
+        if organizer:
+            user_data["name"] = organizer.organization_name
+            user_data["contact"] = organizer.contact
+
+    return user_data
+
+@router.get("/auth/leaderboard")
+async def get_leaderboard(db: AsyncSession = Depends(get_db)):
+    from models import Student, Booking
+    from sqlalchemy import func, desc
+    
+    # Top 10 students by bookings
+    result = await db.execute(
+        select(Student, func.count(Booking.id).label("bookings_count"))
+        .outerjoin(Booking, Student.id == Booking.student_id)
+        .group_by(Student.id)
+        .order_by(desc("bookings_count"))
+        .limit(10)
+    )
+    
+    leaderboard = []
+    for student, count in result:
+        leaderboard.append({
+            "name": student.name,
+            "department": student.department,
+            "bookings_count": count,
+            "points": count * 100 # Mock points
+        })
+        
+    return leaderboard
+
 class EmailCheck(BaseModel):
     email: str
 

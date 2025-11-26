@@ -20,6 +20,9 @@ class User(Base):
     student_profile = relationship("Student", back_populates="user", uselist=False)
     organizer_profile = relationship("Organizer", back_populates="user", uselist=False)
     media = relationship("Media", back_populates="user")
+    posts = relationship("FeedPost", back_populates="user")
+    likes = relationship("FeedLike", back_populates="user")
+    comments = relationship("FeedComment", back_populates="user")
 
 class Student(Base):
     __tablename__ = "students"
@@ -59,12 +62,30 @@ class Event(Base):
     date = Column(String) # Storing as string for simplicity, can be DateTime
     time = Column(String)
     venue = Column(String)
-    image_url = Column(String, nullable=True)
+    image_url = Column(String, nullable=True) # Main thumbnail
+    images = Column(String, nullable=True) # JSON string for multiple images
+    department = Column(String, nullable=True)
+    open_for = Column(String, nullable=True)
+    outcomes = Column(String, nullable=True)
+    is_paid = Column(Boolean, default=False)
+    price = Column(Integer, default=0)
     status = Column(String, default="Upcoming") # Upcoming, Ongoing, Completed
 
     organizer = relationship("Organizer", back_populates="events")
     bookings = relationship("Booking", back_populates="event")
     media = relationship("Media", back_populates="event")
+    waitlist = relationship("Waitlist", back_populates="event")
+
+class Waitlist(Base):
+    __tablename__ = "waitlist"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    event_id = Column(Integer, ForeignKey("events.id"))
+    created_at = Column(String) # Store timestamp
+
+    user = relationship("User")
+    event = relationship("Event", back_populates="waitlist")
 
 class Booking(Base):
     __tablename__ = "bookings"
@@ -125,3 +146,57 @@ class StudentRegistrationAttempt(Base):
     enrollment_number = Column(String)
     is_verified = Column(Boolean, default=False)
     created_at = Column(String) # Store as ISO string for simplicity
+
+class FeedPost(Base):
+    __tablename__ = "feed_posts"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    content = Column(String, nullable=True)
+    media_url = Column(String, nullable=True)
+    media_type = Column(String, nullable=True) # image, video
+    event_id = Column(Integer, ForeignKey("events.id"), nullable=True)
+    location = Column(String, nullable=True)
+    feeling = Column(String, nullable=True)
+    tagged_users = Column(String, nullable=True) # JSON string of user_ids
+    created_at = Column(String) # ISO string
+    
+    user = relationship("User", back_populates="posts")
+    event = relationship("Event")
+    likes = relationship("FeedLike", back_populates="post", cascade="all, delete-orphan")
+    comments = relationship("FeedComment", back_populates="post", cascade="all, delete-orphan")
+
+class FeedLike(Base):
+    __tablename__ = "feed_likes"
+
+    id = Column(Integer, primary_key=True, index=True)
+    post_id = Column(Integer, ForeignKey("feed_posts.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
+    created_at = Column(String)
+
+    post = relationship("FeedPost", back_populates="likes")
+    user = relationship("User", back_populates="likes")
+
+class FeedComment(Base):
+    __tablename__ = "feed_comments"
+
+    id = Column(Integer, primary_key=True, index=True)
+    post_id = Column(Integer, ForeignKey("feed_posts.id"))
+    user_id = Column(Integer, ForeignKey("users.id"))
+    content = Column(String)
+    created_at = Column(String)
+
+    post = relationship("FeedPost", back_populates="comments")
+    user = relationship("User", back_populates="comments")
+
+class Volunteer(Base):
+    __tablename__ = "volunteers"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    event_id = Column(Integer, ForeignKey("events.id"))
+    status = Column(String, default="Pending") # Pending, Approved, Rejected
+    created_at = Column(String)
+
+    user = relationship("User")
+    event = relationship("Event")

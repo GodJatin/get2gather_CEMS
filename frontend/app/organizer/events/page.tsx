@@ -32,6 +32,9 @@ export default function MyEventsPage() {
         };
 
         fetchEvents();
+        const interval = setInterval(fetchEvents, 5000); // Poll every 5 seconds
+
+        return () => clearInterval(interval);
     }, []);
 
     if (loading) return <div className="p-8 text-center text-neutral-400">Loading events...</div>;
@@ -79,12 +82,32 @@ export default function MyEventsPage() {
                         </div>
 
                         <div className="flex gap-3">
-                            <button className="flex-1 py-2 rounded-lg bg-white/5 hover:bg-white/10 font-medium transition-colors">
+                            <Link 
+                                href={`/organizer/events/edit/${event.id}`}
+                                className="flex-1 py-2 rounded-lg bg-white/5 hover:bg-white/10 font-medium transition-colors text-center"
+                            >
                                 Edit
-                            </button>
-                            <button className="flex-1 py-2 rounded-lg bg-white/5 hover:bg-white/10 font-medium transition-colors">
+                            </Link>
+                            <Link 
+                                href={`/events/${event.id}`}
+                                className="flex-1 py-2 rounded-lg bg-white/5 hover:bg-white/10 font-medium transition-colors text-center"
+                            >
                                 View
-                            </button>
+                            </Link>
+                        </div>
+                        <div className="grid grid-cols-2 gap-3 mt-3">
+                            <Link 
+                                href={`/organizer/events/${event.id}/attendees`}
+                                className="py-2 rounded-lg bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 font-medium transition-colors text-center text-sm"
+                            >
+                                Attendees
+                            </Link>
+                            <Link 
+                                href={`/organizer/events/${event.id}/volunteers`}
+                                className="py-2 rounded-lg bg-orange-600/20 text-orange-400 hover:bg-orange-600/30 font-medium transition-colors text-center text-sm"
+                            >
+                                Volunteers
+                            </Link>
                         </div>
                     </div>
                 ))}

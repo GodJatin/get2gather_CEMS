@@ -67,6 +67,30 @@ async def read_my_bookings(current_user: User = Depends(get_current_user), db: A
     if not student:
         raise HTTPException(status_code=404, detail="Student profile not found")
 
-    result = await db.execute(select(Booking).where(Booking.student_id == student.id))
-    bookings = result.scalars().all()
-    return bookings
+    # Join with Event to get details
+    result = await db.execute(
+        select(Booking, Event)
+        .join(Event, Booking.event_id == Event.id)
+        .where(Booking.student_id == student.id)
+    )
+    
+    bookings_with_events = []
+    rows = result.all()
+    print(f"DEBUG: Found {len(rows)} bookings for student {student.id}")
+    
+    for booking, event in rows:
+        print(f"DEBUG: Processing booking {booking.id} for event {event.title}")
+        booking_resp = BookingResponse(
+            id=booking.id,
+            event_id=booking.event_id,
+            student_id=booking.student_id,
+            status=booking.status,
+            booking_date=booking.booking_date,
+            event_title=event.title,
+            event_date=event.date,
+            event_time=event.time,
+            event_venue=event.venue
+        )
+        bookings_with_events.append(booking_resp)
+        
+    return bookings_with_events

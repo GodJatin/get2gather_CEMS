@@ -15,52 +15,56 @@ export default function OrganizerLayout({
         { name: 'My Events', href: '/organizer/events', icon: '📅' },
         { name: 'Create Event', href: '/organizer/events/create', icon: '➕' },
         { name: 'Approvals', href: '/organizer/approvals', icon: '✅' },
+        { name: 'Leaderboard', href: '/organizer/leaderboard', icon: '🏆' },
         { name: 'Profile', href: '/organizer/profile', icon: '👤' },
     ];
 
     return (
-        <div className="min-h-screen flex bg-neutral-950 text-white">
-            {/* Sidebar */}
-            <aside className="w-64 border-r border-white/10 bg-neutral-900/50 backdrop-blur-xl fixed h-full z-20 hidden md:block">
-                <div className="p-6 border-b border-white/10">
-                    <h1 className="text-2xl font-bold bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">
-                        Get2Gather
-                    </h1>
-                    <p className="text-xs text-neutral-500 mt-1">Organizer Portal</p>
-                </div>
+        <div className="min-h-screen bg-neutral-950 text-white">
+            {/* Navbar */}
+            <nav className="fixed top-0 left-0 w-full z-50 bg-neutral-900/80 backdrop-blur-xl border-b border-white/10">
+                <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center font-bold text-xl">
+                            G
+                        </div>
+                        <div>
+                            <h1 className="font-bold text-lg leading-none">Get2Gather</h1>
+                            <p className="text-xs text-neutral-400">Organizer</p>
+                        </div>
+                    </div>
 
-                <nav className="p-4 space-y-2">
-                    {navItems.map((item) => {
-                        const isActive = pathname === item.href;
-                        return (
-                            <Link
-                                key={item.href}
-                                href={item.href}
-                                className={`flex items-center gap-3 px-4 py-3 rounded-xl transition-all ${isActive
-                                    ? 'bg-purple-600/10 text-purple-400 border border-purple-500/20'
-                                    : 'text-neutral-400 hover:bg-white/5 hover:text-white'
+                    <div className="hidden md:flex items-center gap-1 bg-white/5 p-1 rounded-2xl border border-white/10">
+                        {navItems.map((item) => {
+                            const isActive = pathname === item.href;
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    className={`px-5 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${
+                                        isActive
+                                            ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20'
+                                            : 'text-neutral-400 hover:text-white hover:bg-white/5'
                                     }`}
-                            >
-                                <span className="text-xl">{item.icon}</span>
-                                <span className="font-medium">{item.name}</span>
-                            </Link>
-                        );
-                    })}
-                </nav>
+                                >
+                                    <span>{item.icon}</span>
+                                    <span>{item.name}</span>
+                                </Link>
+                            );
+                        })}
+                    </div>
 
-                <div className="absolute bottom-0 w-full p-4 border-t border-white/10">
                     <Link
                         href="/login"
-                        className="flex items-center gap-3 px-4 py-3 rounded-xl text-red-400 hover:bg-red-500/10 transition-colors"
+                        className="px-4 py-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 font-medium text-sm transition-colors"
                     >
-                        <span>🚪</span>
-                        <span className="font-medium">Logout</span>
+                        Logout
                     </Link>
                 </div>
-            </aside>
+            </nav>
 
             {/* Main Content */}
-            <main className="flex-1 md:ml-64 p-8">
+            <main className="pt-28 px-6 pb-12 max-w-7xl mx-auto">
                 {children}
             </main>
         </div>

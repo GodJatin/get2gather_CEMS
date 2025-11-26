@@ -1,9 +1,9 @@
-import resend
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 import os
 import secrets
 from datetime import datetime
-
-resend.api_key = os.getenv("RESEND_API_KEY")
 
 def generate_otp() -> str:
     """Generate a secure 6-digit OTP"""
@@ -11,7 +11,7 @@ def generate_otp() -> str:
 
 def send_otp_email(email: str, otp: str, user_type: str = "user") -> bool:
     """
-    Send OTP email using Resend
+    Send OTP email using Gmail SMTP
     
     Args:
         email: Recipient email address
@@ -21,6 +21,13 @@ def send_otp_email(email: str, otp: str, user_type: str = "user") -> bool:
     Returns:
         bool: True if email sent successfully, False otherwise
     """
+    smtp_email = os.getenv("SMTP_EMAIL")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+
+    if not smtp_email or not smtp_password:
+        print("❌ SMTP credentials missing in .env")
+        return False
+
     try:
         subject = "Get2Gather - Email Verification Code"
         
@@ -124,15 +131,19 @@ def send_otp_email(email: str, otp: str, user_type: str = "user") -> bool:
         </html>
         """
         
-        params = {
-            "from": "Get2Gather <onboarding@resend.dev>",
-            "to": [email],
-            "subject": subject,
-            "html": html_content,
-        }
-        
-        response = resend.Emails.send(params)
-        print(f"✅ OTP email sent to {email} - ID: {response.get('id', 'N/A')}")
+        msg = MIMEMultipart()
+        msg['From'] = f"Get2Gather <{smtp_email}>"
+        msg['To'] = email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(html_content, 'html'))
+
+        # Connect to Gmail SMTP
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(smtp_email, smtp_password)
+            server.send_message(msg)
+            
+        print(f"✅ OTP email sent to {email} via SMTP")
         return True
         
     except Exception as e:
