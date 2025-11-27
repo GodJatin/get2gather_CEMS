@@ -1,22 +1,25 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from pydantic import BaseModel
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy.future import select
 from sqlalchemy import delete
 from database import get_db
 import os
 from models import User, Student, Organizer, UserRole, OrganizerInvite, RegistrationAttempt
-from schemas import StudentCreate, OrganizerCreate, Token, UserCreate
+from schemas import (
+    StudentCreate, OrganizerCreate, Token, UserCreate, TokenData, 
+    OrganizerSignupInitiate, OrganizerSignupVerify, OrganizerSignupComplete, 
+    StudentSignupInitiate, StudentSignupVerify, StudentSignupComplete
+)
 from .security_utils import get_password_hash, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
 from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import JWTError, jwt
-from schemas import StudentCreate, OrganizerCreate, Token, UserCreate, TokenData, OrganizerSignupInitiate, OrganizerSignupVerify, OrganizerSignupComplete, StudentSignupInitiate, StudentSignupVerify, StudentSignupComplete
 
 router = APIRouter(tags=["Authentication"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
 
-async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession = Depends(get_db)):
+async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -32,14 +35,14 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: AsyncSession
     except JWTError:
         raise credentials_exception
     
-    result = await db.execute(select(User).where(User.email == token_data.email))
+    result = db.execute(select(User).where(User.email == token_data.email))
     user = result.scalar_one_or_none()
     if user is None:
         raise credentials_exception
     return user
 
 @router.get("/auth/me")
-async def read_users_me(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+async def read_users_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """
     Get current user details including profile information
     """
@@ -51,43 +54,81 @@ async def read_users_me(current_user: User = Depends(get_current_user), db: Asyn
     }
 
     if current_user.role == UserRole.STUDENT:
-        # Fetch student profile
-        result = await db.execute(select(Student).where(Student.user_id == current_user.id))
-        student = result.scalar_one_or_none()
-        if student:
-            user_data["name"] = student.name
-            user_data["department"] = student.department
-            user_data["enrollment_number"] = student.enrollment_number
+        try:
+            print("Fetching student profile...")
+            # Fetch student profile (Columns only to avoid MissingGreenlet)
+            result = db.execute(select(
+                Student.id, 
+                Student.name, 
+                Student.department, 
+                Student.enrollment_number,
+                Student.title,
+                Student.badges
+            ).where(Student.user_id == current_user.id))
+            student = result.first() # Returns a Row
             
-            # Get Stats
-            from models import Booking, FeedPost
-            from sqlalchemy import func
-            
-            # Bookings Count
-            bookings_res = await db.execute(select(func.count()).select_from(Booking).where(Booking.student_id == student.id))
-            user_data["bookings_count"] = bookings_res.scalar()
-            
-            # Posts Count
-            posts_res = await db.execute(select(func.count()).select_from(FeedPost).where(FeedPost.user_id == current_user.id))
-            user_data["posts_count"] = posts_res.scalar()
+            if student:
+                print(f"Student found: {student.id}")
+                user_data["name"] = student.name
+                user_data["department"] = student.department
+                user_data["enrollment_number"] = student.enrollment_number
+                
+                # Gamification & Points (Centralized)
+                from points_utils import calculate_student_points, calculate_gamification
+                print("Calculating points...")
+                points_data = calculate_student_points(db, student.id, current_user.id)
+                print(f"Points calculated: {points_data}")
+                
+                user_data.update(points_data)
+                
+                print("Calculating gamification...")
+                gamification_data = calculate_gamification(student, points_data)
+                print(f"Gamification calculated: {gamification_data}")
+                
+                user_data["title"] = gamification_data["title"]
+                user_data["badges"] = gamification_data["badges"]
+        except Exception as e:
+            print(f"ERROR in /auth/me: {e}")
+            import traceback
+            traceback.print_exc()
+            raise e
             
     elif current_user.role == UserRole.ORGANIZER:
         # Fetch organizer profile
-        result = await db.execute(select(Organizer).where(Organizer.user_id == current_user.id))
+        result = db.execute(select(Organizer).where(Organizer.user_id == current_user.id))
         organizer = result.scalar_one_or_none()
         if organizer:
+            from models import Event, Booking
+            from sqlalchemy import func
+            
             user_data["name"] = organizer.organization_name
             user_data["contact"] = organizer.contact
+            user_data["organizer_id"] = organizer.id
+            
+            # Get event statistics
+            events_result = db.execute(select(func.count()).select_from(Event).where(Event.organizer_id == organizer.id))
+            total_events = events_result.scalar() or 0
+            user_data["total_events"] = total_events
+            
+            # Get total bookings across all events
+            bookings_result = db.execute(
+                select(func.count())
+                .select_from(Booking)
+                .join(Event, Event.id == Booking.event_id)
+                .where(Event.organizer_id == organizer.id)
+            )
+            total_attendees = bookings_result.scalar() or 0
+            user_data["total_attendees"] = total_attendees
 
     return user_data
 
 @router.get("/auth/leaderboard")
-async def get_leaderboard(db: AsyncSession = Depends(get_db)):
+async def get_leaderboard(db: Session = Depends(get_db)):
     from models import Student, Booking
     from sqlalchemy import func, desc
     
     # Top 10 students by bookings
-    result = await db.execute(
+    result = db.execute(
         select(Student, func.count(Booking.id).label("bookings_count"))
         .outerjoin(Booking, Student.id == Booking.student_id)
         .group_by(Student.id)
@@ -110,18 +151,18 @@ class EmailCheck(BaseModel):
     email: str
 
 @router.post("/auth/check-email")
-async def check_email(email_data: EmailCheck, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(User).where(User.email == email_data.email))
+async def check_email(email_data: EmailCheck, db: Session = Depends(get_db)):
+    result = db.execute(select(User).where(User.email == email_data.email))
     user = result.scalar_one_or_none()
     return {"exists": user is not None}
 
 @router.post("/auth/student/initiate")
-async def initiate_student_signup(data: StudentSignupInitiate, db: AsyncSession = Depends(get_db)):
+async def initiate_student_signup(data: StudentSignupInitiate, db: Session = Depends(get_db)):
     from models import StudentRegistrationAttempt
     from email_service import generate_otp, send_otp_email
     
     # Check if user exists
-    result = await db.execute(select(User).where(User.email == data.email))
+    result = db.execute(select(User).where(User.email == data.email))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Email already registered")
     
@@ -139,7 +180,7 @@ async def initiate_student_signup(data: StudentSignupInitiate, db: AsyncSession 
     enrollment = data.email.split('@')[0]
     
     # Store Registration Attempt
-    result = await db.execute(select(StudentRegistrationAttempt).where(StudentRegistrationAttempt.email == data.email))
+    result = db.execute(select(StudentRegistrationAttempt).where(StudentRegistrationAttempt.email == data.email))
     attempt = result.scalar_one_or_none()
     
     if attempt:
@@ -159,14 +200,14 @@ async def initiate_student_signup(data: StudentSignupInitiate, db: AsyncSession 
         )
         db.add(attempt)
     
-    await db.commit()
+    db.commit()
     return {"message": "OTP sent to your email"}
 
 @router.post("/auth/student/verify")
-async def verify_student_otp(data: StudentSignupVerify, db: AsyncSession = Depends(get_db)):
+async def verify_student_otp(data: StudentSignupVerify, db: Session = Depends(get_db)):
     from models import StudentRegistrationAttempt
     
-    result = await db.execute(select(StudentRegistrationAttempt).where(StudentRegistrationAttempt.email == data.email))
+    result = db.execute(select(StudentRegistrationAttempt).where(StudentRegistrationAttempt.email == data.email))
     attempt = result.scalar_one_or_none()
 
     if not attempt:
@@ -176,18 +217,18 @@ async def verify_student_otp(data: StudentSignupVerify, db: AsyncSession = Depen
         raise HTTPException(status_code=400, detail="Invalid OTP")
     
     attempt.is_verified = True
-    await db.commit()
+    db.commit()
     return {
         "message": "Email verified successfully",
         "enrollment_number": attempt.enrollment_number
     }
 
 @router.post("/auth/student/complete", response_model=Token)
-async def complete_student_signup(data: StudentSignupComplete, db: AsyncSession = Depends(get_db)):
+async def complete_student_signup(data: StudentSignupComplete, db: Session = Depends(get_db)):
     from models import StudentRegistrationAttempt
     
     # Verify Attempt
-    result = await db.execute(select(StudentRegistrationAttempt).where(StudentRegistrationAttempt.email == data.email))
+    result = db.execute(select(StudentRegistrationAttempt).where(StudentRegistrationAttempt.email == data.email))
     attempt = result.scalar_one_or_none()
 
     if not attempt or not attempt.is_verified:
@@ -197,7 +238,7 @@ async def complete_student_signup(data: StudentSignupComplete, db: AsyncSession 
     hashed_pw = get_password_hash(data.password)
     new_user = User(email=data.email, hashed_password=hashed_pw, role=UserRole.STUDENT)
     db.add(new_user)
-    await db.flush()
+    db.flush()
     
     # Create Student Profile
     new_student = Student(
@@ -210,8 +251,8 @@ async def complete_student_signup(data: StudentSignupComplete, db: AsyncSession 
     db.add(new_student)
 
     # Cleanup Attempt
-    await db.execute(delete(StudentRegistrationAttempt).where(StudentRegistrationAttempt.email == data.email))
-    await db.commit()
+    db.execute(delete(StudentRegistrationAttempt).where(StudentRegistrationAttempt.email == data.email))
+    db.commit()
 
     # Generate Token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -221,9 +262,9 @@ async def complete_student_signup(data: StudentSignupComplete, db: AsyncSession 
     return {"access_token": access_token, "token_type": "bearer", "role": "student"}
 
 @router.post("/auth/signup/student", response_model=Token)
-async def signup_student(student_data: StudentCreate, db: AsyncSession = Depends(get_db)):
+async def signup_student(student_data: StudentCreate, db: Session = Depends(get_db)):
     # Check if user exists
-    result = await db.execute(select(User).where(User.email == student_data.email))
+    result = db.execute(select(User).where(User.email == student_data.email))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Email already registered")
 
@@ -235,8 +276,8 @@ async def signup_student(student_data: StudentCreate, db: AsyncSession = Depends
     hashed_pw = get_password_hash(student_data.password)
     new_user = User(email=student_data.email, hashed_password=hashed_pw, role=UserRole.STUDENT)
     db.add(new_user)
-    await db.commit()
-    await db.refresh(new_user)
+    db.commit()
+    db.refresh(new_user)
 
     # Create Student Profile
     new_student = Student(
@@ -247,7 +288,7 @@ async def signup_student(student_data: StudentCreate, db: AsyncSession = Depends
         enrollment_number=student_data.enrollment_number
     )
     db.add(new_student)
-    await db.commit()
+    db.commit()
 
     # Generate Token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -259,14 +300,14 @@ async def signup_student(student_data: StudentCreate, db: AsyncSession = Depends
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post("/auth/organizer/initiate")
-async def initiate_organizer_signup(data: OrganizerSignupInitiate, db: AsyncSession = Depends(get_db)):
+async def initiate_organizer_signup(data: OrganizerSignupInitiate, db: Session = Depends(get_db)):
     # 1. Check if user already exists
-    result = await db.execute(select(User).where(User.email == data.email))
+    result = db.execute(select(User).where(User.email == data.email))
     if result.scalar_one_or_none():
         raise HTTPException(status_code=400, detail="Email already registered")
 
     # 2. Validate Invite Code against OrganizerInvite
-    result = await db.execute(select(OrganizerInvite).where(
+    result = db.execute(select(OrganizerInvite).where(
         OrganizerInvite.email == data.email,
         OrganizerInvite.invite_code == data.invite_code,
         OrganizerInvite.is_used == False
@@ -288,7 +329,7 @@ async def initiate_organizer_signup(data: OrganizerSignupInitiate, db: AsyncSess
 
     # 4. Store Registration Attempt
     # Check if attempt exists, update it, or create new
-    result = await db.execute(select(RegistrationAttempt).where(RegistrationAttempt.email == data.email))
+    result = db.execute(select(RegistrationAttempt).where(RegistrationAttempt.email == data.email))
     attempt = result.scalar_one_or_none()
     
     if attempt:
@@ -308,12 +349,12 @@ async def initiate_organizer_signup(data: OrganizerSignupInitiate, db: AsyncSess
         )
         db.add(attempt)
     
-    await db.commit()
+    db.commit()
     return {"message": "OTP sent to email (Check console)"}
 
 @router.post("/auth/organizer/verify")
-async def verify_organizer_otp(data: OrganizerSignupVerify, db: AsyncSession = Depends(get_db)):
-    result = await db.execute(select(RegistrationAttempt).where(RegistrationAttempt.email == data.email))
+async def verify_organizer_otp(data: OrganizerSignupVerify, db: Session = Depends(get_db)):
+    result = db.execute(select(RegistrationAttempt).where(RegistrationAttempt.email == data.email))
     attempt = result.scalar_one_or_none()
 
     if not attempt:
@@ -323,13 +364,13 @@ async def verify_organizer_otp(data: OrganizerSignupVerify, db: AsyncSession = D
         raise HTTPException(status_code=400, detail="Invalid OTP")
     
     attempt.is_verified = True
-    await db.commit()
+    db.commit()
     return {"message": "Email verified successfully"}
 
 @router.post("/auth/organizer/complete", response_model=Token)
-async def complete_organizer_signup(data: OrganizerSignupComplete, db: AsyncSession = Depends(get_db)):
+async def complete_organizer_signup(data: OrganizerSignupComplete, db: Session = Depends(get_db)):
     # 1. Verify Attempt
-    result = await db.execute(select(RegistrationAttempt).where(RegistrationAttempt.email == data.email))
+    result = db.execute(select(RegistrationAttempt).where(RegistrationAttempt.email == data.email))
     attempt = result.scalar_one_or_none()
 
     if not attempt or not attempt.is_verified:
@@ -344,7 +385,7 @@ async def complete_organizer_signup(data: OrganizerSignupComplete, db: AsyncSess
     hashed_pw = get_password_hash(data.password)
     new_user = User(email=data.email, hashed_password=hashed_pw, role=UserRole.ORGANIZER)
     db.add(new_user)
-    await db.flush() # Flush to get ID
+    db.flush() # Flush to get ID
     
     # 3. Create Organizer Profile
     new_organizer = Organizer(
@@ -355,7 +396,7 @@ async def complete_organizer_signup(data: OrganizerSignupComplete, db: AsyncSess
     db.add(new_organizer)
 
     # 4. Mark Invite as Used
-    result = await db.execute(select(OrganizerInvite).where(
+    result = db.execute(select(OrganizerInvite).where(
         OrganizerInvite.email == data.email,
         OrganizerInvite.invite_code == org_invite_code
     ))
@@ -364,9 +405,9 @@ async def complete_organizer_signup(data: OrganizerSignupComplete, db: AsyncSess
         invite.is_used = True
 
     # 5. Cleanup Attempt
-    await db.execute(delete(RegistrationAttempt).where(RegistrationAttempt.email == data.email))
+    db.execute(delete(RegistrationAttempt).where(RegistrationAttempt.email == data.email))
     
-    await db.commit()
+    db.commit()
     
     # 6. Generate Token
     access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
@@ -376,9 +417,9 @@ async def complete_organizer_signup(data: OrganizerSignupComplete, db: AsyncSess
     return {"access_token": access_token, "token_type": "bearer", "role": "organizer"}
 
 @router.post("/auth/login", response_model=Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: AsyncSession = Depends(get_db)):
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     # Find User
-    result = await db.execute(select(User).where(User.email == form_data.username))
+    result = db.execute(select(User).where(User.email == form_data.username))
     user = result.scalar_one_or_none()
     
     if not user or not verify_password(form_data.password, user.hashed_password):

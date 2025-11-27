@@ -26,6 +26,7 @@ export default function Navbar() {
 
     const navItems = [
         { name: 'Dashboard', href: '/student/dashboard', icon: '🏠' },
+        { name: 'Events', href: '/student/events', icon: '🎉' },
         { name: 'Feeds', href: '/student/feeds', icon: '📰' },
         { name: 'Calendar', href: '/student/calendar', icon: '📅' },
         { name: 'Leaderboard', href: '/student/leaderboard', icon: '🏆' },

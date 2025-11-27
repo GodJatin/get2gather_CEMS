@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
+import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api';
 import BookingSuccessModal from '@/components/BookingSuccessModal';
 
@@ -77,6 +78,19 @@ export default function EventDetailsPage() {
         if (params.id) init();
     }, [params.id]);
 
+    // Slideshow Auto-Rotation
+    useEffect(() => {
+        if (!event) return;
+        const images = event.images ? JSON.parse(event.images) : (event.image_url ? [event.image_url] : []);
+        if (images.length <= 1) return;
+
+        const interval = setInterval(() => {
+            setCurrentImageIndex((prev) => (prev + 1) % images.length);
+        }, 3000); // Change every 3 seconds
+
+        return () => clearInterval(interval);
+    }, [event]);
+
     const handleBooking = async () => {
         if (!event) return;
         try {
@@ -89,7 +103,15 @@ export default function EventDetailsPage() {
         }
     };
 
-    const handleJoinWaitlist = async () => {
+    const [showWaitlistModal, setShowWaitlistModal] = useState(false);
+
+    const handleJoinWaitlist = () => {
+        // Mock logic: If waitlist count > 5, show warning (In real app, fetch waitlist count)
+        // For now, we'll just show it if seats are 0 to demonstrate the feature
+        setShowWaitlistModal(true);
+    };
+
+    const confirmJoinWaitlist = async () => {
         if (!event) return;
         try {
             await api.post(`/events/${event.id}/waitlist`);
@@ -97,8 +119,10 @@ export default function EventDetailsPage() {
             setShowToast(true);
             setTimeout(() => setShowToast(false), 3000);
             setOnWaitlist(true);
+            setShowWaitlistModal(false);
         } catch (error: any) {
             alert(error.response?.data?.detail || 'Failed to join waitlist');
+            setShowWaitlistModal(false);
         }
     };
 
@@ -110,6 +134,47 @@ export default function EventDetailsPage() {
     return (
         <div className="min-h-screen bg-neutral-950 text-white p-6 md:p-12">
             <BookingSuccessModal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} />
+            
+            {/* Waitlist Warning Modal */}
+            <AnimatePresence>
+                {showWaitlistModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="bg-neutral-900 border border-white/10 rounded-2xl p-6 max-w-md w-full shadow-2xl"
+                        >
+                            <div className="text-center mb-6">
+                                <div className="w-16 h-16 bg-orange-500/20 text-orange-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+                                    ⚠️
+                                </div>
+                                <h3 className="text-xl font-bold mb-2">High Demand Event</h3>
+                                <p className="text-neutral-400">
+                                    There are already many students on the waitlist. Your chances of getting a confirmed seat are low.
+                                </p>
+                                <p className="text-sm text-neutral-500 mt-2">
+                                    We recommend checking out other similar events.
+                                </p>
+                            </div>
+                            <div className="flex gap-3">
+                                <button
+                                    onClick={() => setShowWaitlistModal(false)}
+                                    className="flex-1 py-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 font-bold transition-colors"
+                                >
+                                    Cancel
+                                </button>
+                                <button
+                                    onClick={confirmJoinWaitlist}
+                                    className="flex-1 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 font-bold transition-colors"
+                                >
+                                    Join Anyway
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
 
             <div className="max-w-5xl mx-auto">
                 <button 
@@ -234,17 +299,33 @@ export default function EventDetailsPage() {
                                     </button>
                                 )
                             ) : (
-                                <button
-                                    onClick={handleJoinWaitlist}
-                                    disabled={onWaitlist}
-                                    className={`w-full py-4 rounded-xl font-bold shadow-lg transition-all ${
-                                        onWaitlist 
-                                            ? 'bg-neutral-700 text-neutral-400 cursor-not-allowed' 
-                                            : 'bg-orange-600 hover:bg-orange-500 text-white shadow-orange-900/20'
-                                    }`}
-                                >
-                                    {onWaitlist ? 'Joined Waitlist' : 'Join Waitlist'}
-                                </button>
+                                <>
+                                    <div className="text-center mb-4 p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                                        <p className="text-orange-400 font-bold text-sm">Event Full</p>
+                                        <p className="text-xs text-neutral-400">Join the waitlist to get notified if a seat opens up.</p>
+                                    </div>
+                                    
+                                    {isBooked ? (
+                                         <button
+                                            disabled
+                                            className="w-full py-4 rounded-xl bg-green-600/20 text-green-400 font-bold border border-green-500/50 cursor-not-allowed"
+                                        >
+                                            ✅ Booked
+                                        </button>
+                                    ) : (
+                                        <button
+                                            onClick={handleJoinWaitlist}
+                                            disabled={onWaitlist}
+                                            className={`w-full py-4 rounded-xl font-bold shadow-lg transition-all ${
+                                                onWaitlist 
+                                                    ? 'bg-neutral-700 text-neutral-400 cursor-not-allowed' 
+                                                    : 'bg-orange-600 hover:bg-orange-500 text-white shadow-orange-900/20'
+                                            }`}
+                                        >
+                                            {onWaitlist ? 'Joined Waitlist' : 'Join Waitlist'}
+                                        </button>
+                                    )}
+                                </>
                             )}
 
                             <button

@@ -33,8 +33,56 @@ export default function StudentBookingsPage() {
         fetchBookings();
     }, []);
 
+    const [selectedTicket, setSelectedTicket] = useState<Booking | null>(null);
+
     return (
         <MotionWrapper className="max-w-7xl mx-auto">
+            {/* Ticket Modal */}
+            {selectedTicket && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setSelectedTicket(null)}>
+                    <div className="bg-white text-black rounded-3xl overflow-hidden max-w-sm w-full shadow-2xl relative" onClick={e => e.stopPropagation()}>
+                        <div className="bg-blue-600 p-6 text-white text-center relative overflow-hidden">
+                            <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
+                            <h3 className="text-2xl font-bold relative z-10">Event Ticket</h3>
+                            <p className="text-blue-100 text-sm relative z-10">Scan at entry</p>
+                        </div>
+                        <div className="p-8 flex flex-col items-center">
+                            <h4 className="text-xl font-bold text-center mb-2">{selectedTicket.event_title}</h4>
+                            <p className="text-neutral-500 text-sm mb-6 text-center">{selectedTicket.event_date} • {selectedTicket.event_time}</p>
+                            
+                            <div className="p-4 bg-white rounded-xl border-2 border-dashed border-neutral-300 mb-6">
+                                <img 
+                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=BOOKING-${selectedTicket.id}`} 
+                                    alt="Ticket QR" 
+                                    className="w-48 h-48"
+                                />
+                            </div>
+                            
+                            <div className="w-full space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                    <span className="text-neutral-500">Venue</span>
+                                    <span className="font-bold">{selectedTicket.event_venue}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-neutral-500">Status</span>
+                                    <span className="font-bold text-green-600">{selectedTicket.status}</span>
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-neutral-500">Booking ID</span>
+                                    <span className="font-mono text-neutral-400">#{selectedTicket.id}</span>
+                                </div>
+                            </div>
+                        </div>
+                        <button 
+                            onClick={() => setSelectedTicket(null)}
+                            className="w-full py-4 bg-neutral-100 hover:bg-neutral-200 font-bold transition-colors"
+                        >
+                            Close Ticket
+                        </button>
+                    </div>
+                </div>
+            )}
+
             <header className="mb-12">
                 <h1 className="text-4xl font-bold mb-4">My Bookings</h1>
                 <p className="text-neutral-400">Manage your event registrations and tickets.</p>
@@ -71,20 +119,19 @@ export default function StudentBookingsPage() {
                                 </div>
                             </div>
                             
-                            <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/10">
+                            <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/10">
                                 <Link 
                                     href={`/events/${booking.event_id}`}
-                                    className="inline-block px-6 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 transition-colors font-medium"
+                                    className="flex-1 text-center px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors font-medium text-sm"
                                 >
-                                    View Details
+                                    View Event Detail
                                 </Link>
-                                <div className="p-2 bg-white rounded-lg">
-                                    <img 
-                                        src={`https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=BOOKING-${booking.id}-EVENT-${booking.event_id}`} 
-                                        alt="Ticket QR" 
-                                        className="w-16 h-16"
-                                    />
-                                </div>
+                                <button
+                                    onClick={() => setSelectedTicket(booking)}
+                                    className="flex-1 text-center px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/20 transition-all text-sm flex items-center justify-center gap-2"
+                                >
+                                    <span>🎟️</span> View Ticket
+                                </button>
                             </div>
                         </StaggerItem>
                     ))}

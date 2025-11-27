@@ -1,28 +1,29 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy.future import select
 from database import get_db
 from models import Booking, Event, Student, User, UserRole
-from schemas import BookingCreate, BookingResponse, TokenData
+import schemas
+# from schemas import BookingCreate, BookingResponse, TokenData
 from typing import List
 from routers.auth import get_current_user
 from datetime import datetime
 
 router = APIRouter(tags=["Bookings"])
 
-@router.post("/bookings/", response_model=BookingResponse)
-async def create_booking(booking: BookingCreate, current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+@router.post("/bookings/", response_model=schemas.BookingResponse)
+async def create_booking(booking: schemas.BookingCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.role != UserRole.STUDENT:
         raise HTTPException(status_code=403, detail="Only students can book events")
     
     # Get Student Profile
-    result = await db.execute(select(Student).where(Student.user_id == current_user.id))
+    result = db.execute(select(Student).where(Student.user_id == current_user.id))
     student = result.scalar_one_or_none()
     if not student:
         raise HTTPException(status_code=404, detail="Student profile not found")
 
     # Check if event exists and has seats
-    result = await db.execute(select(Event).where(Event.id == booking.event_id))
+    result = db.execute(select(Event).where(Event.id == booking.event_id))
     event = result.scalar_one_or_none()
     if not event:
         raise HTTPException(status_code=404, detail="Event not found")
@@ -31,7 +32,7 @@ async def create_booking(booking: BookingCreate, current_user: User = Depends(ge
         raise HTTPException(status_code=400, detail="Event is fully booked")
 
     # Check if already booked
-    result = await db.execute(select(Booking).where(
+    result = db.execute(select(Booking).where(
         Booking.event_id == booking.event_id,
         Booking.student_id == student.id
     ))
@@ -51,24 +52,47 @@ async def create_booking(booking: BookingCreate, current_user: User = Depends(ge
     event.seats_available -= 1
     
     db.add(new_booking)
-    db.add(event) # Update event seats
-    await db.commit()
-    await db.refresh(new_booking)
+    db.commit()
+    db.refresh(new_booking)
+    
+    # Generate QR code after booking is created (to get ID)
+    from qr_utils import generate_qr_code
+    qr_data, qr_image = generate_qr_code("booking", new_booking.id)
+    new_booking.qr_code = qr_data
+    db.commit()
+    db.refresh(new_booking)
+    
+    # Send booking confirmation email with ticket
+    try:
+        from email_service import send_booking_ticket
+        send_booking_ticket(
+            email=current_user.email,
+            student_name=student.name,
+            event_title=event.title,
+            event_date=event.date,
+            event_time=event.time,
+            event_venue=event.venue,
+            qr_image=qr_image,
+            ticket_type="attendee"
+        )
+    except Exception as e:
+        print(f"Failed to send booking email: {e}")
+        # Don't fail booking if email fails
     
     return new_booking
 
-@router.get("/bookings/my", response_model=List[BookingResponse])
-async def read_my_bookings(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
+@router.get("/bookings/my", response_model=List[schemas.BookingResponse])
+async def read_my_bookings(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.role != UserRole.STUDENT:
         raise HTTPException(status_code=403, detail="Only students can access this")
     
-    result = await db.execute(select(Student).where(Student.user_id == current_user.id))
+    result = db.execute(select(Student).where(Student.user_id == current_user.id))
     student = result.scalar_one_or_none()
     if not student:
         raise HTTPException(status_code=404, detail="Student profile not found")
 
     # Join with Event to get details
-    result = await db.execute(
+    result = db.execute(
         select(Booking, Event)
         .join(Event, Booking.event_id == Event.id)
         .where(Booking.student_id == student.id)
@@ -80,7 +104,7 @@ async def read_my_bookings(current_user: User = Depends(get_current_user), db: A
     
     for booking, event in rows:
         print(f"DEBUG: Processing booking {booking.id} for event {event.title}")
-        booking_resp = BookingResponse(
+        booking_resp = schemas.BookingResponse(
             id=booking.id,
             event_id=booking.event_id,
             student_id=booking.student_id,

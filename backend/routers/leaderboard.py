@@ -1,10 +1,10 @@
 from fastapi import APIRouter, Depends, HTTPException
-from sqlalchemy.ext.asyncio import AsyncSession
+from sqlalchemy.orm import Session
 from sqlalchemy.future import select
 from sqlalchemy import func, desc
 from database import get_db
 from models import User, UserRole, Booking, Student, Volunteer
-from typing import List
+from typing import List, Optional
 from pydantic import BaseModel
 from routers.auth import get_current_user
 
@@ -12,36 +12,54 @@ router = APIRouter(tags=["Leaderboard"])
 
 class LeaderboardEntry(BaseModel):
     rank: int
+    student_id: int
     student_name: str
     department: str
-    score: int # Calculated based on bookings (10pts) and volunteering (50pts)
+    score: int
+    title: Optional[str] = None
+    badges: List[dict] = []
 
 @router.get("/leaderboard", response_model=List[LeaderboardEntry])
-async def get_leaderboard(current_user: User = Depends(get_current_user), db: AsyncSession = Depends(get_db)):
-    if current_user.role not in [UserRole.ORGANIZER, UserRole.ADMIN, UserRole.STUDENT]:
-        raise HTTPException(status_code=403, detail="Not authorized")
-
-    # Fetch all students
-    result = await db.execute(select(Student))
-    students = result.scalars().all()
-
+async def get_leaderboard(
+    department: Optional[str] = None,
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    # Fetch all students (Columns only)
+    query = select(
+        Student.id,
+        Student.user_id,
+        Student.name,
+        Student.department,
+        Student.title,
+        Student.badges,
+        Student.spent_points
+    )
+    if department:
+        query = query.where(Student.department == department)
+        
+    result = db.execute(query)
+    students = result.all() # Returns list of Rows
+    
     leaderboard = []
     
     for student in students:
-        # Count bookings
-        booking_result = await db.execute(select(func.count(Booking.id)).where(Booking.student_id == student.id))
-        booking_count = booking_result.scalar() or 0
+        # Calculate Score (Centralized)
+        from points_utils import calculate_student_points, calculate_gamification
+        points_data = calculate_student_points(db, student.id, student.user_id)
         
-        # Count approved volunteering
-        volunteer_result = await db.execute(select(func.count(Volunteer.id)).where(Volunteer.user_id == student.user_id, Volunteer.status == "Approved"))
-        volunteer_count = volunteer_result.scalar() or 0
+        score = points_data["available_points"]
         
-        score = (booking_count * 100) + (volunteer_count * 200)
+        # Calculate Gamification (Centralized)
+        gamification_data = calculate_gamification(student, points_data)
         
         leaderboard.append({
+            "student_id": student.id,
             "student_name": student.name,
             "department": student.department,
-            "score": score
+            "score": score,
+            "title": gamification_data["title"],
+            "badges": gamification_data["badges"]
         })
     
     # Sort by score desc

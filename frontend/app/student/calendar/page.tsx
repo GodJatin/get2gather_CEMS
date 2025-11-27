@@ -13,7 +13,8 @@ import {
     addMonths, 
     subMonths, 
     parseISO, 
-    isToday
+    isToday,
+    parse
 } from 'date-fns';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api';
@@ -36,6 +37,7 @@ export default function CalendarPage() {
     const [selectedDate, setSelectedDate] = useState(new Date());
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
+    const [myBookings, setMyBookings] = useState<number[]>([]);
 
     useEffect(() => {
         const fetchEvents = async () => {
@@ -48,7 +50,18 @@ export default function CalendarPage() {
                 setLoading(false);
             }
         };
+
+        const fetchBookings = async () => {
+            try {
+                const res = await api.get('/bookings/my');
+                setMyBookings(res.data.map((b: any) => b.event_id));
+            } catch (error) {
+                console.error('Failed to fetch bookings:', error);
+            }
+        };
+
         fetchEvents();
+        fetchBookings();
     }, []);
 
     const nextMonth = () => setCurrentDate(addMonths(currentDate, 1));
@@ -162,36 +175,68 @@ export default function CalendarPage() {
                             </motion.div>
                         ) : selectedDateEvents.length > 0 ? (
                             <div className="space-y-4">
-                                {selectedDateEvents.map((event) => (
-                                    <motion.div
-                                        key={event.id}
-                                        initial={{ opacity: 0, y: 10 }}
-                                        animate={{ opacity: 1, y: 0 }}
-                                        exit={{ opacity: 0, y: -10 }}
-                                        className="bg-white/5 rounded-2xl p-4 border border-white/5 hover:border-blue-500/30 transition-colors group"
-                                    >
-                                        <div className="flex justify-between items-start mb-2">
-                                            <span className="text-xs font-bold px-2 py-1 rounded-full bg-blue-500/20 text-blue-400">
-                                                {event.category}
-                                            </span>
-                                            <span className="text-xs text-neutral-400">{event.time}</span>
-                                        </div>
-                                        <h4 className="font-bold text-lg mb-1 group-hover:text-blue-400 transition-colors">{event.title}</h4>
-                                        <p className="text-sm text-neutral-400 mb-3">{event.venue}</p>
-                                        
-                                        <div className="flex items-center justify-between mt-2">
-                                            <span className="text-xs text-green-400 font-medium">
-                                                {event.seats_available} seats left
-                                            </span>
-                                            <Link 
-                                                href={`/events/${event.id}`}
-                                                className="text-xs font-bold bg-white text-black px-3 py-1.5 rounded-lg hover:bg-neutral-200 transition-colors"
-                                            >
-                                                Book Now
-                                            </Link>
-                                        </div>
-                                    </motion.div>
-                                ))}
+                                {selectedDateEvents.map((event) => {
+                                    // Parse date and time (Format: YYYY-MM-DD and h:mm aa e.g., 10:00 AM)
+                                    const eventDate = parse(`${event.date} ${event.time}`, 'yyyy-MM-dd h:mm aa', new Date());
+                                    const now = new Date();
+                                    const isPast = eventDate < now;
+                                    const isBookingClosed = eventDate.getTime() - now.getTime() < 30 * 60 * 1000; // Less than 30 mins
+                                    const isBooked = myBookings.includes(event.id);
+
+                                    return (
+                                        <motion.div
+                                            key={event.id}
+                                            initial={{ opacity: 0, y: 10 }}
+                                            animate={{ opacity: 1, y: 0 }}
+                                            exit={{ opacity: 0, y: -10 }}
+                                            className="bg-white/5 rounded-2xl p-4 border border-white/5 hover:border-blue-500/30 transition-colors group"
+                                        >
+                                            <div className="flex justify-between items-start mb-2">
+                                                <span className="text-xs font-bold px-2 py-1 rounded-full bg-blue-500/20 text-blue-400">
+                                                    {event.category}
+                                                </span>
+                                                <span className="text-xs text-neutral-400">{event.time}</span>
+                                            </div>
+                                            <h4 className="font-bold text-lg mb-1 group-hover:text-blue-400 transition-colors">{event.title}</h4>
+                                            <p className="text-sm text-neutral-400 mb-3">{event.venue}</p>
+                                            
+                                            <div className="flex items-center justify-between mt-2">
+                                                <span className="text-xs text-green-400 font-medium">
+                                                    {event.seats_available} seats left
+                                                </span>
+                                                
+                                                {isPast ? (
+                                                    <span className="text-xs font-bold bg-neutral-700 text-neutral-400 px-3 py-1.5 rounded-lg cursor-not-allowed">
+                                                        Completed
+                                                    </span>
+                                                ) : isBookingClosed && !isBooked ? (
+                                                    <span className="text-xs font-bold bg-orange-900/50 text-orange-400 px-3 py-1.5 rounded-lg cursor-not-allowed border border-orange-500/30">
+                                                        Booking Closed
+                                                    </span>
+                                                ) : isBooked ? (
+                                                    <div className="flex items-center gap-2">
+                                                        <span className="text-xs font-bold bg-green-600/20 text-green-400 px-2 py-1.5 rounded-lg border border-green-500/30">
+                                                            ✅ Booked
+                                                        </span>
+                                                        <Link 
+                                                            href={`/events/${event.id}`}
+                                                            className="text-xs font-bold bg-white/10 text-white px-3 py-1.5 rounded-lg hover:bg-white/20 transition-colors"
+                                                        >
+                                                            View Details
+                                                        </Link>
+                                                    </div>
+                                                ) : (
+                                                    <Link 
+                                                        href={`/events/${event.id}`}
+                                                        className="text-xs font-bold bg-white text-black px-3 py-1.5 rounded-lg hover:bg-neutral-200 transition-colors"
+                                                    >
+                                                        Book Now
+                                                    </Link>
+                                                )}
+                                            </div>
+                                        </motion.div>
+                                    );
+                                })}
                             </div>
                         ) : (
                             <motion.div

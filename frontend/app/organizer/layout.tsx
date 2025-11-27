@@ -14,7 +14,7 @@ export default function OrganizerLayout({
         { name: 'Dashboard', href: '/organizer/dashboard', icon: '📊' },
         { name: 'My Events', href: '/organizer/events', icon: '📅' },
         { name: 'Create Event', href: '/organizer/events/create', icon: '➕' },
-        { name: 'Approvals', href: '/organizer/approvals', icon: '✅' },
+        { name: 'Scan', href: '/organizer/scan', icon: '📱' },
         { name: 'Leaderboard', href: '/organizer/leaderboard', icon: '🏆' },
         { name: 'Profile', href: '/organizer/profile', icon: '👤' },
     ];

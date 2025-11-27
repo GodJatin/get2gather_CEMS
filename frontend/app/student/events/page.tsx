@@ -11,105 +11,214 @@ interface Event {
     date: string;
     time: string;
     venue: string;
-    status: string;
+    category: string;
     seats_available: number;
     capacity: number;
-    category: string;
     image_url?: string;
-    is_paid: boolean;
+    images?: string;
+    department?: string;
+    open_for?: string;
+    hashtags?: string;
     price: number;
+    is_paid: boolean;
 }
 
-export default function StudentEventsPage() {
+interface UserProfile {
+    department?: string;
+}
+
+export default function EventsPage() {
     const [events, setEvents] = useState<Event[]>([]);
+    const [trendingEvents, setTrendingEvents] = useState<Event[]>([]);
+    const [user, setUser] = useState<UserProfile | null>(null);
     const [loading, setLoading] = useState(true);
+    const [filter, setFilter] = useState('All');
+    const [searchTag, setSearchTag] = useState('');
 
     useEffect(() => {
-        const fetchEvents = async () => {
+        const fetchData = async () => {
             try {
-                const res = await api.get('/events/');
-                setEvents(res.data);
+                const userRes = await api.get('/auth/me');
+                setUser(userRes.data);
+
+                const eventsRes = await api.get('/events/');
+                setEvents(eventsRes.data);
+
+                const trendingRes = await api.get('/events/trending');
+                setTrendingEvents(trendingRes.data);
             } catch (error) {
-                console.error('Failed to fetch events:', error);
+                console.error('Failed to fetch data:', error);
             } finally {
                 setLoading(false);
             }
         };
-        fetchEvents();
+
+        fetchData();
     }, []);
 
+    const filterEvents = (section?: string) => {
+        let filtered = events;
+
+        // Apply Category Filter (from Dropdown)
+        if (filter !== 'All') {
+            if (filter === 'Department') {
+                filtered = filtered.filter(e => e.department === user?.department);
+            } else {
+                filtered = filtered.filter(e => e.category === filter);
+            }
+        }
+
+        // Apply Search Filter
+        if (searchTag) {
+            const tag = searchTag.toLowerCase();
+            filtered = filtered.filter(e => 
+                e.title.toLowerCase().includes(tag) || 
+                e.hashtags?.toLowerCase().includes(tag)
+            );
+        }
+
+        // Apply Section specific filters (for "Open for All" etc.)
+        if (section === 'Open') {
+            filtered = filtered.filter(e => e.open_for === 'Everyone' || !e.department);
+        }
+
+        return filtered;
+    };
+
+    const EventCard = ({ event }: { event: Event }) => {
+        const image = event.images ? JSON.parse(event.images)[0] : (event.image_url || null);
+
+        return (
+            <Link href={`/events/${event.id}`} className="group block">
+                <div className="rounded-3xl bg-neutral-900/50 border border-white/10 overflow-hidden hover:border-blue-500/30 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/5 h-full flex flex-col">
+                    <div className="h-48 bg-neutral-800 relative overflow-hidden">
+                        {image ? (
+                            <img src={image} alt={event.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                        ) : (
+                            <div className="absolute inset-0 flex items-center justify-center text-4xl opacity-30">🎉</div>
+                        )}
+                        <div className="absolute top-3 right-3 flex gap-2">
+                             <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-white">
+                                {event.category}
+                            </span>
+                            {event.is_paid && (
+                                <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-purple-600/80 backdrop-blur-md text-white">
+                                    ₹{event.price}
+                                </span>
+                            )}
+                        </div>
+                    </div>
+                    <div className="p-5 flex-1 flex flex-col">
+                        <div className="flex items-center gap-2 text-xs text-blue-400 mb-2 font-medium">
+                            <span>📅 {event.date}</span>
+                            <span>•</span>
+                            <span>⏰ {event.time}</span>
+                        </div>
+                        <h3 className="text-lg font-bold mb-2 group-hover:text-blue-400 transition-colors line-clamp-1">{event.title}</h3>
+                        <p className="text-sm text-neutral-400 mb-4 line-clamp-1">{event.venue}</p>
+                        
+                        {event.hashtags && (
+                            <div className="flex flex-wrap gap-1 mb-4">
+                                {event.hashtags.split(',').map((tag, i) => (
+                                    <span key={i} className="text-[10px] text-neutral-500 bg-white/5 px-2 py-1 rounded-md">#{tag.trim()}</span>
+                                ))}
+                            </div>
+                        )}
+
+                        <div className="mt-auto pt-4 border-t border-white/5 flex justify-between items-center">
+                            <span className="text-xs text-neutral-500">{event.seats_available} seats left</span>
+                            <span className="text-sm font-bold text-white group-hover:translate-x-1 transition-transform">View →</span>
+                        </div>
+                    </div>
+                </div>
+            </Link>
+        );
+    };
+
     return (
-        <MotionWrapper className="max-w-7xl mx-auto">
+        <MotionWrapper className="max-w-7xl mx-auto p-6 md:p-12">
             <header className="mb-12">
-                <h1 className="text-4xl font-bold mb-4">Upcoming Events</h1>
-                <p className="text-neutral-400">Discover and book events happening around campus.</p>
+                <h1 className="text-4xl font-bold mb-4">Discover Events</h1>
+                <p className="text-neutral-400">Find workshops, seminars, and fun activities happening around you.</p>
+                
+                {/* Search / Filter Bar */}
+                <div className="mt-8 flex flex-col md:flex-row gap-4">
+                    <div className="relative flex-1">
+                        <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500">🔍</span>
+                        <input 
+                            type="text" 
+                            placeholder="Search events by title or hashtag..." 
+                            value={searchTag}
+                            onChange={(e) => setSearchTag(e.target.value)}
+                            className="bg-neutral-900 border border-white/10 rounded-xl pl-12 pr-4 py-3 w-full focus:outline-none focus:border-blue-500 transition-colors"
+                        />
+                    </div>
+                    
+                    <select
+                        value={filter}
+                        onChange={(e) => setFilter(e.target.value)}
+                        className="bg-neutral-900 border border-white/10 rounded-xl px-4 py-3 min-w-[200px] focus:outline-none focus:border-blue-500 transition-colors appearance-none cursor-pointer"
+                    >
+                        <option value="All">All Categories</option>
+                        <option value="Technical">Technical</option>
+                        <option value="Cultural">Cultural</option>
+                        <option value="Sports">Sports</option>
+                        <option value="Workshop">Workshop</option>
+                        <option value="Seminar">Seminar</option>
+                        {user?.department && <option value="Department">My Department ({user.department})</option>}
+                    </select>
+                </div>
             </header>
 
-            {loading ? (
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {[1, 2, 3, 4, 5, 6].map((i) => (
-                        <div key={i} className="h-80 rounded-3xl bg-neutral-900/50 animate-pulse" />
+            {/* Trending Section - Only show when no filter/search is active */}
+            {filter === 'All' && !searchTag && (
+                <section className="mb-16">
+                    <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                        <span>🔥</span> Trending Now
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {trendingEvents.map(event => (
+                            <EventCard key={event.id} event={event} />
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            {/* Department Section */}
+            {user?.department && (
+                <section className="mb-16">
+                    <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                        <span>🎓</span> For {user.department} Students
+                    </h2>
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        {filterEvents('Department').map(event => (
+                            <EventCard key={event.id} event={event} />
+                        ))}
+                    </div>
+                </section>
+            )}
+
+            {/* Open For All */}
+            <section className="mb-16">
+                <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
+                    <span>🌍</span> Open for All
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {filterEvents('Open').map(event => (
+                        <EventCard key={event.id} event={event} />
                     ))}
                 </div>
-            ) : (
-                <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                    {events.map((event) => (
-                        <StaggerItem key={event.id} className="group flex flex-col p-5 rounded-3xl bg-neutral-900/50 border border-white/10 hover:border-blue-500/30 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/5">
-                            <div className="h-48 rounded-2xl bg-gradient-to-br from-neutral-800 to-neutral-900 mb-5 relative overflow-hidden group-hover:scale-[1.02] transition-transform duration-500">
-                                {event.image_url ? (
-                                    <img src={event.image_url} alt={event.title} className="w-full h-full object-cover" />
-                                ) : (
-                                    <div className="absolute inset-0 flex items-center justify-center text-6xl opacity-30 group-hover:opacity-50 transition-opacity">
-                                        🎉
-                                    </div>
-                                )}
-                                <div className="absolute top-3 right-3 flex gap-2">
-                                    <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-white">
-                                        {event.category}
-                                    </span>
-                                    <span className={`text-xs font-bold px-3 py-1.5 rounded-full backdrop-blur-md border border-white/10 text-white ${event.is_paid ? 'bg-purple-500/80' : 'bg-green-500/80'}`}>
-                                        {event.is_paid ? `₹ ${event.price}` : 'Free'}
-                                    </span>
-                                </div>
-                            </div>
+            </section>
 
-                            <div className="flex-1 flex flex-col">
-                                <div className="flex items-center gap-2 text-xs text-blue-400 mb-2 font-medium">
-                                    <span>📅 {event.date}</span>
-                                    <span>•</span>
-                                    <span>⏰ {event.time}</span>
-                                </div>
-
-                                <h3 className="text-xl font-bold mb-2 group-hover:text-blue-400 transition-colors line-clamp-1">{event.title}</h3>
-                                <p className="text-sm text-neutral-400 mb-4 line-clamp-2">{event.venue}</p>
-
-                                <div className="mt-auto pt-4 border-t border-white/5 flex items-center justify-between">
-                                    <div className="flex flex-col">
-                                        <span className="text-xs text-neutral-500">Availability</span>
-                                        <span className="text-sm font-bold text-green-400">
-                                            {event.seats_available} / {event.capacity}
-                                        </span>
-                                    </div>
-                                    <Link
-                                        href={`/events/${event.id}`}
-                                        className="px-5 py-2.5 rounded-xl bg-white text-black font-bold text-sm hover:bg-neutral-200 transition-colors transform active:scale-95"
-                                    >
-                                        Book Now
-                                    </Link>
-                                </div>
-                            </div>
-                        </StaggerItem>
+             {/* All Events Grid */}
+             <section>
+                <h2 className="text-2xl font-bold mb-6">All Events</h2>
+                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                    {filterEvents().map(event => (
+                        <EventCard key={event.id} event={event} />
                     ))}
-
-                    {events.length === 0 && (
-                        <div className="col-span-full flex flex-col items-center justify-center py-20 text-center bg-neutral-900/30 rounded-3xl border border-white/5">
-                            <span className="text-6xl mb-4">🏜️</span>
-                            <h3 className="text-xl font-bold mb-2">No Events Found</h3>
-                            <p className="text-neutral-400">Check back later for upcoming events!</p>
-                        </div>
-                    )}
-                </StaggerContainer>
-            )}
+                </div>
+            </section>
         </MotionWrapper>
     );
 }

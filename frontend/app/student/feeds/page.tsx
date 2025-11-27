@@ -57,14 +57,18 @@ export default function FeedPage() {
     const [showFeelingInput, setShowFeelingInput] = useState(false);
     const [showTagInput, setShowTagInput] = useState(false);
 
+    const [filter, setFilter] = useState<'all' | 'following'>('all');
+
     useEffect(() => {
         fetchPosts();
         fetchEvents();
-    }, []);
+    }, [filter]);
 
     const fetchPosts = async () => {
+        setLoading(true);
         try {
-            const response = await api.get('/feed/');
+            const params = filter === 'following' ? { following_only: true } : {};
+            const response = await api.get('/feed/', { params });
             setPosts(response.data);
         } catch (error) {
             console.error('Failed to fetch posts:', error);
@@ -84,61 +88,37 @@ export default function FeedPage() {
 
     const handleCreatePost = async (e: React.FormEvent) => {
         e.preventDefault();
+        if (!newPostContent && !newPostMediaUrl) return;
+
         try {
-            await api.post('/feed/', {
+            const postData = {
                 content: newPostContent,
-                media_url: newPostMediaUrl || null,
-                media_type: newPostMediaUrl ? 'image' : null,
+                media_url: newPostMediaUrl,
                 event_id: selectedEvent,
-                location: location || null,
-                feeling: feeling || null,
-                tagged_users: taggedUsers || null
-            });
+                location: location,
+                feeling: feeling,
+                tagged_users: taggedUsers ? [1] : [] // Mocking tagged user ID for now as backend expects list of ints
+            };
+            
+            await api.post('/feed/', postData);
+            setNewPostContent('');
+            setNewPostMediaUrl('');
+            setSelectedEvent(null);
+            setLocation('');
+            setFeeling('');
+            setTaggedUsers('');
             setIsCreateModalOpen(false);
-            resetForm();
-            fetchPosts();
+            fetchPosts(); // Refresh feed
         } catch (error) {
             console.error('Failed to create post:', error);
-        }
-    };
-
-    const resetForm = () => {
-        setNewPostContent('');
-        setNewPostMediaUrl('');
-        setSelectedEvent(null);
-        setLocation('');
-        setFeeling('');
-        setTaggedUsers('');
-        setShowEventSelect(false);
-        setShowLocationInput(false);
-        setShowFeelingInput(false);
-        setShowTagInput(false);
-    };
-
-    const handleLike = async (postId: number) => {
-        try {
-            const response = await api.post(`/feed/${postId}/like`);
-            const isLiked = response.data.liked;
-            
-            setPosts(posts.map(post => {
-                if (post.id === postId) {
-                    return {
-                        ...post,
-                        is_liked: isLiked,
-                        likes_count: isLiked ? post.likes_count + 1 : post.likes_count - 1
-                    };
-                }
-                return post;
-            }));
-        } catch (error) {
-            console.error('Failed to toggle like:', error);
+            alert('Failed to create post');
         }
     };
 
     return (
         <MotionWrapper className="max-w-2xl mx-auto pb-20">
             {/* Header / Create Post Trigger */}
-            <div className="flex items-center justify-between mb-8 sticky top-20 z-30 bg-neutral-950/80 backdrop-blur-md py-4 border-b border-white/5">
+            <div className="flex items-center justify-between mb-4 sticky top-20 z-30 bg-neutral-950/80 backdrop-blur-md py-4 border-b border-white/5">
                 <h1 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
                     Campus Feed
                 </h1>
@@ -150,6 +130,32 @@ export default function FeedPage() {
                 </button>
             </div>
 
+            {/* Tabs */}
+            <div className="flex justify-center mb-8">
+                <div className="bg-neutral-900/50 p-1 rounded-xl flex gap-1 border border-white/5">
+                    <button
+                        onClick={() => setFilter('all')}
+                        className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${
+                            filter === 'all' 
+                                ? 'bg-white/10 text-white shadow-lg' 
+                                : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                        }`}
+                    >
+                        All Posts
+                    </button>
+                    <button
+                        onClick={() => setFilter('following')}
+                        className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${
+                            filter === 'following' 
+                                ? 'bg-white/10 text-white shadow-lg' 
+                                : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                        }`}
+                    >
+                        Following
+                    </button>
+                </div>
+            </div>
+
             {/* Feed */}
             <div className="space-y-8">
                 {loading ? (
@@ -157,7 +163,7 @@ export default function FeedPage() {
                 ) : posts.length === 0 ? (
                     <div className="text-center text-neutral-500 py-12">
                         <span className="text-4xl block mb-2">📭</span>
-                        No posts yet. Be the first to share something!
+                        No posts found.
                     </div>
                 ) : (
                     posts.map((post) => (

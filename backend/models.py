@@ -1,4 +1,4 @@
-from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Enum
+from sqlalchemy import Column, Integer, String, Boolean, ForeignKey, Enum, Table, JSON
 from sqlalchemy.orm import relationship
 from database import Base
 import enum
@@ -8,6 +8,14 @@ class UserRole(str, enum.Enum):
     ORGANIZER = "organizer"
     ADMIN = "admin"
 
+# Association Table for Followers
+user_follows = Table(
+    "user_follows",
+    Base.metadata,
+    Column("follower_id", Integer, ForeignKey("users.id"), primary_key=True),
+    Column("followed_id", Integer, ForeignKey("users.id"), primary_key=True),
+)
+
 class User(Base):
     __tablename__ = "users"
 
@@ -16,27 +24,44 @@ class User(Base):
     hashed_password = Column(String)
     role = Column(Enum(UserRole))
     is_active = Column(Boolean, default=True)
-
+    organization_name = Column(String, nullable=True)
+    contact = Column(String, nullable=True)
+    
     student_profile = relationship("Student", back_populates="user", uselist=False)
     organizer_profile = relationship("Organizer", back_populates="user", uselist=False)
     media = relationship("Media", back_populates="user")
     posts = relationship("FeedPost", back_populates="user")
     likes = relationship("FeedLike", back_populates="user")
     comments = relationship("FeedComment", back_populates="user")
+    
+    # Social - Self-referential Many-to-Many for followers
+    followers = relationship(
+        "User",
+        secondary=user_follows,
+        primaryjoin=id==user_follows.c.followed_id,
+        secondaryjoin=id==user_follows.c.follower_id,
+        backref="following"
+    )
 
 class Student(Base):
     __tablename__ = "students"
 
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    name = Column(String)
+    name = Column(String, index=True)
     contact = Column(String)
     department = Column(String)
     enrollment_number = Column(String, unique=True, index=True)
     
+    # Gamification
+    badges = Column(JSON, default=list) # List of badge objects
+    unlocked_features = Column(JSON, default=list) # List of unlocked feature strings
+    weekly_rank = Column(Integer, default=0)
+    title = Column(String, nullable=True) # e.g. "Tech Wizard"
+    spent_points = Column(Integer, default=0)
+
     user = relationship("User", back_populates="student_profile")
     bookings = relationship("Booking", back_populates="student")
-
 
 class Organizer(Base):
     __tablename__ = "organizers"
@@ -59,17 +84,18 @@ class Event(Base):
     category = Column(String)
     capacity = Column(Integer)
     seats_available = Column(Integer)
-    date = Column(String) # Storing as string for simplicity, can be DateTime
+    date = Column(String) 
     time = Column(String)
     venue = Column(String)
-    image_url = Column(String, nullable=True) # Main thumbnail
-    images = Column(String, nullable=True) # JSON string for multiple images
+    image_url = Column(String, nullable=True) 
+    images = Column(String, nullable=True) 
     department = Column(String, nullable=True)
     open_for = Column(String, nullable=True)
     outcomes = Column(String, nullable=True)
     is_paid = Column(Boolean, default=False)
     price = Column(Integer, default=0)
-    status = Column(String, default="Upcoming") # Upcoming, Ongoing, Completed
+    hashtags = Column(String, nullable=True) 
+    status = Column(String, default="Upcoming") 
 
     organizer = relationship("Organizer", back_populates="events")
     bookings = relationship("Booking", back_populates="event")
@@ -82,7 +108,7 @@ class Waitlist(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     event_id = Column(Integer, ForeignKey("events.id"))
-    created_at = Column(String) # Store timestamp
+    created_at = Column(String) 
 
     user = relationship("User")
     event = relationship("Event", back_populates="waitlist")
@@ -93,8 +119,13 @@ class Booking(Base):
     id = Column(Integer, primary_key=True, index=True)
     event_id = Column(Integer, ForeignKey("events.id"))
     student_id = Column(Integer, ForeignKey("students.id"))
-    booking_date = Column(String) # Store as ISO string
-    status = Column(String, default="Confirmed") # Confirmed, Cancelled
+    booking_date = Column(String) 
+    status = Column(String, default="Confirmed")
+    
+    # Attendance tracking
+    attended = Column(Boolean, default=False)
+    qr_code = Column(String, unique=True, nullable=True, index=True)
+    checked_in_at = Column(String, nullable=True) 
 
     event = relationship("Event", back_populates="bookings")
     student = relationship("Student", back_populates="bookings")
@@ -106,10 +137,10 @@ class Media(Base):
     event_id = Column(Integer, ForeignKey("events.id"))
     user_id = Column(Integer, ForeignKey("users.id"))
     url = Column(String)
-    type = Column(String) # image, video
+    type = Column(String) 
     caption = Column(String, nullable=True)
-    uploaded_at = Column(String) # ISO string
-    is_approved = Column(Boolean, default=False) # For moderation
+    uploaded_at = Column(String) 
+    is_approved = Column(Boolean, default=False) 
 
     event = relationship("Event", back_populates="media")
     user = relationship("User", back_populates="media")
@@ -132,7 +163,7 @@ class RegistrationAttempt(Base):
     contact = Column(String)
     invite_code = Column(String)
     is_verified = Column(Boolean, default=False)
-    created_at = Column(String) # Store as ISO string for simplicity
+    created_at = Column(String) 
 
 class StudentRegistrationAttempt(Base):
     __tablename__ = "student_registration_attempts"
@@ -145,7 +176,7 @@ class StudentRegistrationAttempt(Base):
     department = Column(String)
     enrollment_number = Column(String)
     is_verified = Column(Boolean, default=False)
-    created_at = Column(String) # Store as ISO string for simplicity
+    created_at = Column(String) 
 
 class FeedPost(Base):
     __tablename__ = "feed_posts"
@@ -154,12 +185,12 @@ class FeedPost(Base):
     user_id = Column(Integer, ForeignKey("users.id"))
     content = Column(String, nullable=True)
     media_url = Column(String, nullable=True)
-    media_type = Column(String, nullable=True) # image, video
+    media_type = Column(String, nullable=True) 
     event_id = Column(Integer, ForeignKey("events.id"), nullable=True)
     location = Column(String, nullable=True)
     feeling = Column(String, nullable=True)
-    tagged_users = Column(String, nullable=True) # JSON string of user_ids
-    created_at = Column(String) # ISO string
+    tagged_users = Column(String, nullable=True) 
+    created_at = Column(String) 
     
     user = relationship("User", back_populates="posts")
     event = relationship("Event")
@@ -195,8 +226,27 @@ class Volunteer(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     event_id = Column(Integer, ForeignKey("events.id"))
-    status = Column(String, default="Pending") # Pending, Approved, Rejected
+    status = Column(String, default="Pending") 
     created_at = Column(String)
+    
+    # Attendance tracking
+    attended = Column(Boolean, default=False)
+    qr_code = Column(String, unique=True, nullable=True, index=True)
+    checked_in_at = Column(String, nullable=True)
 
     user = relationship("User")
     event = relationship("Event")
+
+class PointTransaction(Base):
+    __tablename__ = "point_transactions"
+
+    id = Column(Integer, primary_key=True, index=True)
+    student_id = Column(Integer, ForeignKey("students.id"))
+    amount = Column(Integer) # Positive for earning (optional usage), Negative for spending
+    description = Column(String)
+    timestamp = Column(String) # ISO format
+
+    student = relationship("Student", back_populates="transactions")
+
+# Add relationship to Student model
+Student.transactions = relationship("PointTransaction", back_populates="student")

@@ -103,23 +103,38 @@ class EventBase(BaseModel):
     capacity: int
     date: str
     time: str
-    venue: str
-    image_url: Optional[str] = None
-    images: Optional[str] = None # JSON string
+
+    class Config:
+        orm_mode = True
+
+class EventCreate(EventBase):
+    # Optional fields that frontend may send
+    venue: Optional[str] = None
     department: Optional[str] = None
     open_for: Optional[str] = None
     outcomes: Optional[str] = None
+    images: Optional[str] = None
+    image_url: Optional[str] = None
     is_paid: Optional[bool] = False
     price: Optional[int] = 0
-
-class EventCreate(EventBase):
-    pass
+    hashtags: Optional[str] = None
+    # These are set by backend, so frontend shouldn't send them
+    # organizer_id, seats_available, status will be set server-side
 
 class EventResponse(EventBase):
     id: int
-    organizer_id: int
     seats_available: int
+    organizer_id: int
     status: str
+    image_url: Optional[str] = None
+    images: Optional[str] = None
+    venue: Optional[str] = None
+    department: Optional[str] = None
+    open_for: Optional[str] = None
+    outcomes: Optional[str] = None
+    is_paid: bool = False
+    price: int = 0
+    hashtags: Optional[str] = None
 
     class Config:
         orm_mode = True
@@ -153,6 +168,10 @@ class BookingResponse(BaseModel):
     event_venue: Optional[str] = None
     student_name: Optional[str] = None
     student_email: Optional[str] = None
+    # Attendance tracking
+    attended: Optional[bool] = False
+    qr_code: Optional[str] = None
+    checked_in_at: Optional[str] = None
 
     class Config:
         orm_mode = True
@@ -188,14 +207,6 @@ class FeedPostCreate(BaseModel):
 class FeedCommentCreate(BaseModel):
     content: str
 
-class FeedLikeResponse(BaseModel):
-    id: int
-    user_id: int
-    post_id: int
-
-    class Config:
-        orm_mode = True
-
 class FeedCommentResponse(BaseModel):
     id: int
     user_id: int
@@ -215,7 +226,7 @@ class FeedPostResponse(BaseModel):
     event_id: Optional[int]
     location: Optional[str]
     feeling: Optional[str]
-    tagged_users: Optional[str] # JSON string
+    tagged_users: Optional[str]
     created_at: str
     user_name: Optional[str] = None
     user_role: Optional[str] = None
@@ -240,6 +251,10 @@ class VolunteerResponse(BaseModel):
     event_id: int
     status: str
     created_at: str
+    # Attendance tracking
+    attended: Optional[bool] = False
+    qr_code: Optional[str] = None
+    checked_in_at: Optional[str] = None
 
     class Config:
         orm_mode = True

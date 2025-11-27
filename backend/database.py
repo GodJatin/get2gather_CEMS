@@ -1,4 +1,4 @@
-from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
+from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker, declarative_base
 import os
 
@@ -6,23 +6,22 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-DATABASE_URL = os.getenv("DATABASE_URL", "postgresql+asyncpg://postgres:password@localhost/get2gather")
+# Use sqlite directly
+DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///C:/Users/HP/.gemini/test_sync_final.db").replace("sqlite+aiosqlite", "sqlite")
 
-engine = create_async_engine(DATABASE_URL, echo=True)
+engine = create_engine(DATABASE_URL, echo=True, connect_args={"check_same_thread": False})
 
 SessionLocal = sessionmaker(
     autocommit=False,
     autoflush=False,
-    bind=engine,
-    class_=AsyncSession,
-    expire_on_commit=False
+    bind=engine
 )
 
 Base = declarative_base()
 
-async def get_db():
-    async with SessionLocal() as session:
-        try:
-            yield session
-        finally:
-            await session.close()
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()

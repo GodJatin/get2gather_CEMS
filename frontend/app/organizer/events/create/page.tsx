@@ -17,7 +17,8 @@ export default function CreateEventPage() {
         outcomes: '',
         images: [] as string[],
         is_paid: false,
-        price: 0
+        price: 0,
+        hashtags: ''
     });
     const [uploading, setUploading] = useState(false);
 
@@ -68,12 +69,19 @@ export default function CreateEventPage() {
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
         try {
+            // Get current user to extract organizer_id
+            const userResponse = await api.get('/auth/me');
+            const organizerId = userResponse.data.id;
+
             await api.post('/events/', {
                 ...formData,
                 capacity: parseInt(formData.capacity),
+                seats_available: parseInt(formData.capacity), // Initially all seats available
                 price: formData.is_paid ? parseInt(formData.price.toString()) : 0,
                 images: JSON.stringify(formData.images),
-                image_url: formData.images[0] || null // Use first image as thumbnail
+                image_url: formData.images[0] || null, // Use first image as thumbnail
+                organizer_id: organizerId,
+                status: 'Upcoming' // Default status
             });
             alert('Event created successfully!');
             window.location.href = '/organizer/events';
@@ -166,30 +174,45 @@ export default function CreateEventPage() {
                             </div>
                         </div>
 
-                        {/* Free / Paid Toggle */}
-                        <div className="flex items-center gap-4 p-4 rounded-xl bg-neutral-800/30 border border-white/5">
-                            <label className="flex items-center gap-3 cursor-pointer">
-                                <input
-                                    type="checkbox"
-                                    name="is_paid"
-                                    checked={formData.is_paid}
-                                    onChange={handleChange}
-                                    className="w-5 h-5 rounded border-white/10 bg-neutral-800 text-purple-600 focus:ring-purple-500"
-                                />
-                                <span className="font-medium">This is a Paid Event</span>
-                            </label>
+                        <div>
+                            <label className="block text-sm font-medium text-neutral-400 mb-2">Hashtags (comma separated)</label>
+                            <input
+                                type="text"
+                                value={formData.hashtags}
+                                onChange={(e) => setFormData({ ...formData, hashtags: e.target.value })}
+                                className="w-full bg-neutral-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
+                                placeholder="e.g. #Workshop, #Coding, #Free"
+                            />
+                        </div>
 
+                        <div className="flex items-center gap-4">
+                            <div className="flex-1">
+                                <label className="block text-sm font-medium text-neutral-400 mb-2">Event Type</label>
+                                <div className="flex items-center gap-4 p-1 bg-neutral-900 rounded-xl border border-white/10">
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, is_paid: false })}
+                                        className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${!formData.is_paid ? 'bg-blue-600 text-white shadow-lg' : 'text-neutral-400 hover:text-white'}`}
+                                    >
+                                        Free
+                                    </button>
+                                    <button
+                                        type="button"
+                                        onClick={() => setFormData({ ...formData, is_paid: true })}
+                                        className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${formData.is_paid ? 'bg-blue-600 text-white shadow-lg' : 'text-neutral-400 hover:text-white'}`}
+                                    >
+                                        Paid
+                                    </button>
+                                </div>
+                            </div>
                             {formData.is_paid && (
-                                <div className="flex-1 flex items-center gap-2 animate-in fade-in slide-in-from-left-4">
-                                    <span className="text-neutral-400">Price (₹):</span>
+                                <div className="flex-1">
+                                    <label className="block text-sm font-medium text-neutral-400 mb-2">Price (₹)</label>
                                     <input
-                                        name="price"
-                                        value={formData.price}
-                                        onChange={handleChange}
                                         type="number"
-                                        className="w-32 px-3 py-2 rounded-lg bg-neutral-800 border border-white/10 text-white focus:border-purple-500/50 focus:outline-none"
-                                        placeholder="0"
-                                        min="0"
+                                        value={formData.price}
+                                        onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
+                                        className="w-full bg-neutral-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
                                     />
                                 </div>
                             )}

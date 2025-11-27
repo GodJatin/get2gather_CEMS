@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CORS Test</title>
+</head>
+<body>
+    <h1>Testing CORS for Event Creation</h1>
+    <button onclick="testCORS()">Test CORS</button>
+    <pre id="result"></pre>
+
+    <script>
+        async function testCORS() {
+            const resultEl = document.getElementById('result');
+            resultEl.textContent = 'Testing CORS...';
+            
+            try {
+                // Test 1: Simple GET
+                const getResponse = await fetch('http://127.0.0.1:8000/events/');
+                const events = await getResponse.json();
+                resultEl.textContent += `\n✅ GET /events/ works: ${events.length} events`;
+                
+                // Test 2: Check CORS headers
+                resultEl.textContent += `\n\nResponse headers:`;
+                for (const [key, value] of getResponse.headers.entries()) {
+                    if (key.includes('access-control')) {
+                        resultEl.textContent += `\n  ${key}: ${value}`;
+                    }
+                }
+                
+            } catch (error) {
+                resultEl.textContent += `\n\n❌ Error: ${error.message}`;
+                console.error('Full error:', error);
+            }
+        }
+    </script>
+</body>
+</html>
