@@ -251,6 +251,8 @@ class VolunteerResponse(BaseModel):
     event_id: int
     status: str
     created_at: str
+    student_name: Optional[str] = None
+    student_email: Optional[str] = None
     # Attendance tracking
     attended: Optional[bool] = False
     qr_code: Optional[str] = None

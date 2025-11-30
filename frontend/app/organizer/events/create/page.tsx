@@ -75,9 +75,9 @@ export default function CreateEventPage() {
 
             await api.post('/events/', {
                 ...formData,
-                capacity: parseInt(formData.capacity),
-                seats_available: parseInt(formData.capacity), // Initially all seats available
-                price: formData.is_paid ? parseInt(formData.price.toString()) : 0,
+                capacity: parseInt(formData.capacity) || 0,
+                seats_available: parseInt(formData.capacity) || 0, // Initially all seats available
+                price: formData.is_paid ? (parseInt(formData.price.toString()) || 0) : 0,
                 images: JSON.stringify(formData.images),
                 image_url: formData.images[0] || null, // Use first image as thumbnail
                 organizer_id: organizerId,

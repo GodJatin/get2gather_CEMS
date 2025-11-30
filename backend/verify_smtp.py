@@ -1,23 +1,48 @@
 import os
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
 from dotenv import load_dotenv
-import sys
 
-# Add current directory to path so we can import email_service
-sys.path.append(os.path.dirname(os.path.abspath(__file__)))
-
-# Load .env
 load_dotenv()
 
-from email_service import send_otp_email
+def verify_smtp():
+    smtp_email = os.getenv("SMTP_EMAIL")
+    smtp_password = os.getenv("SMTP_PASSWORD")
 
-smtp_email = os.getenv("SMTP_EMAIL")
-print(f"SMTP Email found: {smtp_email}")
+    print(f"Checking SMTP Configuration:")
+    print(f"Email: {smtp_email}")
+    print(f"Password: {'*' * len(smtp_password) if smtp_password else 'Not Set'}")
 
-print("Attempting to send email...")
-# Send to the same email as sender for testing
-success = send_otp_email(smtp_email, "123456", "student")
+    if not smtp_email or not smtp_password:
+        print("❌ SMTP credentials missing in .env")
+        return
 
-if success:
-    print("Email sent successfully!")
-else:
-    print("Failed to send email.")
+    try:
+        print("Connecting to smtp.gmail.com:587...")
+        server = smtplib.SMTP('smtp.gmail.com', 587)
+        server.set_debuglevel(1)  # Enable debug output
+        server.starttls()
+        print("Logging in...")
+        server.login(smtp_email, smtp_password)
+        print("✅ Login successful!")
+
+        # Send test email
+        receiver_email = "2305103140014@paruluniversity.ac.in"
+        msg = MIMEMultipart()
+        msg['From'] = f"Get2Gather Test <{smtp_email}>"
+        msg['To'] = receiver_email
+        msg['Subject'] = "Get2Gather SMTP Test"
+        msg.attach(MIMEText("This is a test email from the Get2Gather backend verification script.", 'plain'))
+
+        print(f"Sending test email to {receiver_email}...")
+        server.send_message(msg)
+        print("✅ Test email sent successfully!")
+        
+        server.quit()
+
+    except Exception as e:
+        print(f"❌ SMTP Verification Failed: {e}")
+
+if __name__ == "__main__":
+    verify_smtp()

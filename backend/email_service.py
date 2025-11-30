@@ -4,6 +4,7 @@ from email.mime.multipart import MIMEMultipart
 import os
 import secrets
 from datetime import datetime
+import base64
 
 def generate_otp() -> str:
     """Generate a secure 6-digit OTP"""
@@ -150,7 +151,7 @@ def send_otp_email(email: str, otp: str, user_type: str = "user") -> bool:
         print(f"❌ Failed to send OTP email to {email}: {str(e)}")
         return False
 
-def send_booking_ticket(email: str, student_name: str, event_title: str, event_date: str, event_time: str, event_venue: str, qr_image: str, ticket_type: str = "attendee") -> bool:
+def send_booking_ticket(email: str, student_name: str, event_title: str, event_date: str, event_time: str, event_venue: str, qr_image: str, qr_data: str = None, ticket_type: str = "attendee") -> bool:
     """
     Send event ticket with QR code to student
     """
@@ -160,11 +161,20 @@ def send_booking_ticket(email: str, student_name: str, event_title: str, event_d
     if not smtp_email or not smtp_password:
         print(f"⚠️ SMTP not configured, simulating email to {email}")
         print(f"📧 Ticket Email: {student_name} - {event_title} ({ticket_type})")
+        if qr_data:
+            print(f"🔑 Manual Code: {qr_data}")
         return True
 
     try:
         subject = f"🎫 Your {ticket_type.capitalize()} Pass - {event_title}"
         
+        # Create the root message and set headers
+        msg = MIMEMultipart('related')
+        msg['From'] = f"Get2Gather <{smtp_email}>"
+        msg['To'] = email
+        msg['Subject'] = subject
+        
+        # Create the HTML part
         html_content = f"""
         <!DOCTYPE html>
         <html>
@@ -175,6 +185,8 @@ def send_booking_ticket(email: str, student_name: str, event_title: str, event_d
                 .header {{ background: linear-gradient(135deg, {'#667eea 0%, #764ba2' if ticket_type == 'attendee' else '#d946ef 0%, #f43f5e'} 100%); padding: 30px; text-align: center; color: white; }}
                 .ticket {{ background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px; border: 2px dashed #667eea; }}
                 .qr-section {{ text-align: center; margin: 20px 0; }}
+                .manual-code {{ background: #eef2ff; padding: 15px; margin: 15px 20px; border-radius: 8px; text-align: center; border: 1px solid #c7d2fe; }}
+                .code-text {{ font-family: monospace; font-size: 16px; font-weight: bold; color: #4338ca; word-break: break-all; }}
                 .instructions {{ background: #fff3cd; padding: 15px; margin: 20px; border-radius: 8px; border-left: 4px solid #ffc107; }}
             </style>
         </head>
@@ -197,14 +209,22 @@ def send_booking_ticket(email: str, student_name: str, event_title: str, event_d
                     
                     <div class="qr-section">
                         <p style="font-weight: bold; color: #333;">Show this QR code at the event:</p>
-                        <img src="{qr_image}" alt="Event QR Code" style="max-width: 250px; border: 2px solid #ddd; border-radius: 8px; padding: 10px; background: white;" />
+                        <img src="cid:qrcode_image" alt="Event QR Code" style="max-width: 250px; border: 2px solid #ddd; border-radius: 8px; padding: 10px; background: white;" />
                     </div>
+
+                    {f'''
+                    <div class="manual-code">
+                        <p style="margin: 0 0 5px 0; font-size: 12px; color: #666;">Having trouble scanning? Use this code:</p>
+                        <div class="code-text">{qr_data}</div>
+                    </div>
+                    ''' if qr_data else ''}
                     
                     <div class="instructions">
                         <h4 style="margin-top: 0;">⚠️ Important Instructions:</h4>
                         <ul style="margin: 10px 0;">
                             <li>Arrive at the venue on time</li>
                             <li><strong>Scan this QR code at the entrance to mark your attendance</strong></li>
+                            <li>If scanning fails, provide the manual code above to the organizer</li>
                             <li>Points will be credited ONLY after scanning</li>
                             <li>Keep this email accessible on your phone</li>
                         </ul>
@@ -220,11 +240,22 @@ def send_booking_ticket(email: str, student_name: str, event_title: str, event_d
         </html>
         """
         
-        msg = MIMEMultipart()
-        msg['From'] = f"Get2Gather <{smtp_email}>"
-        msg['To'] = email
-        msg['Subject'] = subject
-        msg.attach(MIMEText(html_content, 'html'))
+        msg_alternative = MIMEMultipart('alternative')
+        msg.attach(msg_alternative)
+        msg_alternative.attach(MIMEText(html_content, 'html'))
+
+        # Process QR Image for CID
+        # qr_image is expected to be "data:image/png;base64,..."
+        if qr_image.startswith('data:image'):
+            # Extract base64 part
+            header, encoded = qr_image.split(",", 1)
+            data = base64.b64decode(encoded)
+            
+            from email.mime.image import MIMEImage
+            image = MIMEImage(data)
+            image.add_header('Content-ID', '<qrcode_image>')
+            image.add_header('Content-Disposition', 'inline', filename='qrcode.png')
+            msg.attach(image)
 
         with smtplib.SMTP('smtp.gmail.com', 587) as server:
             server.starttls()

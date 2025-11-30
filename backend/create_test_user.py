@@ -1,33 +1,43 @@
-import asyncio
-from database import engine, Base, get_db
+import sys
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+# Add path
+sys.path.append(os.getcwd())
+
+from database import Base, engine
 from models import User, Student, UserRole
 from routers.security_utils import get_password_hash
-from sqlalchemy.future import select
 
-async def create_test_user():
-    async with engine.begin() as conn:
-        await conn.run_sync(Base.metadata.create_all)
+def create_test_user():
+    SessionLocal = sessionmaker(bind=engine)
+    db = SessionLocal()
 
-    async for db in get_db():
+    try:
         # Check if user exists
-        result = await db.execute(select(User).where(User.email == "test@paruluniversity.ac.in"))
-        if result.scalar_one_or_none():
+        email = "test@paruluniversity.ac.in"
+        user = db.query(User).filter(User.email == email).first()
+        
+        if user:
             print("User already exists.")
             return
 
         # Create User
+        print(f"Creating user {email}...")
         hashed_pw = get_password_hash("password123")
         user = User(
-            email="test@paruluniversity.ac.in",
+            email=email,
             hashed_password=hashed_pw,
             role=UserRole.STUDENT,
             is_active=True
         )
         db.add(user)
-        await db.commit()
-        await db.refresh(user)
+        db.commit()
+        db.refresh(user)
 
         # Create Student Profile
+        print("Creating student profile...")
         student = Student(
             user_id=user.id,
             name="Test Student",
@@ -37,9 +47,14 @@ async def create_test_user():
             spent_points=0
         )
         db.add(student)
-        await db.commit()
+        db.commit()
         print("Test user created successfully.")
-        return
+
+    except Exception as e:
+        print(f"Error: {e}")
+        db.rollback()
+    finally:
+        db.close()
 
 if __name__ == "__main__":
-    asyncio.run(create_test_user())
+    create_test_user()

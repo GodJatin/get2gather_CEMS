@@ -6,8 +6,8 @@ import requests
 BASE_URL = "http://localhost:8000"
 
 # Student credentials
-EMAIL = "2305103140014@paruluniversity.ac.in"
-PASSWORD = "J@tin224"
+EMAIL = "test@paruluniversity.ac.in"
+PASSWORD = "password123"
 
 def test_booking_flow():
     print("🔍 Testing QR Code Booking Flow\n")

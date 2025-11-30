@@ -176,8 +176,11 @@ export default function CalendarPage() {
                         ) : selectedDateEvents.length > 0 ? (
                             <div className="space-y-4">
                                 {selectedDateEvents.map((event) => {
-                                    // Parse date and time (Format: YYYY-MM-DD and h:mm aa e.g., 10:00 AM)
-                                    const eventDate = parse(`${event.date} ${event.time}`, 'yyyy-MM-dd h:mm aa', new Date());
+                                    // Parse date and time (Support both 12hr and 24hr)
+                                    let eventDate = parse(`${event.date} ${event.time}`, 'yyyy-MM-dd h:mm aa', new Date());
+                                    if (isNaN(eventDate.getTime())) {
+                                        eventDate = parse(`${event.date} ${event.time}`, 'yyyy-MM-dd HH:mm', new Date());
+                                    }
                                     const now = new Date();
                                     const isPast = eventDate < now;
                                     const isBookingClosed = eventDate.getTime() - now.getTime() < 30 * 60 * 1000; // Less than 30 mins
@@ -202,7 +205,7 @@ export default function CalendarPage() {
                                             
                                             <div className="flex items-center justify-between mt-2">
                                                 <span className="text-xs text-green-400 font-medium">
-                                                    {event.seats_available} seats left
+                                                    {isPast ? '' : `${event.seats_available} seats left`}
                                                 </span>
                                                 
                                                 {isPast ? (

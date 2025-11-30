@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
 import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';
+import { parse } from 'date-fns';
 
 interface Event {
     id: number;
@@ -31,6 +32,7 @@ export default function EventsPage() {
     const [events, setEvents] = useState<Event[]>([]);
     const [trendingEvents, setTrendingEvents] = useState<Event[]>([]);
     const [user, setUser] = useState<UserProfile | null>(null);
+    const [bookings, setBookings] = useState<number[]>([]); // Store booked event IDs
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('All');
     const [searchTag, setSearchTag] = useState('');
@@ -46,6 +48,12 @@ export default function EventsPage() {
 
                 const trendingRes = await api.get('/events/trending');
                 setTrendingEvents(trendingRes.data);
+
+                // Fetch user bookings to check status
+                const bookingsRes = await api.get('/bookings/my');
+                const bookedEventIds = bookingsRes.data.map((b: any) => b.event_id);
+                setBookings(bookedEventIds);
+
             } catch (error) {
                 console.error('Failed to fetch data:', error);
             } finally {
@@ -77,9 +85,21 @@ export default function EventsPage() {
             );
         }
 
-        // Apply Section specific filters (for "Open for All" etc.)
+        // Apply Section specific filters
         if (section === 'Open') {
             filtered = filtered.filter(e => e.open_for === 'Everyone' || !e.department);
+        }
+
+        // Filter out past events for specific sections (Trending, Department, Open)
+        // Only show them in "All Events" (when section is undefined AND filter is All)
+        if (section || filter !== 'All') {
+             filtered = filtered.filter(e => {
+                let eventDate = parse(`${e.date} ${e.time}`, 'yyyy-MM-dd h:mm aa', new Date());
+                if (isNaN(eventDate.getTime())) {
+                     eventDate = parse(`${e.date} ${e.time}`, 'yyyy-MM-dd HH:mm', new Date());
+                }
+                return !isNaN(eventDate.getTime()) && eventDate >= new Date();
+             });
         }
 
         return filtered;
@@ -87,6 +107,13 @@ export default function EventsPage() {
 
     const EventCard = ({ event }: { event: Event }) => {
         const image = event.images ? JSON.parse(event.images)[0] : (event.image_url || null);
+        const isBooked = bookings.includes(event.id);
+
+        let eventDate = parse(`${event.date} ${event.time}`, 'yyyy-MM-dd h:mm aa', new Date());
+        if (isNaN(eventDate.getTime())) {
+            eventDate = parse(`${event.date} ${event.time}`, 'yyyy-MM-dd HH:mm', new Date());
+        }
+        const isCompleted = !isNaN(eventDate.getTime()) && eventDate < new Date();
 
         return (
             <Link href={`/events/${event.id}`} className="group block">
@@ -126,8 +153,16 @@ export default function EventsPage() {
                         )}
 
                         <div className="mt-auto pt-4 border-t border-white/5 flex justify-between items-center">
-                            <span className="text-xs text-neutral-500">{event.seats_available} seats left</span>
-                            <span className="text-sm font-bold text-white group-hover:translate-x-1 transition-transform">View →</span>
+                            <span className="text-xs text-neutral-500">
+                                {isCompleted ? '' : `${event.seats_available} seats left`}
+                            </span>
+                            {isCompleted ? (
+                                <span className="text-xs font-bold bg-neutral-700 text-neutral-400 px-3 py-1.5 rounded-lg">Completed</span>
+                            ) : isBooked ? (
+                                <span className="text-xs font-bold bg-green-500/20 text-green-400 px-3 py-1.5 rounded-lg border border-green-500/20">Booked</span>
+                            ) : (
+                                <span className="text-sm font-bold text-blue-400 group-hover:translate-x-1 transition-transform">Book Now →</span>
+                            )}
                         </div>
                     </div>
                 </div>

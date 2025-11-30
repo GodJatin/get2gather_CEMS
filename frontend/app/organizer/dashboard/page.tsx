@@ -10,25 +10,18 @@ export default function OrganizerDashboard() {
     const [stats, setStats] = useState({
         totalEvents: 0,
         totalBookings: 0,
-        revenue: 0
+        totalVolunteers: 0
     });
 
     useEffect(() => {
         const fetchStats = async () => {
             try {
-                const res = await api.get('/events/my');
-                const events = res.data;
-                
-                const totalEvents = events.length;
-                const totalBookings = events.reduce((acc: number, event: any) => acc + (event.capacity - event.seats_available), 0);
-                const revenue = events.reduce((acc: number, event: any) => {
-                    if (event.is_paid) {
-                        return acc + (event.price * (event.capacity - event.seats_available));
-                    }
-                    return acc;
-                }, 0);
-
-                setStats({ totalEvents, totalBookings, revenue });
+                const res = await api.get('/stats/organizer');
+                setStats({
+                    totalEvents: res.data.total_events,
+                    totalBookings: res.data.total_bookings,
+                    totalVolunteers: res.data.total_volunteers
+                });
             } catch (error) {
                 console.error('Failed to fetch stats', error);
             }
@@ -47,8 +40,8 @@ export default function OrganizerDashboard() {
             <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                 {[
                     { label: 'Total Events', value: stats.totalEvents, icon: '📅', color: 'bg-blue-500/10 text-blue-400' },
-                    { label: 'Total Bookings', value: stats.totalBookings, icon: '👥', color: 'bg-purple-500/10 text-purple-400' },
-                    { label: 'Revenue', value: `₹${stats.revenue}`, icon: '💰', color: 'bg-green-500/10 text-green-400' },
+                    { label: 'Total Attendees', value: stats.totalBookings, icon: '👥', color: 'bg-purple-500/10 text-purple-400' },
+                    { label: 'Total Volunteers', value: stats.totalVolunteers, icon: '🤝', color: 'bg-green-500/10 text-green-400' },
                 ].map((stat, i) => (
                     <StaggerItem key={i} className="p-6 rounded-3xl bg-neutral-900/50 border border-white/10 flex items-center gap-4">
                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${stat.color}`}>

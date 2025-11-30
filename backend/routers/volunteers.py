@@ -96,14 +96,30 @@ async def get_event_volunteers(event_id: int, current_user: User = Depends(get_c
     if current_user.role not in [UserRole.ORGANIZER, UserRole.ADMIN]:
         raise HTTPException(status_code=403, detail="Not authorized")
 
-    result = db.execute(select(Volunteer).where(Volunteer.event_id == event_id))
-    volunteers = result.scalars().all()
+    result = db.execute(
+        select(Volunteer, Student, User)
+        .join(User, Volunteer.user_id == User.id)
+        .join(Student, User.id == Student.user_id)
+        .where(Volunteer.event_id == event_id)
+    )
     
-    # Enrich with student details? 
-    # Similar to bookings, we might need student info.
-    # Let's handle that in the response model or query.
+    volunteers_resp = []
+    for volunteer, student, user in result:
+        v_resp = VolunteerResponse(
+            id=volunteer.id,
+            user_id=volunteer.user_id,
+            event_id=volunteer.event_id,
+            status=volunteer.status,
+            created_at=volunteer.created_at,
+            student_name=student.name,
+            student_email=user.email,
+            attended=volunteer.attended,
+            qr_code=volunteer.qr_code,
+            checked_in_at=volunteer.checked_in_at
+        )
+        volunteers_resp.append(v_resp)
     
-    return volunteers
+    return volunteers_resp
 
 @router.put("/volunteers/{volunteer_id}", response_model=VolunteerResponse)
 async def update_volunteer_status(volunteer_id: int, update_data: VolunteerUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -173,6 +189,7 @@ async def update_volunteer_status(volunteer_id: int, update_data: VolunteerUpdat
                     event_time=event.time,
                     event_venue=event.venue,
                     qr_image=qr_image,
+                    qr_data=qr_data,
                     ticket_type="volunteer"
                 )
         except Exception as e:

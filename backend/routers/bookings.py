@@ -73,6 +73,7 @@ async def create_booking(booking: schemas.BookingCreate, current_user: User = De
             event_time=event.time,
             event_venue=event.venue,
             qr_image=qr_image,
+            qr_data=qr_data,
             ticket_type="attendee"
         )
     except Exception as e:
@@ -104,13 +105,72 @@ async def read_my_bookings(current_user: User = Depends(get_current_user), db: S
     
     for booking, event in rows:
         print(f"DEBUG: Processing booking {booking.id} for event {event.title}")
+        # Determine status based on date
+        status = booking.status
+        try:
+            event_datetime = datetime.strptime(f"{event.date} {event.time}", "%Y-%m-%d %I:%M %p")
+        except:
+            # Try 24hr format if 12hr fails
+            try:
+                event_datetime = datetime.strptime(f"{event.date} {event.time}", "%Y-%m-%d %H:%M")
+            except:
+                event_datetime = datetime.max # Fallback
+
+        if datetime.now() > event_datetime:
+            status = "Completed"
+
         booking_resp = schemas.BookingResponse(
             id=booking.id,
             event_id=booking.event_id,
             student_id=booking.student_id,
-            status=booking.status,
+            status=status,
             booking_date=booking.booking_date,
             event_title=event.title,
+            event_date=event.date,
+            event_time=event.time,
+            event_venue=event.venue
+        )
+        bookings_with_events.append(booking_resp)
+        
+    # bookings_with_events populated above
+
+    # Fetch approved volunteer records
+    from models import Volunteer
+    v_result = db.execute(
+        select(Volunteer, Event)
+        .join(Event, Volunteer.event_id == Event.id)
+        .where(Volunteer.user_id == current_user.id, Volunteer.status == "Approved")
+    )
+    
+    v_rows = v_result.all()
+    print(f"DEBUG: Found {len(v_rows)} volunteer records for user {current_user.id}")
+    
+    for volunteer, event in v_rows:
+        # Determine status based on date
+        status = "Confirmed" # Volunteer approved means confirmed
+        try:
+            event_datetime = datetime.strptime(f"{event.date} {event.time}", "%Y-%m-%d %I:%M %p")
+        except:
+            try:
+                event_datetime = datetime.strptime(f"{event.date} {event.time}", "%Y-%m-%d %H:%M")
+            except:
+                event_datetime = datetime.max
+
+        if datetime.now() > event_datetime:
+            status = "Completed"
+
+        # Map volunteer record to BookingResponse structure
+        # Use negative ID or similar to distinguish if needed, but for display it's fine
+        # We can use a special status or just "Volunteer" in title if we want, 
+        # but the UI expects standard fields.
+        
+        booking_resp = schemas.BookingResponse(
+            id=volunteer.id, # Using volunteer ID
+            event_id=volunteer.event_id,
+            student_id=student.id,
+            status=status, 
+            booking_date=volunteer.created_at,
+            event_title=f"{event.title} (Volunteer)",
             event_date=event.date,
             event_time=event.time,
             event_venue=event.venue

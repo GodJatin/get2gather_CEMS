@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
-from routers import auth, events, bookings, media, feed, volunteers, leaderboard, stats, scan, social, student
+from routers import auth, events, bookings, media, feed, volunteers, leaderboard, stats, scan, social, student, admin
 import time
 
 app = FastAPI(title="Get2Gather API")
@@ -37,6 +37,7 @@ app.include_router(stats.router)
 app.include_router(scan.router)
 app.include_router(social.router)
 app.include_router(student.router)
+app.include_router(admin.router)
 
 @app.get("/")
 def read_root():

@@ -144,7 +144,15 @@ export default function OrganizerScanPage() {
                         <div className="bg-neutral-900/50 border border-white/10 rounded-2xl p-6">
                             <h2 className="text-xl font-bold mb-4">Select Event</h2>
                             <div className="space-y-2 max-h-96 overflow-y-auto">
-                                {events.map(event => (
+                                {/* Active Events */}
+                                <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2 sticky top-0 bg-[#171717] py-1 z-10">Active Events</h3>
+                                {events.filter(e => {
+                                    try {
+                                        const dt = new Date(`${e.date} ${e.time}`);
+                                        // Allow scanning for 24 hours after event starts
+                                        return dt.getTime() + (24 * 60 * 60 * 1000) > new Date().getTime();
+                                    } catch { return true; }
+                                }).map(event => (
                                     <button
                                         key={event.id}
                                         onClick={() => setSelectedEvent(event)}
@@ -160,6 +168,33 @@ export default function OrganizerScanPage() {
                                         </p>
                                         <p className="text-xs text-neutral-500 mt-1">
                                             {event.capacity - event.seats_available}/{event.capacity} booked
+                                        </p>
+                                    </button>
+                                ))}
+
+                                {/* Completed Events */}
+                                <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2 mt-6 sticky top-0 bg-[#171717] py-1 z-10">Completed Events</h3>
+                                {events.filter(e => {
+                                    try {
+                                        const dt = new Date(`${e.date} ${e.time}`);
+                                        return dt.getTime() + (24 * 60 * 60 * 1000) <= new Date().getTime();
+                                    } catch { return false; }
+                                }).map(event => (
+                                    <button
+                                        key={event.id}
+                                        onClick={() => setSelectedEvent(event)}
+                                        className={`w-full text-left p-4 rounded-xl transition-all opacity-60 hover:opacity-100 ${
+                                            selectedEvent?.id === event.id
+                                                ? 'bg-blue-900/50 border-2 border-blue-400/50'
+                                                : 'bg-neutral-900/50 hover:bg-neutral-800 border border-white/5'
+                                        }`}
+                                    >
+                                        <h3 className="font-bold text-sm mb-1">{event.title}</h3>
+                                        <p className="text-xs text-neutral-400">
+                                            📅 {event.date} • ⏰ {event.time}
+                                        </p>
+                                        <p className="text-xs text-neutral-500 mt-1">
+                                            Completed
                                         </p>
                                     </button>
                                 ))}
@@ -200,7 +235,9 @@ export default function OrganizerScanPage() {
                                                 autoFocus
                                             />
                                             <p className="text-xs text-neutral-500 mt-2">
-                                                Paste QR code text from student's email and press Enter
+                                                Paste the text from the student's ticket email (e.g., <code>booking:123:abc...</code>).
+                                                <br/>
+                                                <span className="text-neutral-600">Note: This is a fallback if the camera scanner is unavailable.</span>
                                             </p>
                                         </div>
                                         
@@ -213,16 +250,7 @@ export default function OrganizerScanPage() {
                                                 {canScan ? '✓ Verify Ticket' : '🔒 Scanning Not Available'}
                                             </button>
                                             
-                                            <label className={`px-6 py-4 rounded-xl font-bold transition-colors cursor-pointer flex items-center gap-2 ${canScan ? 'bg-purple-600 hover:bg-purple-500' : 'bg-neutral-700 cursor-not-allowed opacity-50'}`}>
-                                                <input
-                                                    type="file"
-                                                    accept="image/*"
-                                                    onChange={handleImageUpload}
-                                                    disabled={!canScan}
-                                                    className="hidden"
-                                                />
-                                                📷 Upload QR
-                                            </label>
+                                            {/* Image upload removed as per user request */}
                                         </div>
                                     </div>
                                 </div>

@@ -3,7 +3,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy.future import select
 from sqlalchemy import desc, func
 from database import get_db
-from models import User, FeedPost, FeedLike, FeedComment, Student, Organizer, UserRole
+from models import User, FeedPost, FeedLike, FeedComment, Student, Organizer, UserRole, Event
 import schemas
 # from schemas import FeedPostCreate, FeedPostResponse, FeedCommentCreate, FeedCommentResponse
 from .auth import get_current_user

@@ -45,7 +45,7 @@ async def checkin_scan(
         record_type, record_id, token = parts
         record_id = int(record_id)
     except:
-        raise HTTPException(status_code=400, detail="Invalid QR code format")
+        raise HTTPException(status_code=400, detail="Invalid format. Expected 'booking:ID:TOKEN' or 'volunteer:ID:TOKEN'")
     
     if record_type == "booking":
         # Handle booking attendance
@@ -102,7 +102,7 @@ async def checkin_scan(
         except Exception as e:
             print(f"Failed to send attendance email: {e}")
         
-        return CheckinResponse(
+        response_data = CheckinResponse(
             success=True,
             message="Check-in successful!",
             student_name=student.name,
@@ -110,6 +110,8 @@ async def checkin_scan(
             points_earned=POINTS_PER_BOOKING,
             attendance_type="attendee"
         )
+        print(f"DEBUG: Scan successful. Response: {response_data}")
+        return response_data
     
     elif record_type == "volunteer":
         # Handle volunteer attendance
@@ -168,7 +170,7 @@ async def checkin_scan(
         except Exception as e:
             print(f"Failed to send attendance email: {e}")
         
-        return CheckinResponse(
+        response_data = CheckinResponse(
             success=True,
             message="Check-in successful!",
             student_name=student.name,
@@ -176,6 +178,8 @@ async def checkin_scan(
             points_earned=POINTS_PER_VOLUNTEER,
             attendance_type="volunteer"
         )
+        print(f"DEBUG: Volunteer scan successful. Response: {response_data}")
+        return response_data
     
     else:
         raise HTTPException(status_code=400, detail="Invalid QR code type")

@@ -39,10 +39,32 @@ async def create_event(event: schemas.EventCreate, current_user: User = Depends(
 
 @router.get("/events/trending", response_model=List[schemas.EventResponse])
 async def get_trending_events(db: Session = Depends(get_db)):
-    # Get top 3 events by booking count (simplified: least seats available)
-    result = db.execute(select(Event).order_by(Event.seats_available.asc()).limit(3))
-    events = result.scalars().all()
-    return events
+    # Get all events
+    result = db.execute(select(Event))
+    all_events = result.scalars().all()
+    
+    active_events = []
+    from datetime import datetime
+    
+    for e in all_events:
+        try:
+            dt_str = f"{e.date} {e.time}"
+            # Try parsing with AM/PM first
+            try:
+                dt = datetime.strptime(dt_str, "%Y-%m-%d %I:%M %p")
+            except ValueError:
+                # Fallback to 24hr format
+                dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M")
+            
+            if dt >= datetime.now():
+                active_events.append(e)
+        except Exception:
+            continue # Skip invalid dates
+            
+    # Sort by seats_available ASC (least seats = most popular/full)
+    active_events.sort(key=lambda x: x.seats_available)
+    
+    return active_events[:3]
 
 @router.post("/events/{event_id}/waitlist", response_model=schemas.WaitlistResponse)
 async def join_waitlist(event_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

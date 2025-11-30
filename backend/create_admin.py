@@ -1,14 +1,21 @@
-import asyncio
-from sqlalchemy.future import select
+import sys
+import os
+from sqlalchemy import create_engine
+from sqlalchemy.orm import sessionmaker
+
+# Add path
+sys.path.append(os.getcwd())
+
 from database import SessionLocal
 from models import User, UserRole
 from routers.security_utils import get_password_hash
 
-async def create_admin():
-    async with SessionLocal() as db:
+def create_admin():
+    db = SessionLocal()
+    try:
         # Check if admin exists
-        result = await db.execute(select(User).where(User.email == "admin@get2gather.com"))
-        existing_admin = result.scalar_one_or_none()
+        email = "admin@get2gather.com"
+        existing_admin = db.query(User).filter(User.email == email).first()
 
         if existing_admin:
             print("Admin user already exists.")
@@ -18,16 +25,22 @@ async def create_admin():
         print("Creating admin user...")
         hashed_pw = get_password_hash("admin123")
         new_admin = User(
-            email="admin@get2gather.com",
+            email=email,
             hashed_password=hashed_pw,
             role=UserRole.ADMIN,
             is_active=True
         )
         db.add(new_admin)
-        await db.commit()
+        db.commit()
         print("✅ Admin user created successfully!")
-        print("Email: admin@get2gather.com")
+        print(f"Email: {email}")
         print("Password: admin123")
+    
+    except Exception as e:
+        print(f"Error creating admin: {e}")
+        db.rollback()
+    finally:
+        db.close()
 
 if __name__ == "__main__":
-    asyncio.run(create_admin())
+    create_admin()

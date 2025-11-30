@@ -15,9 +15,12 @@ interface Event {
     capacity: number;
 }
 
+import { parse } from 'date-fns';
+
 export default function MyEventsPage() {
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
+    const [activeTab, setActiveTab] = useState<'upcoming' | 'completed'>('upcoming');
 
     useEffect(() => {
         const fetchEvents = async () => {
@@ -37,6 +40,31 @@ export default function MyEventsPage() {
         return () => clearInterval(interval);
     }, []);
 
+    const filteredEvents = events.filter(event => {
+        const eventDate = parse(`${event.date} ${event.time}`, 'yyyy-MM-dd h:mm aa', new Date());
+        // Fallback for 24h format if needed
+        const dateObj = isNaN(eventDate.getTime()) 
+            ? parse(`${event.date} ${event.time}`, 'yyyy-MM-dd HH:mm', new Date())
+            : eventDate;
+            
+        if (isNaN(dateObj.getTime())) return false; // Should not happen if data is valid
+
+        if (activeTab === 'upcoming') {
+            return dateObj >= new Date();
+        } else {
+            return dateObj < new Date();
+        }
+    }).sort((a, b) => {
+        const dateA = parse(`${a.date} ${a.time}`, 'yyyy-MM-dd h:mm aa', new Date());
+        const dateB = parse(`${b.date} ${b.time}`, 'yyyy-MM-dd h:mm aa', new Date());
+        
+        // Handle potential parsing errors or fallbacks
+        const validDateA = isNaN(dateA.getTime()) ? parse(`${a.date} ${a.time}`, 'yyyy-MM-dd HH:mm', new Date()) : dateA;
+        const validDateB = isNaN(dateB.getTime()) ? parse(`${b.date} ${b.time}`, 'yyyy-MM-dd HH:mm', new Date()) : dateB;
+
+        return validDateA.getTime() - validDateB.getTime();
+    });
+
     if (loading) return <div className="p-8 text-center text-neutral-400">Loading events...</div>;
 
     return (
@@ -51,16 +79,43 @@ export default function MyEventsPage() {
                 </Link>
             </div>
 
+            {/* Tabs */}
+            <div className="flex gap-4 mb-8 border-b border-white/10 pb-4">
+                <button
+                    onClick={() => setActiveTab('upcoming')}
+                    className={`px-4 py-2 rounded-lg font-bold transition-colors ${
+                        activeTab === 'upcoming' 
+                            ? 'bg-white text-black' 
+                            : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                    }`}
+                >
+                    Upcoming
+                </button>
+                <button
+                    onClick={() => setActiveTab('completed')}
+                    className={`px-4 py-2 rounded-lg font-bold transition-colors ${
+                        activeTab === 'completed' 
+                            ? 'bg-white text-black' 
+                            : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                    }`}
+                >
+                    Completed
+                </button>
+            </div>
+
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {events.map((event) => (
+                {filteredEvents.map((event) => (
                     <div key={event.id} className="group p-6 rounded-3xl bg-neutral-900/50 border border-white/10 hover:border-purple-500/50 transition-all">
                         <div className="flex justify-between items-start mb-4">
                             <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl font-bold text-white">
                                 {event.title[0]}
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${event.status === 'Upcoming' ? 'bg-green-500/20 text-green-400' : 'bg-neutral-500/20 text-neutral-400'
-                                }`}>
-                                {event.status}
+                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                new Date(`${event.date} ${event.time}`) < new Date() 
+                                ? 'bg-neutral-500/20 text-neutral-400' 
+                                : 'bg-green-500/20 text-green-400'
+                            }`}>
+                                {new Date(`${event.date} ${event.time}`) < new Date() ? 'Completed' : 'Upcoming'}
                             </span>
                         </div>
 
@@ -112,15 +167,17 @@ export default function MyEventsPage() {
                     </div>
                 ))}
 
-                {events.length === 0 && (
+                {filteredEvents.length === 0 && (
                     <div className="col-span-full text-center py-20 rounded-3xl border border-dashed border-white/10">
-                        <p className="text-neutral-500 mb-4">No events found</p>
-                        <Link
-                            href="/organizer/events/create"
-                            className="text-purple-400 hover:underline"
-                        >
-                            Create your first event
-                        </Link>
+                        <p className="text-neutral-500 mb-4">No {activeTab} events found</p>
+                        {activeTab === 'upcoming' && (
+                            <Link
+                                href="/organizer/events/create"
+                                className="text-purple-400 hover:underline"
+                            >
+                                Create your first event
+                            </Link>
+                        )}
                     </div>
                 )}
             </div>

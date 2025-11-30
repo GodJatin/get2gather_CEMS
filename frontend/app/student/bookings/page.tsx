@@ -65,7 +65,10 @@ export default function StudentBookingsPage() {
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-neutral-500">Status</span>
-                                    <span className="font-bold text-green-600">{selectedTicket.status}</span>
+                                    <span className={`font-bold ${
+                                        selectedTicket.status === 'Confirmed' ? 'text-green-600' :
+                                        selectedTicket.status === 'Completed' ? 'text-neutral-500' : 'text-red-600'
+                                    }`}>{selectedTicket.status}</span>
                                 </div>
                                 <div className="flex justify-between">
                                     <span className="text-neutral-500">Booking ID</span>
@@ -96,7 +99,13 @@ export default function StudentBookingsPage() {
                 </div>
             ) : (
                 <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    {bookings.map((booking) => (
+                    {/* Active Bookings */}
+                    <h2 className="col-span-full text-xl font-bold text-white/80 mt-4 mb-2">Upcoming Events</h2>
+                    {bookings.filter(b => b.status !== 'Completed').sort((a, b) => {
+                        const dateA = new Date(`${a.event_date} ${a.event_time}`);
+                        const dateB = new Date(`${b.event_date} ${b.event_time}`);
+                        return dateA.getTime() - dateB.getTime();
+                    }).map((booking) => (
                         <StaggerItem key={booking.id} className="p-6 rounded-3xl bg-gradient-to-br from-purple-900/50 to-blue-900/50 border border-purple-500/30 shadow-lg shadow-purple-900/20 relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-4">
                                 <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
@@ -135,6 +144,42 @@ export default function StudentBookingsPage() {
                             </div>
                         </StaggerItem>
                     ))}
+
+                    {/* Completed Bookings */}
+                    {bookings.filter(b => b.status === 'Completed').length > 0 && (
+                        <>
+                            <h2 className="col-span-full text-xl font-bold text-white/50 mt-12 mb-2 border-t border-white/10 pt-8">Past Events</h2>
+                            {bookings.filter(b => b.status === 'Completed').map((booking) => (
+                                <StaggerItem key={booking.id} className="p-6 rounded-3xl bg-neutral-900/30 border border-white/5 relative overflow-hidden group opacity-75 hover:opacity-100 transition-opacity">
+                                    <div className="absolute top-0 right-0 p-4">
+                                        <span className="px-3 py-1 rounded-full text-xs font-bold border bg-neutral-500/20 text-neutral-400 border-neutral-500/20">
+                                            Completed
+                                        </span>
+                                    </div>
+                                    <h3 className="text-2xl font-bold mb-2 text-neutral-400">{booking.event_title}</h3>
+                                    <div className="space-y-2 text-neutral-500 mb-6">
+                                        <div className="flex items-center gap-2">
+                                            <span>📅</span>
+                                            <span>{booking.event_date} • {booking.event_time}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <span>📍</span>
+                                            <span>{booking.event_venue}</span>
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/5">
+                                        <Link 
+                                            href={`/events/${booking.event_id}`}
+                                            className="flex-1 text-center px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-colors font-medium text-sm text-neutral-400"
+                                        >
+                                            View Details
+                                        </Link>
+                                    </div>
+                                </StaggerItem>
+                            ))}
+                        </>
+                    )}
 
                     {bookings.length === 0 && (
                         <div className="col-span-full flex flex-col items-center justify-center py-20 text-center bg-neutral-900/30 rounded-3xl border border-white/5">

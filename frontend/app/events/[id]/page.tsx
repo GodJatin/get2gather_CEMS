@@ -282,67 +282,84 @@ export default function EventDetailsPage() {
                                 <div className={`w-3 h-3 rounded-full ${event.seats_available > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
                             </div>
 
-                            {event.seats_available > 0 ? (
-                                isBooked ? (
-                                    <button
-                                        disabled
-                                        className="w-full py-4 rounded-xl bg-green-600/20 text-green-400 font-bold border border-green-500/50 cursor-not-allowed"
-                                    >
-                                        ✅ Booked
-                                    </button>
-                                ) : (
-                                    <button
-                                        onClick={handleBooking}
-                                        className="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/20 transition-all"
-                                    >
-                                        Book Seat Now
-                                    </button>
-                                )
-                            ) : (
-                                <>
-                                    <div className="text-center mb-4 p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
-                                        <p className="text-orange-400 font-bold text-sm">Event Full</p>
-                                        <p className="text-xs text-neutral-400">Join the waitlist to get notified if a seat opens up.</p>
-                                    </div>
-                                    
-                                    {isBooked ? (
-                                         <button
-                                            disabled
-                                            className="w-full py-4 rounded-xl bg-green-600/20 text-green-400 font-bold border border-green-500/50 cursor-not-allowed"
-                                        >
-                                            ✅ Booked
-                                        </button>
-                                    ) : (
-                                        <button
-                                            onClick={handleJoinWaitlist}
-                                            disabled={onWaitlist}
-                                            className={`w-full py-4 rounded-xl font-bold shadow-lg transition-all ${
-                                                onWaitlist 
-                                                    ? 'bg-neutral-700 text-neutral-400 cursor-not-allowed' 
-                                                    : 'bg-orange-600 hover:bg-orange-500 text-white shadow-orange-900/20'
-                                            }`}
-                                        >
-                                            {onWaitlist ? 'Joined Waitlist' : 'Join Waitlist'}
-                                        </button>
-                                    )}
-                                </>
-                            )}
+                            {(() => {
+                                const eventDate = new Date(`${event.date} ${event.time}`);
+                                const isPast = !isNaN(eventDate.getTime()) && eventDate < new Date();
 
-                            <button
-                                onClick={async () => {
-                                    try {
-                                        await api.post(`/events/${event.id}/volunteer`);
-                                        setToastMessage('Applied for volunteer!');
-                                        setShowToast(true);
-                                        setTimeout(() => setShowToast(false), 3000);
-                                    } catch (error: any) {
-                                        alert(error.response?.data?.detail || 'Failed to apply');
-                                    }
-                                }}
-                                className="w-full mt-3 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 font-medium transition-colors border border-white/10"
-                            >
-                                ✋ Apply as Volunteer
-                            </button>
+                                if (isPast) {
+                                    return (
+                                        <div className="w-full py-4 rounded-xl bg-neutral-800 text-neutral-400 font-bold border border-neutral-700 text-center cursor-not-allowed">
+                                            Event Ended
+                                        </div>
+                                    );
+                                }
+
+                                return (
+                                    <>
+                                        {event.seats_available > 0 ? (
+                                            isBooked ? (
+                                                <button
+                                                    disabled
+                                                    className="w-full py-4 rounded-xl bg-green-600/20 text-green-400 font-bold border border-green-500/50 cursor-not-allowed"
+                                                >
+                                                    ✅ Booked
+                                                </button>
+                                            ) : (
+                                                <button
+                                                    onClick={handleBooking}
+                                                    className="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/20 transition-all"
+                                                >
+                                                    Book Seat Now
+                                                </button>
+                                            )
+                                        ) : (
+                                            <>
+                                                <div className="text-center mb-4 p-3 bg-orange-500/10 rounded-lg border border-orange-500/20">
+                                                    <p className="text-orange-400 font-bold text-sm">Event Full</p>
+                                                    <p className="text-xs text-neutral-400">Join the waitlist to get notified if a seat opens up.</p>
+                                                </div>
+                                                
+                                                {isBooked ? (
+                                                     <button
+                                                        disabled
+                                                        className="w-full py-4 rounded-xl bg-green-600/20 text-green-400 font-bold border border-green-500/50 cursor-not-allowed"
+                                                    >
+                                                        ✅ Booked
+                                                    </button>
+                                                ) : (
+                                                    <button
+                                                        onClick={handleJoinWaitlist}
+                                                        disabled={onWaitlist}
+                                                        className={`w-full py-4 rounded-xl font-bold shadow-lg transition-all ${
+                                                            onWaitlist 
+                                                                ? 'bg-neutral-700 text-neutral-400 cursor-not-allowed' 
+                                                                : 'bg-orange-600 hover:bg-orange-500 text-white shadow-orange-900/20'
+                                                        }`}
+                                                    >
+                                                        {onWaitlist ? 'Joined Waitlist' : 'Join Waitlist'}
+                                                    </button>
+                                                )}
+                                            </>
+                                        )}
+
+                                        <button
+                                            onClick={async () => {
+                                                try {
+                                                    await api.post(`/events/${event.id}/volunteer`);
+                                                    setToastMessage('Applied for volunteer!');
+                                                    setShowToast(true);
+                                                    setTimeout(() => setShowToast(false), 3000);
+                                                } catch (error: any) {
+                                                    alert(error.response?.data?.detail || 'Failed to apply');
+                                                }
+                                            }}
+                                            className="w-full mt-3 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 font-medium transition-colors border border-white/10"
+                                        >
+                                            ✋ Apply as Volunteer
+                                        </button>
+                                    </>
+                                );
+                            })()}
 
                             <p className="text-xs text-center text-neutral-500 mt-4">
                                 Instant confirmation • No payment required

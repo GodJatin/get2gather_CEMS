@@ -10,6 +10,8 @@ interface Volunteer {
     user_id: number;
     status: string;
     created_at: string;
+    student_name?: string;
+    student_email?: string;
 }
 
 export default function VolunteerManagementPage() {
@@ -57,54 +59,63 @@ export default function VolunteerManagementPage() {
                 </button>
             </div>
 
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {volunteers.map((vol) => (
-                    <div key={vol.id} className="p-6 rounded-3xl bg-neutral-900/50 border border-white/10">
-                        <div className="flex justify-between items-start mb-4">
-                            <div>
-                                <h3 className="font-bold text-lg">Volunteer #{vol.id}</h3>
-                                <p className="text-sm text-neutral-400">User ID: {vol.user_id}</p>
-                            </div>
-                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                vol.status === 'Approved' ? 'bg-green-500/20 text-green-400' :
-                                vol.status === 'Rejected' ? 'bg-red-500/20 text-red-400' :
-                                'bg-yellow-500/20 text-yellow-400'
-                            }`}>
-                                {vol.status}
-                            </span>
-                        </div>
-
-                        {vol.status === 'Pending' && (
-                            <div className="flex gap-2 mt-4">
-                                <button
-                                    onClick={() => handleStatusUpdate(vol.id, 'Approved')}
-                                    className="flex-1 py-2 rounded-lg bg-green-600 hover:bg-green-500 text-white font-bold transition-colors"
-                                >
-                                    Approve
-                                </button>
-                                <button
-                                    onClick={() => handleStatusUpdate(vol.id, 'Rejected')}
-                                    className="flex-1 py-2 rounded-lg bg-red-600 hover:bg-red-500 text-white font-bold transition-colors"
-                                >
-                                    Reject
-                                </button>
-                            </div>
+            <div className="bg-neutral-900/50 rounded-3xl border border-white/10 overflow-hidden">
+                <table className="w-full text-left">
+                    <thead className="bg-white/5 text-neutral-400">
+                        <tr>
+                            <th className="p-4 font-medium">Name</th>
+                            <th className="p-4 font-medium">Email</th>
+                            <th className="p-4 font-medium">Date</th>
+                            <th className="p-4 font-medium">Status</th>
+                            <th className="p-4 font-medium">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody className="divide-y divide-white/10">
+                        {volunteers.map((vol) => (
+                            <tr key={vol.id} className="hover:bg-white/5 transition-colors">
+                                <td className="p-4 font-medium">{vol.student_name || `User ${vol.user_id}`}</td>
+                                <td className="p-4 text-neutral-400">{vol.student_email || '-'}</td>
+                                <td className="p-4 text-neutral-400">
+                                    {new Date(vol.created_at).toLocaleDateString()}
+                                </td>
+                                <td className="p-4">
+                                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                                        vol.status === 'Approved' ? 'bg-green-500/20 text-green-400' :
+                                        vol.status === 'Rejected' ? 'bg-red-500/20 text-red-400' :
+                                        'bg-yellow-500/20 text-yellow-400'
+                                    }`}>
+                                        {vol.status}
+                                    </span>
+                                </td>
+                                <td className="p-4">
+                                    {vol.status === 'Pending' && (
+                                        <div className="flex gap-2">
+                                            <button
+                                                onClick={() => handleStatusUpdate(vol.id, 'Approved')}
+                                                className="px-3 py-1 rounded-lg bg-green-600 hover:bg-green-500 text-white text-sm font-bold transition-colors"
+                                            >
+                                                Approve
+                                            </button>
+                                            <button
+                                                onClick={() => handleStatusUpdate(vol.id, 'Rejected')}
+                                                className="px-3 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-bold transition-colors"
+                                            >
+                                                Reject
+                                            </button>
+                                        </div>
+                                    )}
+                                </td>
+                            </tr>
+                        ))}
+                        {volunteers.length === 0 && (
+                            <tr>
+                                <td colSpan={5} className="p-8 text-center text-neutral-500">
+                                    No volunteer applications yet
+                                </td>
+                            </tr>
                         )}
-
-                        {vol.status === 'Approved' && (
-                            <div className="mt-4 flex flex-col items-center p-4 bg-white rounded-xl">
-                                <QRCodeSVG value={`VOLUNTEER-${vol.id}-${vol.user_id}`} size={120} />
-                                <p className="text-black text-xs font-bold mt-2 text-center">Volunteer Pass</p>
-                            </div>
-                        )}
-                    </div>
-                ))}
-
-                {volunteers.length === 0 && (
-                    <div className="col-span-full text-center py-20 text-neutral-500">
-                        No volunteer applications yet.
-                    </div>
-                )}
+                    </tbody>
+                </table>
             </div>
         </div>
     );

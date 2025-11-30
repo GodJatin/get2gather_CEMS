@@ -142,14 +142,28 @@ export default function StudentDashboard() {
                     </Link>
                 </div>
 
-                {bookings.length > 0 ? (
+                {bookings.filter(b => b.status !== 'Completed').sort((a, b) => {
+                    const dateA = new Date(`${a.event_date} ${a.event_time}`);
+                    const dateB = new Date(`${b.event_date} ${b.event_time}`);
+                    return dateA.getTime() - dateB.getTime();
+                }).length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {bookings.map((booking) => (
+                        {bookings.filter(b => b.status !== 'Completed').sort((a, b) => {
+                            const dateA = new Date(`${a.event_date} ${a.event_time}`);
+                            const dateB = new Date(`${b.event_date} ${b.event_time}`);
+                            return dateA.getTime() - dateB.getTime();
+                        }).map((booking) => (
                             <Link key={booking.id} href={`/events/${booking.event_id}`}>
                                 <div className="p-6 rounded-3xl bg-gradient-to-br from-purple-900/50 to-blue-900/50 border border-purple-500/30 shadow-lg shadow-purple-900/20 relative overflow-hidden group hover:scale-[1.02] transition-transform cursor-pointer">
                                     <div className="absolute top-0 right-0 p-4">
-                                        <span className="px-3 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-bold border border-green-500/20">
-                                            Confirmed
+                                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                                            booking.status === 'Confirmed' 
+                                                ? 'bg-green-500/20 text-green-400 border-green-500/20' 
+                                                : booking.status === 'Completed'
+                                                ? 'bg-neutral-500/20 text-neutral-400 border-neutral-500/20'
+                                                : 'bg-red-500/20 text-red-400 border-red-500/20'
+                                        }`}>
+                                            {booking.status}
                                         </span>
                                     </div>
                                     <h3 className="text-2xl font-bold mb-2">{booking.event_title}</h3>

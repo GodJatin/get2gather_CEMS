@@ -37,9 +37,10 @@ export default function LoginPage() {
             } else if (userRole === 'admin') {
                 window.location.href = '/admin/dashboard';
             } else {
-                // Fallback if role is missing or unknown
+                // Fallback
                 if (role === 'student') window.location.href = '/student/dashboard';
-                else window.location.href = '/organizer/dashboard';
+                else if (role === 'organizer') window.location.href = '/organizer/dashboard';
+                else window.location.href = '/admin/dashboard';
             }
         } catch (error: any) {
             console.error('Login failed:', error);
