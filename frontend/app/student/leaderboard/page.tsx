@@ -3,8 +3,8 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';
-
 import Link from 'next/link';
+import { triggerConfetti } from '@/components/Confetti';
 
 interface LeaderboardEntry {
     student_id?: number;
@@ -38,22 +38,7 @@ export default function LeaderboardPage() {
                 const res = await api.get('/auth/me');
                 if (res.data.role === 'student') {
                     setUserDept(res.data.department);
-                    // Need to fetch student ID, auth/me returns user_id
-                    // But leaderboard uses student_id. 
-                    // Let's assume we can match by name or fetch profile.
-                    // Actually, auth/me for student returns student profile data too if we updated it.
-                    // Let's check auth.py. Yes, it returns id (user_id).
-                    // Leaderboard returns student_id.
-                    // Wait, Leaderboard entry has student_id.
-                    // We need to know the logged in student's ID.
-                    // Let's rely on name matching for now or fetch profile.
-                    // Better: Fetch profile to get student ID.
-                    const profileRes = await api.get('/student/profile'); // We need an endpoint for this or use auth/me data if it has student id.
-                    // auth/me returns user_id. Student table links user_id.
-                    // Let's try to match by name from auth/me if student_id isn't available.
-                    // Or better, let's update the leaderboard to include user_id so we can match easily.
-                    // For now, let's use name matching as a fallback if IDs don't align.
-                    setCurrentUserId(res.data.id); // This is user_id
+                    setCurrentUserId(res.data.id);
                 }
             } catch (err) {
                 console.error("Failed to fetch user info", err);
@@ -67,16 +52,17 @@ export default function LeaderboardPage() {
             try {
                 setLoading(true);
                 let endpoint = '/leaderboard';
-                // If filtering by department, we might need a query param or a different endpoint.
-                // Assuming the backend supports filtering or we filter client-side.
-                // For now, let's fetch all and filter client side if needed, or assume backend handles it.
-                // If backend has ?department=... support:
                 if (filter === 'department' && userDept) {
                     endpoint += `?department=${encodeURIComponent(userDept)}`;
                 }
                 
                 const res = await api.get(endpoint);
                 setLeaders(res.data);
+
+                // Trigger confetti if data loaded successfully
+                if (res.data.length > 0) {
+                    triggerConfetti();
+                }
             } catch (error) {
                 console.error('Failed to fetch leaderboard:', error);
                 setLeaders([]);
@@ -90,23 +76,11 @@ export default function LeaderboardPage() {
         }
     }, [filter, userDept]);
 
-    // Helper to find my rank
-    const myRankIndex = leaders.findIndex(l => l.student_name === 'Student ' + currentUserId); // This is tricky without exact ID match.
-    // Let's try to match by name if we have it.
-    // Actually, let's just highlight if we find a match.
-    
-    // REAL FIX: We need to know which entry is ME.
-    // Let's assume the API returns a field `is_me` or we match by name.
-    // Since I can't easily change the API right now without context, I'll use a visual trick.
-    // I'll add a "My Rank" footer that finds the entry with the same name as the logged in user.
-    
     const [myEntry, setMyEntry] = useState<LeaderboardEntry | null>(null);
     const [myRank, setMyRank] = useState<number>(-1);
 
     useEffect(() => {
         if (currentUserId && leaders.length > 0) {
-            // We need the current user's name to match.
-            // Let's fetch the profile to get the name.
             api.get('/auth/me').then(res => {
                const myName = res.data.name;
                const index = leaders.findIndex(l => l.student_name === myName);
@@ -128,8 +102,10 @@ export default function LeaderboardPage() {
     return (
         <MotionWrapper className="max-w-4xl mx-auto pb-24">
             <header className="mb-8 text-center">
-                <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-yellow-400 via-orange-500 to-red-500 bg-clip-text text-transparent">
-                    Campus Leaderboard
+                <h1 className="text-4xl font-bold mb-4">
+                    <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-white to-accent bg-[length:200%_auto] animate-shine">
+                        Campus Leaderboard
+                    </span>
                 </h1>
                 <p className="text-neutral-400">Top students leading the engagement charts.</p>
             </header>
@@ -141,7 +117,7 @@ export default function LeaderboardPage() {
                         onClick={() => setFilter('overall')}
                         className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${
                             filter === 'overall' 
-                                ? 'bg-white/10 text-white shadow-lg' 
+                                ? 'bg-primary text-white shadow-lg shadow-primary/20' 
                                 : 'text-neutral-400 hover:text-white hover:bg-white/5'
                         }`}
                     >
@@ -151,7 +127,7 @@ export default function LeaderboardPage() {
                         onClick={() => setFilter('department')}
                         className={`px-6 py-2 rounded-lg text-sm font-medium transition-all ${
                             filter === 'department' 
-                                ? 'bg-white/10 text-white shadow-lg' 
+                                ? 'bg-primary text-white shadow-lg shadow-primary/20' 
                                 : 'text-neutral-400 hover:text-white hover:bg-white/5'
                         }`}
                     >
@@ -176,7 +152,7 @@ export default function LeaderboardPage() {
                             id={`rank-${index}`}
                             className={`relative group flex items-center gap-4 p-4 rounded-2xl border transition-all hover:scale-[1.01] cursor-pointer ${
                                 isMe 
-                                    ? 'bg-blue-900/30 border-blue-500/50 shadow-lg shadow-blue-900/20 ring-1 ring-blue-500/50'
+                                    ? 'bg-primary/10 border-primary/50 shadow-lg shadow-primary/10 ring-1 ring-primary/50'
                                     : index === 0 
                                     ? 'bg-gradient-to-r from-yellow-500/10 to-orange-500/10 border-yellow-500/30 shadow-lg shadow-yellow-500/5' 
                                     : index === 1
@@ -193,17 +169,22 @@ export default function LeaderboardPage() {
                                 {getRankEmoji(index)}
                             </div>
                             
-                            <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-white font-bold text-lg shadow-lg shrink-0">
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg shrink-0 ${
+                                index === 0 ? 'bg-gradient-to-br from-yellow-400 to-orange-600' :
+                                index === 1 ? 'bg-gradient-to-br from-neutral-300 to-neutral-500' :
+                                index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-700' :
+                                'bg-gradient-to-br from-primary to-secondary'
+                            }`}>
                                 {leader.student_name[0]}
                             </div>
 
                             <div className="flex-1 min-w-0">
                                 <div className="flex items-center gap-2 flex-wrap">
-                                    <h3 className={`font-bold text-lg truncate ${isMe ? 'text-blue-400' : ''}`}>
+                                    <h3 className={`font-bold text-lg truncate ${isMe ? 'text-primary' : ''}`}>
                                         {leader.student_name} {isMe && '(You)'}
                                     </h3>
                                     {leader.title && (
-                                        <span className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 border border-purple-500/20">
+                                        <span className="text-[10px] uppercase tracking-wider font-bold px-2 py-0.5 rounded-full bg-accent/20 text-accent border border-accent/20">
                                             {leader.title}
                                         </span>
                                     )}
@@ -242,16 +223,16 @@ export default function LeaderboardPage() {
                 <div className="fixed bottom-6 left-1/2 -translate-x-1/2 z-40 w-full max-w-md px-4">
                     <button 
                         onClick={scrollToMyRank}
-                        className="w-full bg-neutral-800/90 backdrop-blur-md border border-blue-500/30 p-4 rounded-2xl shadow-2xl flex items-center gap-4 hover:bg-neutral-800 transition-colors group"
+                        className="w-full bg-neutral-900/90 backdrop-blur-md border border-primary/30 p-4 rounded-2xl shadow-2xl flex items-center gap-4 hover:bg-neutral-800 transition-colors group"
                     >
-                        <div className="w-10 h-10 flex items-center justify-center text-xl font-bold text-blue-400">
+                        <div className="w-10 h-10 flex items-center justify-center text-xl font-bold text-primary">
                             #{myRank + 1}
                         </div>
                         <div className="flex-1 text-left">
                             <p className="font-bold text-white">Your Rank</p>
                             <p className="text-xs text-neutral-400">{myEntry.score} Points</p>
                         </div>
-                        <div className="text-blue-400 group-hover:-translate-y-1 transition-transform">
+                        <div className="text-primary group-hover:-translate-y-1 transition-transform">
                             ↑
                         </div>
                     </button>

@@ -117,7 +117,7 @@ export default function EventsPage() {
 
         return (
             <Link href={`/events/${event.id}`} className="group block">
-                <div className="rounded-3xl bg-neutral-900/50 border border-white/10 overflow-hidden hover:border-blue-500/30 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-blue-500/5 h-full flex flex-col">
+                <div className="rounded-3xl bg-neutral-900/50 border border-white/10 overflow-hidden hover:border-primary/30 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 h-full flex flex-col">
                     <div className="h-48 bg-neutral-800 relative overflow-hidden">
                         {image ? (
                             <img src={image} alt={event.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
@@ -129,19 +129,19 @@ export default function EventsPage() {
                                 {event.category}
                             </span>
                             {event.is_paid && (
-                                <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-purple-600/80 backdrop-blur-md text-white">
+                                <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-secondary/80 backdrop-blur-md text-white">
                                     ₹{event.price}
                                 </span>
                             )}
                         </div>
                     </div>
                     <div className="p-5 flex-1 flex flex-col">
-                        <div className="flex items-center gap-2 text-xs text-blue-400 mb-2 font-medium">
+                        <div className="flex items-center gap-2 text-xs text-accent mb-2 font-medium">
                             <span>📅 {event.date}</span>
                             <span>•</span>
                             <span>⏰ {event.time}</span>
                         </div>
-                        <h3 className="text-lg font-bold mb-2 group-hover:text-blue-400 transition-colors line-clamp-1">{event.title}</h3>
+                        <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors line-clamp-1">{event.title}</h3>
                         <p className="text-sm text-neutral-400 mb-4 line-clamp-1">{event.venue}</p>
                         
                         {event.hashtags && (
@@ -161,7 +161,7 @@ export default function EventsPage() {
                             ) : isBooked ? (
                                 <span className="text-xs font-bold bg-green-500/20 text-green-400 px-3 py-1.5 rounded-lg border border-green-500/20">Booked</span>
                             ) : (
-                                <span className="text-sm font-bold text-blue-400 group-hover:translate-x-1 transition-transform">Book Now →</span>
+                                <span className="text-sm font-bold text-primary group-hover:translate-x-1 transition-transform">Book Now →</span>
                             )}
                         </div>
                     </div>
@@ -185,14 +185,14 @@ export default function EventsPage() {
                             placeholder="Search events by title or hashtag..." 
                             value={searchTag}
                             onChange={(e) => setSearchTag(e.target.value)}
-                            className="bg-neutral-900 border border-white/10 rounded-xl pl-12 pr-4 py-3 w-full focus:outline-none focus:border-blue-500 transition-colors"
+                            className="bg-neutral-900 border border-white/10 rounded-xl pl-12 pr-4 py-3 w-full focus:outline-none focus:border-primary transition-colors"
                         />
                     </div>
                     
                     <select
                         value={filter}
                         onChange={(e) => setFilter(e.target.value)}
-                        className="bg-neutral-900 border border-white/10 rounded-xl px-4 py-3 min-w-[200px] focus:outline-none focus:border-blue-500 transition-colors appearance-none cursor-pointer"
+                        className="bg-neutral-900 border border-white/10 rounded-xl px-4 py-3 min-w-[200px] focus:outline-none focus:border-primary transition-colors appearance-none cursor-pointer"
                     >
                         <option value="All">All Categories</option>
                         <option value="Technical">Technical</option>

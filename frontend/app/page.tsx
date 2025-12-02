@@ -1,7 +1,10 @@
-'use client';
-
 import Link from 'next/link';
 import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';
+import AnimatedTitle from '@/components/AnimatedTitle';
+import HeroSubtitle from '@/components/HeroSubtitle';
+import TeamMemberCard from '@/components/TeamMemberCard';
+import Footer from '@/components/Footer';
+import InteractiveFeatureCard from '@/components/InteractiveFeatureCard';
 
 export default function Home() {
   return (
@@ -10,18 +13,15 @@ export default function Home() {
       <section className="relative h-screen flex items-center justify-center overflow-hidden">
         {/* Background Gradients */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-purple-600/20 rounded-full blur-[120px]" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-blue-600/20 rounded-full blur-[120px]" />
+          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-secondary/20 rounded-full blur-[120px]" />
+          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px]" />
         </div>
 
-        <MotionWrapper className="relative z-10 text-center px-4 max-w-4xl mx-auto">
-          <h1 className="text-6xl md:text-8xl font-bold mb-6 bg-gradient-to-r from-blue-400 via-purple-400 to-pink-400 bg-clip-text text-transparent tracking-tight">
-            Get2Gather
-          </h1>
-          <p className="text-xl md:text-2xl text-neutral-400 mb-10 leading-relaxed">
-            The ultimate platform for college events. <br />
-            <span className="text-white font-medium">Connect. Celebrate. Create Memories.</span>
-          </p>
+        <MotionWrapper className="relative z-10 text-center px-4 max-w-4xl mx-auto flex flex-col items-center">
+          <div className="mb-6 w-full">
+            <AnimatedTitle />
+          </div>
+          <HeroSubtitle />
 
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link
@@ -31,7 +31,7 @@ export default function Home() {
               Get Started
             </Link>
             <Link
-              href="/about"
+              href="/learn-more"
               className="px-8 py-4 rounded-full border border-white/20 hover:bg-white/10 font-bold text-lg backdrop-blur-sm transition-all"
             >
               Learn More
@@ -41,53 +41,106 @@ export default function Home() {
       </section>
 
       {/* Features Section */}
-      <section className="py-24 bg-neutral-900/50">
-        <div className="max-w-6xl mx-auto px-6">
+      <section className="py-32 relative overflow-hidden">
+        {/* Decorative Background for Section */}
+        <div className="absolute inset-0 bg-neutral-950">
+          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-primary/5 rounded-full blur-[120px]" />
+        </div>
+
+        <div className="max-w-7xl mx-auto px-6 relative z-10">
           <MotionWrapper delay={0.2}>
-            <h2 className="text-4xl font-bold text-center mb-16">Why Get2Gather?</h2>
+            <h2 className="text-5xl md:text-6xl font-bold text-center mb-20">
+              Why <span className="text-transparent bg-clip-text bg-gradient-to-r from-primary via-white to-accent bg-[length:200%_auto] animate-shine">Get2Gather?</span>
+            </h2>
           </MotionWrapper>
 
-          <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-8">
-            {[
-              { icon: "🎉", title: "Exciting Events", desc: "Discover concerts, workshops, and fests happening on campus." },
-              { icon: "🎫", title: "Easy Booking", desc: "Book your spot in seconds with our seamless ticketing system." },
-              { icon: "🤝", title: "Community", desc: "Connect with peers and organizers to build your network." }
-            ].map((feature, i) => (
-              <StaggerItem key={i} className="p-8 rounded-3xl bg-neutral-950 border border-white/5 hover:border-purple-500/30 transition-colors group">
-                <div className="text-5xl mb-6 group-hover:scale-110 transition-transform duration-300">{feature.icon}</div>
-                <h3 className="text-xl font-bold mb-3 text-white">{feature.title}</h3>
-                <p className="text-neutral-400 leading-relaxed">{feature.desc}</p>
-              </StaggerItem>
-            ))}
-          </StaggerContainer>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative z-10">
+            <InteractiveFeatureCard 
+              icon="🎉"
+              title="Exciting Events"
+              description="Never miss a beat. Discover high-energy concerts, tech hackathons, and cultural fests tailored to your interests."
+              colorClass="from-primary to-purple-600"
+              delay={0}
+            />
+            <InteractiveFeatureCard 
+              icon="⚡"
+              title="Instant Access"
+              description="Say goodbye to queues. Secure your spot in seconds with our lightning-fast QR ticketing and seamless check-in system."
+              colorClass="from-blue-500 to-cyan-400"
+              delay={0.1}
+            />
+            <InteractiveFeatureCard 
+              icon="🏆"
+              title="Level Up"
+              description="More than just events. Earn XP, unlock badges, and climb the leaderboards by participating and volunteering."
+              colorClass="from-amber-500 to-orange-600"
+              delay={0.2}
+            />
+          </div>
         </div>
       </section>
 
       {/* Team Section */}
-      <section className="py-24">
-        <div className="max-w-6xl mx-auto px-6 text-center">
+      <section className="py-32 bg-neutral-900/30 relative">
+        <div className="max-w-7xl mx-auto px-6">
           <MotionWrapper>
-            <h2 className="text-4xl font-bold mb-16">Meet the Team</h2>
+            <h2 className="text-5xl font-bold text-center mb-20">Meet the <span className="text-primary">Team</span></h2>
           </MotionWrapper>
 
-          <StaggerContainer className="grid grid-cols-1 md:grid-cols-4 gap-8">
+          <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
             {[
-              { name: "Alex", role: "Lead Developer" },
-              { name: "Sam", role: "UI/UX Designer" },
-              { name: "Jordan", role: "Backend Engineer" },
-              { name: "Casey", role: "Project Manager" }
+              { 
+                name: "Alex Johnson", 
+                role: "Lead Developer", 
+                image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex&backgroundColor=b6e3f4",
+                contribution: "Architected the entire backend microservices and real-time notification system.",
+                socials: { github: "#", linkedin: "#", instagram: "#", whatsapp: "#" }
+              },
+              { 
+                name: "Sam Smith", 
+                role: "UI/UX Designer", 
+                image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sam&backgroundColor=c0aede",
+                contribution: "Designed the vibrant neon theme and crafted the seamless user experience.",
+                socials: { github: "#", linkedin: "#", instagram: "#", whatsapp: "#" }
+              },
+              { 
+                name: "Jordan Lee", 
+                role: "Backend Engineer", 
+                image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jordan&backgroundColor=ffdfbf",
+                contribution: "Optimized database queries and implemented the secure authentication flow.",
+                socials: { github: "#", linkedin: "#", instagram: "#", whatsapp: "#" }
+              },
+              { 
+                name: "Casey Taylor", 
+                role: "Project Manager", 
+                image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Casey&backgroundColor=ffdfbf",
+                contribution: "Coordinated the sprint cycles and ensured timely delivery of all features.",
+                socials: { github: "#", linkedin: "#", instagram: "#", whatsapp: "#" }
+              },
+              { 
+                name: "Riley Davis", 
+                role: "Frontend Dev", 
+                image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Riley&backgroundColor=b6e3f4",
+                contribution: "Built the responsive dashboard and implemented the complex animation logic.",
+                socials: { github: "#", linkedin: "#", instagram: "#", whatsapp: "#" }
+              },
+              { 
+                name: "Morgan White", 
+                role: "QA Engineer", 
+                image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Morgan&backgroundColor=c0aede",
+                contribution: "Conducted rigorous testing to ensure a bug-free and smooth launch.",
+                socials: { github: "#", linkedin: "#", instagram: "#", whatsapp: "#" }
+              }
             ].map((member, i) => (
-              <StaggerItem key={i} className="p-6 rounded-2xl bg-neutral-900 border border-white/5">
-                <div className="w-24 h-24 rounded-full bg-gradient-to-br from-neutral-800 to-neutral-700 mx-auto mb-4 flex items-center justify-center text-2xl">
-                  👤
-                </div>
-                <h3 className="font-bold text-lg">{member.name}</h3>
-                <p className="text-sm text-purple-400">{member.role}</p>
+              <StaggerItem key={i}>
+                <TeamMemberCard {...member} />
               </StaggerItem>
             ))}
           </StaggerContainer>
         </div>
       </section>
+      
+      <Footer />
     </div>
   );
 }

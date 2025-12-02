@@ -23,24 +23,50 @@ interface UserProfile {
     total_points?: number;
 }
 
+import Counter from '@/components/Counter';
+
+interface StudentStats {
+    rank: number;
+    total_bookings: number;
+    total_volunteer: number;
+    total_posts: number;
+}
+
+interface Booking {
+    id: number;
+    attended: boolean;
+    status: string;
+}
+
 export default function ProfilePage() {
     const [user, setUser] = useState<UserProfile | null>(null);
+    const [stats, setStats] = useState<StudentStats | null>(null);
+    const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const fetchProfile = async () => {
+        const fetchData = async () => {
             try {
-                // 1. Get basic auth info to get ID
+                // 1. Get basic auth info
                 const authRes = await api.get('/auth/me');
                 setUser(authRes.data);
+
+                // 2. Get student stats (for total bookings)
+                const statsRes = await api.get('/stats/student');
+                setStats(statsRes.data);
+
+                // 3. Get my bookings (to calculate attended)
+                const bookingsRes = await api.get('/bookings/my');
+                setBookings(bookingsRes.data);
+
             } catch (error) {
-                console.error('Failed to fetch profile:', error);
+                console.error('Failed to fetch profile data:', error);
             } finally {
                 setLoading(false);
             }
         };
 
-        fetchProfile();
+        fetchData();
     }, []);
 
     if (loading) return <div className="p-8 text-center text-neutral-400">Loading profile...</div>;
@@ -51,53 +77,63 @@ export default function ProfilePage() {
     const nextUnlock = 1000;
     const progress = Math.min((points / nextUnlock) * 100, 100);
 
+    // Calculate attended events from bookings list
+    const eventsAttended = bookings.filter(b => b.attended).length;
+
     return (
-        <MotionWrapper className="max-w-4xl mx-auto">
+        <MotionWrapper className="max-w-5xl mx-auto">
             <header className="mb-8 flex justify-between items-end">
                 <div>
-                    <h1 className="text-3xl font-bold mb-2">My Profile</h1>
+                    <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-[#00F0FF] to-[#00FF94] bg-clip-text text-transparent">My Profile</h1>
                     <p className="text-neutral-400">Manage your account and view your activity.</p>
                 </div>
                 <div className="text-right">
-                    <div className="text-2xl font-bold text-yellow-500">{points} pts</div>
-                    <div className="text-xs text-neutral-500">Available Balance</div>
+                    <div className="text-3xl font-bold text-[#00F0FF] drop-shadow-[0_0_10px_rgba(0,240,255,0.5)]">
+                        <Counter value={points} /> <span className="text-lg text-neutral-400">pts</span>
+                    </div>
+                    <div className="text-xs text-neutral-500 uppercase tracking-widest">Available Balance</div>
                 </div>
             </header>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
                 {/* Profile Card */}
                 <div className="md:col-span-1">
-                    <div className="bg-neutral-900/50 border border-white/10 rounded-3xl p-6 flex flex-col items-center text-center relative overflow-hidden">
-                        <div className="absolute top-0 left-0 w-full h-20 bg-gradient-to-b from-blue-500/10 to-transparent" />
+                    <div className="bg-neutral-900/80 backdrop-blur-xl border border-[#00F0FF]/20 rounded-[2rem] p-8 flex flex-col items-center text-center relative overflow-hidden shadow-[0_0_30px_rgba(0,240,255,0.1)] group">
+                        <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#00F0FF]/10 to-transparent opacity-50" />
                         
-                        <div className="relative w-32 h-32 rounded-full bg-gradient-to-br from-blue-500 to-purple-500 flex items-center justify-center text-4xl font-bold text-white mb-4 shadow-xl shadow-blue-500/20 border-4 border-neutral-900">
-                            {user.name?.[0] || 'U'}
+                        <div className="relative w-36 h-36 rounded-full p-1 bg-gradient-to-br from-[#00F0FF] to-[#00FF94] mb-6 shadow-[0_0_20px_rgba(0,240,255,0.3)]">
+                            <div className="w-full h-full rounded-full bg-neutral-900 flex items-center justify-center text-5xl font-bold text-white overflow-hidden relative">
+                                <span className="z-10">{user.name?.[0] || 'U'}</span>
+                                <div className="absolute inset-0 bg-gradient-to-br from-[#00F0FF]/20 to-[#00FF94]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                            </div>
                         </div>
                         
-                        <h2 className="text-xl font-bold mb-1">{user.name}</h2>
+                        <h2 className="text-2xl font-bold mb-2 text-white">{user.name}</h2>
                         {user.title && (
-                            <span className="mb-2 px-3 py-0.5 rounded-full bg-yellow-500/20 text-yellow-300 text-[10px] font-bold border border-yellow-500/30 uppercase tracking-wider">
+                            <span className="mb-4 px-4 py-1 rounded-full bg-[#00F0FF]/10 text-[#00F0FF] text-xs font-bold border border-[#00F0FF]/30 uppercase tracking-widest shadow-[0_0_10px_rgba(0,240,255,0.2)]">
                                 {user.title}
                             </span>
                         )}
-                        <p className="text-sm text-neutral-400 mb-6">{user.department}</p>
+                        <p className="text-sm text-neutral-400 mb-8">{user.department}</p>
 
                         {/* Gamification Progress */}
-                        <div className="w-full bg-neutral-800 rounded-full h-2 mb-2 overflow-hidden">
-                            <div className="bg-gradient-to-r from-yellow-500 to-orange-500 h-full rounded-full" style={{ width: `${progress}%` }} />
+                        <div className="w-full bg-neutral-800 rounded-full h-3 mb-3 overflow-hidden border border-white/5 relative">
+                            <div className="absolute inset-0 bg-[#00F0FF]/10 animate-pulse" />
+                            <div className="bg-gradient-to-r from-[#00F0FF] to-[#00FF94] h-full rounded-full relative shadow-[0_0_10px_rgba(0,240,255,0.5)]" style={{ width: `${progress}%` }} />
                         </div>
-                        <p className="text-xs text-neutral-500 mb-6">
-                            {points} / {nextUnlock} points to unlock <strong>"Campus Celebrity"</strong> Badge
+                        <p className="text-xs text-neutral-500 mb-8 w-full flex justify-between">
+                            <span><Counter value={points} /> pts</span>
+                            <span className="text-[#00FF94]">{nextUnlock} pts target</span>
                         </p>
 
-                        <div className="w-full pt-4 border-t border-white/5 space-y-2 text-sm text-left">
-                            <div>
-                                <span className="text-neutral-500 block text-xs">Email</span>
-                                <span className="text-neutral-300 truncate">{user.email}</span>
+                        <div className="w-full pt-6 border-t border-white/5 space-y-4 text-sm text-left">
+                            <div className="group/item">
+                                <span className="text-neutral-500 block text-xs uppercase tracking-wider mb-1 group-hover/item:text-[#00F0FF] transition-colors">Email</span>
+                                <span className="text-neutral-300 truncate font-mono">{user.email}</span>
                             </div>
-                            <div>
-                                <span className="text-neutral-500 block text-xs">Enrollment No.</span>
-                                <span className="text-neutral-300">{user.enrollment_number}</span>
+                            <div className="group/item">
+                                <span className="text-neutral-500 block text-xs uppercase tracking-wider mb-1 group-hover/item:text-[#00FF94] transition-colors">Enrollment No.</span>
+                                <span className="text-neutral-300 font-mono">{user.enrollment_number}</span>
                             </div>
                         </div>
                     </div>
@@ -107,59 +143,112 @@ export default function ProfilePage() {
                 <div className="md:col-span-2 space-y-6">
                     {/* Stats Grid */}
                     <div className="grid grid-cols-2 gap-4">
-                        <div className="bg-neutral-900/50 border border-white/10 rounded-2xl p-6">
-                            <span className="text-3xl mb-2 block">🎟️</span>
-                            <span className="text-2xl font-bold block">{user.bookings_count || 0}</span>
-                            <span className="text-sm text-neutral-400">Events Booked</span>
-                        </div>
-                        <div className="bg-neutral-900/50 border border-white/10 rounded-2xl p-6">
-                            <span className="text-3xl mb-2 block">✅</span>
-                            <span className="text-2xl font-bold block">{user.stats?.events_attended || 0}</span>
-                            <span className="text-sm text-neutral-400">Events Attended</span>
-                        </div>
-                        <div className="bg-neutral-900/50 border border-white/10 rounded-2xl p-6">
-                            <span className="text-3xl mb-2 block">📝</span>
-                            <span className="text-2xl font-bold block">{user.posts_count || 0}</span>
-                            <span className="text-sm text-neutral-400">Posts Created</span>
-                        </div>
-                        <div className="bg-neutral-900/50 border border-white/10 rounded-2xl p-6 cursor-pointer hover:bg-white/5 transition-colors" onClick={() => window.location.href = '/student/points'}>
-                            <span className="text-3xl mb-2 block">💎</span>
-                            <span className="text-2xl font-bold block text-yellow-500">{points}</span>
-                            <span className="text-sm text-neutral-400">Points & Rewards →</span>
-                        </div>
+                        <motion.div whileHover={{ y: -5 }} className="bg-neutral-900/50 border border-white/10 rounded-2xl p-6 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <span className="text-6xl">🎟️</span>
+                            </div>
+                            <span className="text-3xl mb-2 block relative z-10">🎟️</span>
+                            <span className="text-3xl font-bold block text-white mb-1 relative z-10">
+                                <Counter value={stats?.total_bookings || 0} />
+                            </span>
+                            <span className="text-sm text-neutral-400 relative z-10">Events Booked</span>
+                            <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-[#F72585] to-[#7209B7]" />
+                        </motion.div>
+
+                        <motion.div whileHover={{ y: -5 }} className="bg-neutral-900/50 border border-white/10 rounded-2xl p-6 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <span className="text-6xl">✅</span>
+                            </div>
+                            <span className="text-3xl mb-2 block relative z-10">✅</span>
+                            <span className="text-3xl font-bold block text-white mb-1 relative z-10">
+                                <Counter value={eventsAttended} />
+                            </span>
+                            <span className="text-sm text-neutral-400 relative z-10">Events Attended</span>
+                            <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-[#00FF94] to-[#00F0FF]" />
+                        </motion.div>
+
+                        <motion.div whileHover={{ y: -5 }} className="bg-neutral-900/50 border border-white/10 rounded-2xl p-6 relative overflow-hidden group">
+                            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+                                <span className="text-6xl">📝</span>
+                            </div>
+                            <span className="text-3xl mb-2 block relative z-10">📝</span>
+                            <span className="text-3xl font-bold block text-white mb-1 relative z-10">
+                                <Counter value={stats?.total_posts || 0} />
+                            </span>
+                            <span className="text-sm text-neutral-400 relative z-10">Posts Created</span>
+                            <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-[#FF9E00] to-[#FFD000]" />
+                        </motion.div>
+
+                        <motion.div 
+                            whileHover={{ y: -5, scale: 1.02 }} 
+                            whileTap={{ scale: 0.98 }}
+                            className="bg-gradient-to-br from-[#00F0FF]/10 to-[#00FF94]/10 border border-[#00F0FF]/30 rounded-2xl p-6 cursor-pointer relative overflow-hidden group" 
+                            onClick={() => window.location.href = '/student/points'}
+                        >
+                            <div className="absolute inset-0 bg-[#00F0FF]/5 opacity-0 group-hover:opacity-100 transition-opacity" />
+                            <span className="text-3xl mb-2 block relative z-10">💎</span>
+                            <span className="text-3xl font-bold block text-[#00F0FF] mb-1 relative z-10 drop-shadow-[0_0_5px_rgba(0,240,255,0.5)]">
+                                <Counter value={points} />
+                            </span>
+                            <span className="text-sm text-neutral-400 relative z-10 flex items-center gap-1 group-hover:text-white transition-colors">
+                                Points & Rewards <span className="group-hover:translate-x-1 transition-transform">→</span>
+                            </span>
+                        </motion.div>
                     </div>
 
                     {/* Badges */}
-                    <div className="bg-neutral-900/50 border border-white/10 rounded-3xl p-6">
-                        <h3 className="text-lg font-bold mb-4 flex items-center gap-2">
-                            <span>🏆</span> My Badges
+                    <div className="bg-neutral-900/50 border border-white/10 rounded-[2rem] p-8 relative overflow-hidden">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-[#00F0FF]/5 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                        
+                        <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
+                            <span className="text-2xl">🏆</span> 
+                            <span className="bg-gradient-to-r from-white to-neutral-400 bg-clip-text text-transparent">My Badges</span>
                         </h3>
+                        
                         {user.badges && user.badges.length > 0 ? (
-                            <div className="flex gap-4 flex-wrap">
+                            <div className="flex gap-6 flex-wrap">
                                 {user.badges.map((badge, i) => (
-                                    <div key={i} className="w-16 h-16 rounded-xl bg-white/5 flex flex-col items-center justify-center p-2 border border-white/5" title={badge.name}>
-                                        <span className="text-3xl">{badge.icon}</span>
-                                    </div>
+                                    <motion.div 
+                                        key={i} 
+                                        initial={{ opacity: 0, scale: 0.8 }}
+                                        animate={{ opacity: 1, scale: 1 }}
+                                        transition={{ delay: i * 0.1 }}
+                                        whileHover={{ y: -5 }}
+                                        className="group relative"
+                                    >
+                                        <div className="w-20 h-20 rounded-2xl bg-neutral-800/50 flex items-center justify-center p-4 border border-white/5 relative z-10 overflow-hidden group-hover:border-[#00F0FF]/50 transition-colors shadow-lg group-hover:shadow-[#00F0FF]/20">
+                                            <div className="absolute inset-0 bg-gradient-to-br from-[#00F0FF]/10 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+                                            <span className="text-4xl drop-shadow-lg filter group-hover:brightness-110 transition-all">{badge.icon}</span>
+                                        </div>
+                                        
+                                        {/* Badge Name Tooltip */}
+                                        <div className="absolute -bottom-8 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-all duration-300 transform translate-y-2 group-hover:translate-y-0 whitespace-nowrap z-20">
+                                            <span className="text-xs font-bold bg-[#00F0FF]/10 text-[#00F0FF] px-3 py-1 rounded-full border border-[#00F0FF]/20 backdrop-blur-md">
+                                                {badge.name}
+                                            </span>
+                                        </div>
+                                    </motion.div>
                                 ))}
                             </div>
                         ) : (
-                            <p className="text-sm text-neutral-500">
-                                Participate in events to earn badges!
-                            </p>
+                            <div className="text-center py-8 border-2 border-dashed border-white/5 rounded-2xl">
+                                <p className="text-neutral-500 mb-2">No badges earned yet</p>
+                                <p className="text-xs text-neutral-600">Participate in events to unlock your first badge!</p>
+                            </div>
                         )}
                     </div>
 
                     {/* Settings / Actions */}
-                    <div className="bg-neutral-900/50 border border-white/10 rounded-3xl p-6">
-                        <h3 className="text-lg font-bold mb-4">Account Settings</h3>
+                    <div className="bg-neutral-900/50 border border-white/10 rounded-[2rem] p-8">
+                        <h3 className="text-xl font-bold mb-6">Account Settings</h3>
                         <div className="space-y-3">
-                            <button className="w-full text-left px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors flex justify-between items-center group">
-                                <span>Edit Profile</span>
-                                <span className="text-neutral-500 group-hover:text-white transition-colors">→</span>
+                            <button className="w-full text-left px-6 py-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all flex justify-between items-center group border border-white/5 hover:border-white/10">
+                                <span className="font-medium group-hover:text-white transition-colors">Edit Profile</span>
+                                <span className="text-neutral-500 group-hover:text-[#00F0FF] transition-colors transform group-hover:translate-x-1">→</span>
                             </button>
-                            <button className="w-full text-left px-4 py-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors flex justify-between items-center group">
-                                <span>Change Password</span>
-                                <span className="text-neutral-500 group-hover:text-white transition-colors">→</span>
+                            <button className="w-full text-left px-6 py-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all flex justify-between items-center group border border-white/5 hover:border-white/10">
+                                <span className="font-medium group-hover:text-white transition-colors">Change Password</span>
+                                <span className="text-neutral-500 group-hover:text-[#00F0FF] transition-colors transform group-hover:translate-x-1">→</span>
                             </button>
                         </div>
                     </div>

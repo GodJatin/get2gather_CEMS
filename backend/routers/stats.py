@@ -14,6 +14,7 @@ class StudentStats(BaseModel):
     rank: int
     total_bookings: int
     total_volunteer: int
+    total_posts: int
 
 @router.get("/stats/student", response_model=StudentStats)
 async def get_student_stats(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -34,6 +35,11 @@ async def get_student_stats(current_user: User = Depends(get_current_user), db: 
         # Count volunteer
         volunteer_res = db.execute(select(func.count(Volunteer.id)).where(Volunteer.user_id == current_user.id, Volunteer.status == "Approved"))
         total_volunteer = volunteer_res.scalar() or 0
+
+        # Count posts
+        from models import FeedPost
+        posts_res = db.execute(select(func.count(FeedPost.id)).where(FeedPost.user_id == current_user.id))
+        total_posts = posts_res.scalar() or 0
 
         # Calculate Rank (Simplified: Calculate score for all, sort, find index)
         # In production, use a window function or cached leaderboard.
@@ -58,7 +64,8 @@ async def get_student_stats(current_user: User = Depends(get_current_user), db: 
         return StudentStats(
             rank=rank,
             total_bookings=total_bookings,
-            total_volunteer=total_volunteer
+            total_volunteer=total_volunteer,
+            total_posts=total_posts
         )
     except Exception as e:
         traceback.print_exc()

@@ -1,6 +1,6 @@
 'use client';
 
-import { motion } from 'framer-motion';
+import { motion, HTMLMotionProps } from 'framer-motion';
 
 interface MotionWrapperProps {
     children: React.ReactNode;
@@ -43,7 +43,7 @@ export const StaggerContainer = ({ children, className = "" }: { children: React
     );
 };
 
-export const StaggerItem = ({ children, className = "" }: { children: React.ReactNode, className?: string }) => {
+export const StaggerItem = ({ children, className = "", ...props }: { children: React.ReactNode, className?: string } & HTMLMotionProps<"div">) => {
     return (
         <motion.div
             variants={{
@@ -51,6 +51,7 @@ export const StaggerItem = ({ children, className = "" }: { children: React.Reac
                 show: { opacity: 1, y: 0 }
             }}
             className={className}
+            {...props}
         >
             {children}
         </motion.div>

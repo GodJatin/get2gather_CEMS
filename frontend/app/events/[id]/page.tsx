@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api';
 import BookingSuccessModal from '@/components/BookingSuccessModal';
+import { triggerConfetti } from '@/components/Confetti';
 
 interface Event {
     id: number;
@@ -91,6 +92,8 @@ export default function EventDetailsPage() {
         return () => clearInterval(interval);
     }, [event]);
 
+
+
     const handleBooking = async () => {
         if (!event) return;
         try {
@@ -98,6 +101,7 @@ export default function EventDetailsPage() {
             setShowSuccessModal(true);
             setIsBooked(true);
             fetchEvent(); // Refresh seats
+            triggerConfetti();
         } catch (error: any) {
             alert(error.response?.data?.detail || 'Booking failed');
         }
@@ -120,6 +124,7 @@ export default function EventDetailsPage() {
             setTimeout(() => setShowToast(false), 3000);
             setOnWaitlist(true);
             setShowWaitlistModal(false);
+            triggerConfetti();
         } catch (error: any) {
             alert(error.response?.data?.detail || 'Failed to join waitlist');
             setShowWaitlistModal(false);
@@ -132,7 +137,13 @@ export default function EventDetailsPage() {
     const eventImages = event.images ? JSON.parse(event.images) : (event.image_url ? [event.image_url] : []);
 
     return (
-        <div className="min-h-screen bg-neutral-950 text-white p-6 md:p-12">
+        <div className="min-h-screen bg-neutral-950 text-white p-6 md:p-12 relative overflow-hidden">
+            {/* Background Ambient Glow */}
+            <div className="fixed top-0 left-0 w-full h-full overflow-hidden pointer-events-none z-0">
+                <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px] animate-pulse" />
+                <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/20 rounded-full blur-[120px] animate-pulse delay-1000" />
+            </div>
+
             <BookingSuccessModal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} />
             
             {/* Waitlist Warning Modal */}
@@ -143,10 +154,11 @@ export default function EventDetailsPage() {
                             initial={{ opacity: 0, scale: 0.9 }}
                             animate={{ opacity: 1, scale: 1 }}
                             exit={{ opacity: 0, scale: 0.9 }}
-                            className="bg-neutral-900 border border-white/10 rounded-2xl p-6 max-w-md w-full shadow-2xl"
+                            className="bg-neutral-900 border border-white/10 rounded-2xl p-6 max-w-md w-full shadow-2xl relative overflow-hidden"
                         >
-                            <div className="text-center mb-6">
-                                <div className="w-16 h-16 bg-orange-500/20 text-orange-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4">
+                            <div className="absolute inset-0 bg-gradient-to-br from-orange-500/10 to-transparent pointer-events-none" />
+                            <div className="text-center mb-6 relative z-10">
+                                <div className="w-16 h-16 bg-orange-500/20 text-orange-500 rounded-full flex items-center justify-center text-3xl mx-auto mb-4 border border-orange-500/30 shadow-[0_0_15px_rgba(249,115,22,0.3)]">
                                     ⚠️
                                 </div>
                                 <h3 className="text-xl font-bold mb-2">High Demand Event</h3>
@@ -157,16 +169,16 @@ export default function EventDetailsPage() {
                                     We recommend checking out other similar events.
                                 </p>
                             </div>
-                            <div className="flex gap-3">
+                            <div className="flex gap-3 relative z-10">
                                 <button
                                     onClick={() => setShowWaitlistModal(false)}
-                                    className="flex-1 py-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 font-bold transition-colors"
+                                    className="flex-1 py-3 rounded-xl bg-neutral-800 hover:bg-neutral-700 font-bold transition-colors border border-white/5"
                                 >
                                     Cancel
                                 </button>
                                 <button
                                     onClick={confirmJoinWaitlist}
-                                    className="flex-1 py-3 rounded-xl bg-orange-600 hover:bg-orange-500 font-bold transition-colors"
+                                    className="flex-1 py-3 rounded-xl bg-gradient-to-r from-orange-600 to-red-600 hover:from-orange-500 hover:to-red-500 font-bold transition-all shadow-lg shadow-orange-600/20"
                                 >
                                     Join Anyway
                                 </button>
@@ -176,15 +188,22 @@ export default function EventDetailsPage() {
                 )}
             </AnimatePresence>
 
-            <div className="max-w-5xl mx-auto">
-                <button 
+            <div className="max-w-6xl mx-auto relative z-10">
+                <motion.button 
                     onClick={() => window.history.back()} 
-                    className="mb-6 flex items-center gap-2 text-neutral-400 hover:text-white transition-colors"
+                    whileHover={{ x: -5 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="mb-8 flex items-center gap-2 px-4 py-2 rounded-full bg-white/5 border border-white/10 hover:bg-white/10 hover:border-white/20 transition-all backdrop-blur-md text-neutral-300 hover:text-white group"
                 >
-                    ← Back
-                </button>
+                    <span className="group-hover:-translate-x-1 transition-transform">←</span> Back to Dashboard
+                </motion.button>
+
                 {/* Hero Section with Carousel */}
-                <div className="relative rounded-3xl overflow-hidden bg-neutral-900 border border-white/10 mb-8 h-96 group">
+                <motion.div 
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="relative rounded-[2rem] overflow-hidden bg-neutral-900 border border-white/10 h-[450px] group shadow-2xl shadow-primary/5 mb-8"
+                >
                     {eventImages.length > 0 ? (
                         <>
                             {eventImages.map((img: string, idx: number) => (
@@ -192,112 +211,168 @@ export default function EventDetailsPage() {
                                     key={idx}
                                     className={`absolute inset-0 transition-opacity duration-1000 ${idx === currentImageIndex ? 'opacity-100' : 'opacity-0'}`}
                                 >
-                                    <img src={img} alt={event.title} className="w-full h-full object-cover" />
-                                    <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/50 to-transparent" />
+                                    <img src={img} alt={event.title} className="w-full h-full object-cover transform group-hover:scale-105 transition-transform duration-[2s]" />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-neutral-950/60 to-transparent" />
                                 </div>
                             ))}
                             
                             {/* Carousel Indicators */}
                             {eventImages.length > 1 && (
-                                <div className="absolute bottom-4 right-4 flex gap-2 z-20">
+                                <div className="absolute bottom-6 right-6 flex gap-2 z-20">
                                     {eventImages.map((_: any, idx: number) => (
                                         <button
                                             key={idx}
                                             onClick={() => setCurrentImageIndex(idx)}
-                                            className={`w-2 h-2 rounded-full transition-all ${idx === currentImageIndex ? 'bg-white w-6' : 'bg-white/50'}`}
+                                            className={`h-1.5 rounded-full transition-all duration-300 ${idx === currentImageIndex ? 'bg-white w-8' : 'bg-white/30 w-2 hover:bg-white/50'}`}
                                         />
                                     ))}
                                 </div>
                             )}
                         </>
                     ) : (
-                        <div className="h-full bg-gradient-to-r from-blue-900/50 to-purple-900/50 flex items-center justify-center">
-                            <h1 className="text-5xl font-bold text-white/20">{event.category}</h1>
+                        <div className="h-full bg-gradient-to-br from-neutral-900 to-neutral-800 flex items-center justify-center relative overflow-hidden">
+                            <div className="absolute inset-0 bg-[url('/grid.svg')] opacity-20" />
+                            <h1 className="text-6xl font-bold text-white/5 select-none">{event.category}</h1>
                         </div>
                     )}
                     
                     <div className="absolute bottom-0 left-0 w-full p-8 z-10">
-                        <div className="flex gap-2 mb-4">
-                            <span className="px-3 py-1 rounded-full bg-blue-600 text-white text-xs font-bold inline-block">
+                        <div className="flex gap-3 mb-4">
+                            <span className="px-4 py-1.5 rounded-full bg-primary/20 text-primary border border-primary/20 text-xs font-bold backdrop-blur-md shadow-[0_0_10px_rgba(var(--primary-rgb),0.3)]">
                                 {event.category}
                             </span>
-                            <span className={`px-3 py-1 rounded-full text-white text-xs font-bold inline-block ${event.is_paid ? 'bg-purple-600' : 'bg-green-600'}`}>
-                                {event.is_paid ? `₹ ${event.price}` : 'Free'}
+                            <span className={`px-4 py-1.5 rounded-full text-xs font-bold backdrop-blur-md border ${event.is_paid ? 'bg-secondary/20 text-secondary border-secondary/20' : 'bg-green-500/20 text-green-400 border-green-500/20'}`}>
+                                {event.is_paid ? `₹ ${event.price}` : 'Free Entry'}
                             </span>
                         </div>
-                        <h1 className="text-4xl font-bold mb-2">{event.title}</h1>
-                        <div className="flex items-center gap-6 text-sm text-neutral-300">
-                            <span>📅 {event.date}</span>
-                            <span>⏰ {event.time}</span>
-                            <span>📍 {event.venue}</span>
+                        <h1 className="text-5xl font-bold mb-4 leading-tight bg-clip-text text-transparent bg-gradient-to-r from-white to-neutral-400">
+                            {event.title}
+                        </h1>
+                        <div className="flex flex-wrap items-center gap-6 text-sm text-neutral-300 font-medium">
+                            <div className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-lg backdrop-blur-sm border border-white/5">
+                                <span>📅</span> {event.date}
+                            </div>
+                            <div className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-lg backdrop-blur-sm border border-white/5">
+                                <span>⏰</span> {event.time}
+                            </div>
+                            <div className="flex items-center gap-2 bg-black/30 px-3 py-1.5 rounded-lg backdrop-blur-sm border border-white/5">
+                                <span>📍</span> {event.venue}
+                            </div>
                         </div>
                     </div>
-                </div>
+                </motion.div>
 
                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                    {/* Main Content */}
+                    {/* Main Content Column */}
                     <div className="lg:col-span-2 space-y-8">
-                        <section>
-                            <h2 className="text-xl font-bold mb-4">About Event</h2>
-                            <p className="text-neutral-400 leading-relaxed whitespace-pre-wrap">
-                                {event.description}
-                            </p>
-                        </section>
+                        {/* About & Details */}
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                            <motion.div 
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 }}
+                                className="md:col-span-2"
+                            >
+                                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                                    <span className="w-1 h-8 bg-primary rounded-full" />
+                                    About Event
+                                </h2>
+                                <p className="text-neutral-400 leading-relaxed whitespace-pre-wrap text-lg">
+                                    {event.description}
+                                </p>
+                            </motion.div>
 
-                        {/* Additional Details */}
-                        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             {event.department && (
-                                <div className="p-4 rounded-2xl bg-neutral-900/50 border border-white/10">
-                                    <h3 className="text-sm text-neutral-500 mb-1">Organized By</h3>
-                                    <p className="font-bold">{event.department}</p>
-                                </div>
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.2 }}
+                                    className="p-6 rounded-2xl bg-neutral-900/50 border border-white/10 hover:border-primary/30 transition-colors group"
+                                >
+                                    <h3 className="text-sm text-neutral-500 mb-2 uppercase tracking-wider font-bold">Organized By</h3>
+                                    <p className="font-bold text-xl group-hover:text-primary transition-colors">{event.department}</p>
+                                </motion.div>
                             )}
                             {event.open_for && (
-                                <div className="p-4 rounded-2xl bg-neutral-900/50 border border-white/10">
-                                    <h3 className="text-sm text-neutral-500 mb-1">Open For</h3>
-                                    <p className="font-bold">{event.open_for}</p>
-                                </div>
+                                <motion.div 
+                                    initial={{ opacity: 0, y: 20 }}
+                                    animate={{ opacity: 1, y: 0 }}
+                                    transition={{ delay: 0.2 }}
+                                    className="p-6 rounded-2xl bg-neutral-900/50 border border-white/10 hover:border-secondary/30 transition-colors group"
+                                >
+                                    <h3 className="text-sm text-neutral-500 mb-2 uppercase tracking-wider font-bold">Open For</h3>
+                                    <p className="font-bold text-xl group-hover:text-secondary transition-colors">{event.open_for}</p>
+                                </motion.div>
                             )}
-                        </section>
+                        </div>
 
                         {event.outcomes && (
-                            <section>
-                                <h2 className="text-xl font-bold mb-4">Event Outcomes</h2>
-                                <div className="p-6 rounded-2xl bg-blue-900/10 border border-blue-500/20 text-blue-200">
-                                    <p className="whitespace-pre-wrap">{event.outcomes}</p>
+                            <motion.section
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.3 }}
+                            >
+                                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
+                                    <span className="w-1 h-8 bg-secondary rounded-full" />
+                                    Event Outcomes
+                                </h2>
+                                <div className="p-8 rounded-3xl bg-gradient-to-br from-primary/5 to-secondary/5 border border-white/10 relative overflow-hidden">
+                                    <div className="absolute top-0 right-0 w-32 h-32 bg-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2" />
+                                    <p className="whitespace-pre-wrap text-neutral-300 relative z-10">{event.outcomes}</p>
                                 </div>
-                            </section>
+                            </motion.section>
                         )}
                     </div>
 
                     {/* Sidebar */}
-                    <div className="lg:col-span-1 space-y-6">
-                        {/* Booking Card */}
-                        <div className="p-6 rounded-3xl bg-neutral-900/50 border border-white/10 backdrop-blur-xl">
-                            <div className="flex justify-between items-center mb-6">
-                                <div>
-                                    <p className="text-sm text-neutral-400">Available Seats</p>
-                                    <p className="text-2xl font-bold text-white">{event.seats_available} <span className="text-sm text-neutral-500 font-normal">/ {event.capacity}</span></p>
-                                </div>
-                                <div className={`w-3 h-3 rounded-full ${event.seats_available > 0 ? 'bg-green-500' : 'bg-red-500'}`} />
-                            </div>
-
-                            {(() => {
-                                const eventDate = new Date(`${event.date} ${event.time}`);
-                                const isPast = !isNaN(eventDate.getTime()) && eventDate < new Date();
-
-                                if (isPast) {
-                                    return (
-                                        <div className="w-full py-4 rounded-xl bg-neutral-800 text-neutral-400 font-bold border border-neutral-700 text-center cursor-not-allowed">
-                                            Event Ended
+                    <div className="lg:col-span-1">
+                        <motion.div 
+                            initial={{ opacity: 0, x: 20 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.2 }}
+                            className="sticky top-8 space-y-8"
+                        >
+                            {/* Booking Card */}
+                            <div className="relative group">
+                                {/* Gradient Border Effect */}
+                                <div className="absolute -inset-[1px] bg-gradient-to-r from-primary via-secondary to-primary rounded-[2rem] opacity-70 blur-sm group-hover:opacity-100 group-hover:blur-md transition-all duration-500 animate-gradient-xy" />
+                                
+                                <div className="relative p-8 rounded-[2rem] bg-neutral-900/90 backdrop-blur-xl border border-white/10 shadow-2xl">
+                                    <div className="flex justify-between items-start mb-8">
+                                        <div>
+                                            <p className="text-sm text-neutral-400 font-medium mb-1">Available Seats</p>
+                                            <div className="flex items-baseline gap-2">
+                                                <span className="text-4xl font-bold text-white">{event.seats_available}</span>
+                                                <span className="text-lg text-neutral-500">/ {event.capacity}</span>
+                                            </div>
                                         </div>
-                                    );
-                                }
+                                        <div className={`w-4 h-4 rounded-full shadow-[0_0_10px_currentColor] ${event.seats_available > 0 ? 'bg-green-500 text-green-500' : 'bg-red-500 text-red-500'}`} />
+                                    </div>
 
-                                return (
-                                    <>
-                                        {event.seats_available > 0 ? (
-                                            isBooked ? (
+                                    {/* Progress Bar */}
+                                    <div className="w-full h-2 bg-neutral-800 rounded-full overflow-hidden mb-8">
+                                        <div 
+                                            className={`h-full rounded-full transition-all duration-1000 ${event.seats_available > 0 ? 'bg-gradient-to-r from-primary to-secondary' : 'bg-red-500'}`}
+                                            style={{ width: `${(event.seats_available / event.capacity) * 100}%` }}
+                                        />
+                                    </div>
+
+                                    {(() => {
+                                        const eventDate = new Date(`${event.date} ${event.time}`);
+                                        const isPast = !isNaN(eventDate.getTime()) && eventDate < new Date();
+
+                                        if (isPast) {
+                                            return (
+                                                <div className="w-full py-4 rounded-xl bg-neutral-800 text-neutral-400 font-bold border border-neutral-700 text-center cursor-not-allowed">
+                                                    Event Ended
+                                                </div>
+                                            );
+                                        }
+
+                                        return (
+                                            <>
+                                                {event.seats_available > 0 ? (
+                                                    isBooked ? (
                                                 <button
                                                     disabled
                                                     className="w-full py-4 rounded-xl bg-green-600/20 text-green-400 font-bold border border-green-500/50 cursor-not-allowed"
@@ -307,7 +382,7 @@ export default function EventDetailsPage() {
                                             ) : (
                                                 <button
                                                     onClick={handleBooking}
-                                                    className="w-full py-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/20 transition-all"
+                                                    className="w-full py-4 rounded-xl bg-primary hover:bg-primary/80 text-white font-bold shadow-lg shadow-primary/20 transition-all"
                                                 >
                                                     Book Seat Now
                                                 </button>
@@ -365,8 +440,10 @@ export default function EventDetailsPage() {
                                 Instant confirmation • No payment required
                             </p>
                         </div>
+                        </div>
+
                         {/* Social Sharing */}
-                        <div className="p-6 rounded-3xl bg-neutral-900/50 border border-white/10">
+                        <div className="p-6 rounded-3xl bg-neutral-900/50 border border-white/10 mt-8">
                             <h3 className="text-sm font-bold text-neutral-400 mb-4 uppercase tracking-wider">Share Event</h3>
                             <div className="grid grid-cols-2 gap-3">
                                 <button
@@ -388,9 +465,12 @@ export default function EventDetailsPage() {
                                 </button>
                             </div>
                         </div>
-                    </div>
+                    </motion.div>
                 </div>
             </div>
+            </div>
+
+
             
             {/* Toast Notification */}
             {showToast && (
@@ -401,3 +481,4 @@ export default function EventDetailsPage() {
         </div>
     );
 }
+

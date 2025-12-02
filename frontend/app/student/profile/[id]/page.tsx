@@ -15,7 +15,7 @@ interface ProfileData {
         events_attended: number;
         volunteer_count: number;
     };
-    is_following: bool;
+    is_following: boolean;
     followers_count: number;
     following_count: number;
     recent_activity: { type: string; event_title: string; date: string }[];

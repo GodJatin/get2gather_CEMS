@@ -86,20 +86,23 @@ export default function CalendarPage() {
         <MotionWrapper className="max-w-7xl mx-auto h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-8">
             
             {/* Calendar Section */}
-            <div className="flex-1 flex flex-col bg-neutral-900/50 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
+            <div className="flex-1 flex flex-col bg-neutral-900/50 backdrop-blur-xl border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl shadow-[#FF9E00]/5 relative group">
+                {/* Ambient Glow */}
+                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-transparent via-[#FF9E00]/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
                 {/* Header */}
-                <div className="p-6 flex items-center justify-between border-b border-white/5 bg-white/5">
-                    <h2 className="text-2xl font-bold bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">
+                <div className="p-8 flex items-center justify-between border-b border-white/5 bg-white/5 backdrop-blur-md">
+                    <h2 className="text-3xl font-bold bg-gradient-to-r from-[#FF9E00] via-white to-[#FF0000] bg-clip-text text-transparent animate-gradient-x">
                         {format(currentDate, 'MMMM yyyy')}
                     </h2>
-                    <div className="flex gap-2">
-                        <button onClick={prevMonth} className="p-2 rounded-xl hover:bg-white/10 transition-colors">
+                    <div className="flex gap-3">
+                        <button onClick={prevMonth} className="p-3 rounded-xl hover:bg-white/10 transition-colors border border-white/5 hover:border-white/20">
                             ←
                         </button>
-                        <button onClick={() => setCurrentDate(new Date())} className="px-3 py-1 text-sm rounded-xl bg-blue-500/20 text-blue-400 hover:bg-blue-500/30 transition-colors">
+                        <button onClick={() => setCurrentDate(new Date())} className="px-4 py-2 text-sm font-bold rounded-xl bg-[#FF9E00]/20 text-[#FF9E00] hover:bg-[#FF9E00]/30 transition-colors border border-[#FF9E00]/20 backdrop-blur-sm">
                             Today
                         </button>
-                        <button onClick={nextMonth} className="p-2 rounded-xl hover:bg-white/10 transition-colors">
+                        <button onClick={nextMonth} className="p-3 rounded-xl hover:bg-white/10 transition-colors border border-white/5 hover:border-white/20">
                             →
                         </button>
                     </div>
@@ -108,14 +111,14 @@ export default function CalendarPage() {
                 {/* Week Days */}
                 <div className="grid grid-cols-7 p-4 border-b border-white/5 bg-neutral-900/30">
                     {weekDays.map(day => (
-                        <div key={day} className="text-center text-sm font-medium text-neutral-500 uppercase tracking-wider">
+                        <div key={day} className="text-center text-sm font-bold text-neutral-500 uppercase tracking-wider py-2">
                             {day}
                         </div>
                     ))}
                 </div>
 
                 {/* Days Grid */}
-                <div className="flex-1 grid grid-cols-7 auto-rows-fr p-4 gap-2 overflow-y-auto">
+                <div className="flex-1 grid grid-cols-7 auto-rows-fr p-6 gap-3 overflow-y-auto custom-scrollbar">
                     {calendarDays.map((day, idx) => {
                         const dayEvents = getEventsForDate(day);
                         const isSelected = isSameDay(day, selectedDate);
@@ -127,26 +130,31 @@ export default function CalendarPage() {
                                 key={day.toString()}
                                 layoutId={isSelected ? 'selected-day' : undefined}
                                 onClick={() => setSelectedDate(day)}
-                                className={`relative rounded-2xl flex flex-col items-center justify-start pt-2 transition-all group
+                                whileHover={{ scale: 1.02 }}
+                                whileTap={{ scale: 0.98 }}
+                                className={`relative rounded-2xl flex flex-col items-center justify-start pt-3 transition-all group
                                     ${!isCurrentMonth ? 'opacity-30' : 'opacity-100'}
-                                    ${isSelected ? 'bg-blue-600 shadow-lg shadow-blue-500/30 ring-2 ring-blue-400' : 'hover:bg-white/5'}
-                                    ${isTodayDate && !isSelected ? 'bg-white/5 border border-blue-500/30' : ''}
+                                    ${isSelected 
+                                        ? 'bg-gradient-to-br from-[#FF9E00] to-[#FF0000] shadow-lg shadow-[#FF9E00]/30 ring-2 ring-white/20' 
+                                        : 'hover:bg-white/5 hover:border hover:border-white/10'
+                                    }
+                                    ${isTodayDate && !isSelected ? 'bg-white/5 border border-[#FF9E00]/50 shadow-[0_0_10px_rgba(255,158,0,0.2)]' : ''}
                                 `}
                             >
-                                <span className={`text-sm font-medium ${isSelected ? 'text-white' : 'text-neutral-300'}`}>
+                                <span className={`text-sm font-bold ${isSelected ? 'text-white' : 'text-neutral-400 group-hover:text-white'}`}>
                                     {format(day, 'd')}
                                 </span>
                                 
                                 {/* Event Indicators */}
-                                <div className="flex gap-1 mt-1 flex-wrap justify-center px-1">
+                                <div className="flex gap-1 mt-2 flex-wrap justify-center px-1">
                                     {dayEvents.slice(0, 3).map((evt, i) => (
                                         <div 
                                             key={i} 
-                                            className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white' : 'bg-blue-400'}`} 
+                                            className={`w-1.5 h-1.5 rounded-full shadow-sm ${isSelected ? 'bg-white' : 'bg-[#FF9E00]'}`} 
                                         />
                                     ))}
                                     {dayEvents.length > 3 && (
-                                        <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white/50' : 'bg-neutral-500'}`} />
+                                        <div className={`w-1.5 h-1.5 rounded-full ${isSelected ? 'bg-white/50' : 'bg-neutral-600'}`} />
                                     )}
                                 </div>
                             </motion.button>
@@ -156,26 +164,26 @@ export default function CalendarPage() {
             </div>
 
             {/* Event Details Section */}
-            <div className="w-full md:w-96 flex flex-col bg-neutral-900/50 backdrop-blur-xl border border-white/10 rounded-3xl overflow-hidden shadow-2xl">
-                <div className="p-6 border-b border-white/5 bg-white/5">
-                    <h3 className="text-xl font-bold">
-                        Events for <span className="text-blue-400">{format(selectedDate, 'MMM do')}</span>
+            <div className="w-full md:w-[400px] flex flex-col bg-neutral-900/50 backdrop-blur-xl border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl shadow-[#FF0000]/5">
+                <div className="p-8 border-b border-white/5 bg-white/5 backdrop-blur-md">
+                    <h3 className="text-xl font-bold flex items-center gap-2">
+                        Events for <span className="text-transparent bg-clip-text bg-gradient-to-r from-[#FF9E00] to-[#FF0000]">{format(selectedDate, 'MMM do')}</span>
                     </h3>
                 </div>
 
-                <div className="flex-1 p-6 overflow-y-auto">
+                <div className="flex-1 p-6 overflow-y-auto custom-scrollbar">
                     <AnimatePresence mode="wait">
                         {loading ? (
                             <motion.div 
                                 initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                                className="flex flex-col items-center justify-center h-full text-neutral-500"
+                                className="flex flex-col items-center justify-center h-full text-neutral-500 gap-4"
                             >
-                                <div className="w-8 h-8 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-2"/>
-                                Loading...
+                                <div className="w-10 h-10 border-2 border-[#FF9E00] border-t-transparent rounded-full animate-spin"/>
+                                <p className="text-sm font-medium animate-pulse">Loading events...</p>
                             </motion.div>
                         ) : selectedDateEvents.length > 0 ? (
                             <div className="space-y-4">
-                                {selectedDateEvents.map((event) => {
+                                {selectedDateEvents.map((event, idx) => {
                                     // Parse date and time (Support both 12hr and 24hr)
                                     let eventDate = parse(`${event.date} ${event.time}`, 'yyyy-MM-dd h:mm aa', new Date());
                                     if (isNaN(eventDate.getTime())) {
@@ -189,53 +197,70 @@ export default function CalendarPage() {
                                     return (
                                         <motion.div
                                             key={event.id}
-                                            initial={{ opacity: 0, y: 10 }}
-                                            animate={{ opacity: 1, y: 0 }}
-                                            exit={{ opacity: 0, y: -10 }}
-                                            className="bg-white/5 rounded-2xl p-4 border border-white/5 hover:border-blue-500/30 transition-colors group"
+                                            initial={{ opacity: 0, x: 20 }}
+                                            animate={{ opacity: 1, x: 0 }}
+                                            transition={{ delay: idx * 0.1 }}
+                                            className="bg-neutral-900/50 rounded-2xl p-5 border border-white/5 hover:border-[#FF9E00]/30 transition-all group hover:shadow-lg hover:shadow-[#FF9E00]/5 relative overflow-hidden"
                                         >
-                                            <div className="flex justify-between items-start mb-2">
-                                                <span className="text-xs font-bold px-2 py-1 rounded-full bg-blue-500/20 text-blue-400">
-                                                    {event.category}
-                                                </span>
-                                                <span className="text-xs text-neutral-400">{event.time}</span>
-                                            </div>
-                                            <h4 className="font-bold text-lg mb-1 group-hover:text-blue-400 transition-colors">{event.title}</h4>
-                                            <p className="text-sm text-neutral-400 mb-3">{event.venue}</p>
-                                            
-                                            <div className="flex items-center justify-between mt-2">
-                                                <span className="text-xs text-green-400 font-medium">
-                                                    {isPast ? '' : `${event.seats_available} seats left`}
-                                                </span>
+                                            {/* Hover Gradient */}
+                                            <div className="absolute inset-0 bg-gradient-to-br from-[#FF9E00]/5 to-[#FF0000]/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+
+                                            <div className="relative z-10">
+                                                <div className="flex justify-between items-start mb-3">
+                                                    <span className="text-[10px] font-bold px-2.5 py-1 rounded-full bg-[#FF9E00]/10 text-[#FF9E00] border border-[#FF9E00]/20 uppercase tracking-wider">
+                                                        {event.category}
+                                                    </span>
+                                                    <span className="text-xs font-medium text-neutral-400 flex items-center gap-1">
+                                                        ⏰ {event.time}
+                                                    </span>
+                                                </div>
+                                                <h4 className="font-bold text-lg mb-1 text-white group-hover:text-[#FF9E00] transition-colors">{event.title}</h4>
+                                                <p className="text-sm text-neutral-400 mb-4 flex items-center gap-1">
+                                                    📍 {event.venue}
+                                                </p>
                                                 
-                                                {isPast ? (
-                                                    <span className="text-xs font-bold bg-neutral-700 text-neutral-400 px-3 py-1.5 rounded-lg cursor-not-allowed">
-                                                        Completed
+                                                <div className="flex items-center justify-between mt-4 pt-4 border-t border-white/5">
+                                                    <span className={`text-xs font-bold ${event.seats_available < 10 ? 'text-orange-400' : 'text-green-400'}`}>
+                                                        {isPast ? '' : `${event.seats_available} seats left`}
                                                     </span>
-                                                ) : isBookingClosed && !isBooked ? (
-                                                    <span className="text-xs font-bold bg-orange-900/50 text-orange-400 px-3 py-1.5 rounded-lg cursor-not-allowed border border-orange-500/30">
-                                                        Booking Closed
-                                                    </span>
-                                                ) : isBooked ? (
-                                                    <div className="flex items-center gap-2">
-                                                        <span className="text-xs font-bold bg-green-600/20 text-green-400 px-2 py-1.5 rounded-lg border border-green-500/30">
-                                                            ✅ Booked
+                                                    
+                                                    {isPast ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs font-bold bg-neutral-800 text-neutral-500 px-3 py-1.5 rounded-lg cursor-not-allowed border border-white/5">
+                                                                Completed
+                                                            </span>
+                                                            <Link 
+                                                                href={`/events/${event.id}`}
+                                                                className="text-xs font-bold bg-white/5 text-white px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors border border-white/10"
+                                                            >
+                                                                View Details
+                                                            </Link>
+                                                        </div>
+                                                    ) : isBookingClosed && !isBooked ? (
+                                                        <span className="text-xs font-bold bg-orange-500/10 text-orange-400 px-3 py-1.5 rounded-lg cursor-not-allowed border border-orange-500/20">
+                                                            Booking Closed
                                                         </span>
+                                                    ) : isBooked ? (
+                                                        <div className="flex items-center gap-2">
+                                                            <span className="text-xs font-bold bg-green-500/10 text-green-400 px-2.5 py-1.5 rounded-lg border border-green-500/20">
+                                                                Booked
+                                                            </span>
+                                                            <Link 
+                                                                href={`/events/${event.id}`}
+                                                                className="text-xs font-bold bg-white/5 text-white px-3 py-1.5 rounded-lg hover:bg-white/10 transition-colors border border-white/10"
+                                                            >
+                                                                View
+                                                            </Link>
+                                                        </div>
+                                                    ) : (
                                                         <Link 
                                                             href={`/events/${event.id}`}
-                                                            className="text-xs font-bold bg-white/10 text-white px-3 py-1.5 rounded-lg hover:bg-white/20 transition-colors"
+                                                            className="text-xs font-bold bg-white text-black px-4 py-2 rounded-lg hover:bg-neutral-200 transition-colors shadow-lg shadow-white/10"
                                                         >
-                                                            View Details
+                                                            Book Now
                                                         </Link>
-                                                    </div>
-                                                ) : (
-                                                    <Link 
-                                                        href={`/events/${event.id}`}
-                                                        className="text-xs font-bold bg-white text-black px-3 py-1.5 rounded-lg hover:bg-neutral-200 transition-colors"
-                                                    >
-                                                        Book Now
-                                                    </Link>
-                                                )}
+                                                    )}
+                                                </div>
                                             </div>
                                         </motion.div>
                                     );
@@ -248,8 +273,11 @@ export default function CalendarPage() {
                                 exit={{ opacity: 0 }}
                                 className="flex flex-col items-center justify-center h-full text-neutral-500"
                             >
-                                <span className="text-4xl mb-2">📅</span>
-                                <p>No events scheduled for this day.</p>
+                                <div className="w-20 h-20 rounded-full bg-white/5 flex items-center justify-center mb-4">
+                                    <span className="text-4xl grayscale opacity-50">📅</span>
+                                </div>
+                                <p className="font-medium">No events scheduled</p>
+                                <p className="text-sm text-neutral-600">Select another date to view events</p>
                             </motion.div>
                         )}
                     </AnimatePresence>

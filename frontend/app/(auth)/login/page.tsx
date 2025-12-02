@@ -29,6 +29,7 @@ export default function LoginPage() {
 
             localStorage.setItem('token', response.data.access_token);
             const userRole = response.data.role;
+            localStorage.setItem('role', userRole);
 
             if (userRole === 'student') {
                 window.location.href = '/student/dashboard';
@@ -61,7 +62,7 @@ export default function LoginPage() {
                     <button
                         onClick={() => setRole('student')}
                         className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${role === 'student'
-                            ? 'bg-blue-600 text-white shadow-lg'
+                            ? 'bg-primary text-white shadow-lg'
                             : 'text-neutral-400 hover:text-white'
                             }`}
                     >
@@ -70,7 +71,7 @@ export default function LoginPage() {
                     <button
                         onClick={() => setRole('organizer')}
                         className={`flex-1 py-2 text-sm font-medium rounded-lg transition-all ${role === 'organizer'
-                            ? 'bg-purple-600 text-white shadow-lg'
+                            ? 'bg-secondary text-white shadow-lg'
                             : 'text-neutral-400 hover:text-white'
                             }`}
                     >
@@ -96,7 +97,7 @@ export default function LoginPage() {
                             name="email"
                             type="email"
                             placeholder={role === 'student' ? '1234567890123@paruluniversity.ac.in' : role === 'organizer' ? 'organizer@college.edu' : 'admin@get2gather.com'}
-                            className="w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white placeholder:text-neutral-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                            className="w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white placeholder:text-neutral-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all"
                         />
                     </div>
 
@@ -106,16 +107,16 @@ export default function LoginPage() {
                             name="password"
                             type="password"
                             placeholder="••••••••"
-                            className="w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white placeholder:text-neutral-600 focus:outline-none focus:border-blue-500/50 focus:ring-1 focus:ring-blue-500/50 transition-all"
+                            className="w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white placeholder:text-neutral-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all"
                         />
                     </div>
 
                     <button
                         type="submit"
                         className={`w-full py-3.5 rounded-xl font-bold text-white shadow-lg transition-all hover:scale-[1.02] ${role === 'student'
-                            ? 'bg-blue-600 hover:bg-blue-500 shadow-blue-900/20'
+                            ? 'bg-primary hover:bg-primary/80 shadow-primary/20'
                             : role === 'organizer'
-                                ? 'bg-purple-600 hover:bg-purple-500 shadow-purple-900/20'
+                                ? 'bg-secondary hover:bg-secondary/80 shadow-secondary/20'
                                 : 'bg-red-600 hover:bg-red-500 shadow-red-900/20'
                             }`}
                     >
@@ -125,7 +126,7 @@ export default function LoginPage() {
 
                 <div className="mt-8 text-center text-sm text-neutral-500">
                     Don't have an account?{' '}
-                    <Link href="/register" className="text-blue-400 hover:underline">
+                    <Link href="/register" className="text-primary hover:underline">
                         Register now
                     </Link>
                 </div>

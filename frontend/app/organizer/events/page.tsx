@@ -73,7 +73,7 @@ export default function MyEventsPage() {
                 <h1 className="text-3xl font-bold">My Events</h1>
                 <Link
                     href="/organizer/events/create"
-                    className="px-6 py-2 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold shadow-lg shadow-purple-900/20 transition-colors"
+                    className="px-6 py-2 rounded-xl bg-secondary hover:bg-secondary/80 text-white font-bold shadow-lg shadow-secondary/20 transition-colors"
                 >
                     + Create Event
                 </Link>
@@ -105,9 +105,9 @@ export default function MyEventsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                 {filteredEvents.map((event) => (
-                    <div key={event.id} className="group p-6 rounded-3xl bg-neutral-900/50 border border-white/10 hover:border-purple-500/50 transition-all">
+                    <div key={event.id} className="group p-6 rounded-3xl bg-neutral-900/50 border border-white/10 hover:border-secondary/50 transition-all">
                         <div className="flex justify-between items-start mb-4">
-                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-purple-500 to-pink-500 flex items-center justify-center text-xl font-bold text-white">
+                            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-secondary to-primary flex items-center justify-center text-xl font-bold text-white">
                                 {event.title[0]}
                             </div>
                             <span className={`px-3 py-1 rounded-full text-xs font-bold ${
@@ -119,7 +119,7 @@ export default function MyEventsPage() {
                             </span>
                         </div>
 
-                        <h3 className="text-xl font-bold mb-2 group-hover:text-purple-400 transition-colors">{event.title}</h3>
+                        <h3 className="text-xl font-bold mb-2 group-hover:text-secondary transition-colors">{event.title}</h3>
 
                         <div className="space-y-2 text-sm text-neutral-400 mb-6">
                             <div className="flex items-center gap-2">
@@ -153,13 +153,13 @@ export default function MyEventsPage() {
                         <div className="grid grid-cols-2 gap-3 mt-3">
                             <Link 
                                 href={`/organizer/events/${event.id}/attendees`}
-                                className="py-2 rounded-lg bg-blue-600/20 text-blue-400 hover:bg-blue-600/30 font-medium transition-colors text-center text-sm"
+                                className="py-2 rounded-lg bg-accent/20 text-accent hover:bg-accent/30 font-medium transition-colors text-center text-sm"
                             >
                                 Attendees
                             </Link>
                             <Link 
                                 href={`/organizer/events/${event.id}/volunteers`}
-                                className="py-2 rounded-lg bg-orange-600/20 text-orange-400 hover:bg-orange-600/30 font-medium transition-colors text-center text-sm"
+                                className="py-2 rounded-lg bg-primary/20 text-primary hover:bg-primary/30 font-medium transition-colors text-center text-sm"
                             >
                                 Volunteers
                             </Link>
@@ -173,7 +173,7 @@ export default function MyEventsPage() {
                         {activeTab === 'upcoming' && (
                             <Link
                                 href="/organizer/events/create"
-                                className="text-purple-400 hover:underline"
+                                className="text-secondary hover:underline"
                             >
                                 Create your first event
                             </Link>

@@ -1,20 +1,35 @@
 @import "tailwindcss";
 
+@theme {
+  --color-primary: #F72585;
+  --color-secondary: #7209B7;
+  --color-accent: #4CC9F0;
+  --color-background: #ffffff;
+  --color-foreground: #171717;
+
+  --animate-gradient-x: gradient-x 3s ease infinite;
+
+  @keyframes gradient-x {
+    0%, 100% {
+      background-size: 200% 200%;
+      background-position: left center;
+    }
+    50% {
+      background-size: 200% 200%;
+      background-position: right center;
+    }
+  }
+}
+
 :root {
   --background: #ffffff;
   --foreground: #171717;
-  --primary: #3b82f6;
-  --secondary: #a855f7;
-  --accent: #10b981;
 }
 
 @media (prefers-color-scheme: dark) {
   :root {
-    --background: #0a0a0a;
+    --background: #0F0518;
     --foreground: #ededed;
-    --primary: #60a5fa;
-    --secondary: #c084fc;
-    --accent: #34d399;
   }
 }
 
@@ -30,12 +45,26 @@ body {
   }
 
   .neon-text {
-    text-shadow: 0 0 5px theme('colors.blue.400'),
-      0 0 10px theme('colors.blue.300');
+    text-shadow: 0 0 5px var(--color-primary),
+      0 0 10px var(--color-secondary);
   }
 
   .neon-border {
-    box-shadow: 0 0 5px theme('colors.purple.500'),
-      inset 0 0 5px theme('colors.purple.500');
+    box-shadow: 0 0 5px var(--color-accent),
+      inset 0 0 5px var(--color-accent);
+  }
+
+  .custom-scrollbar::-webkit-scrollbar {
+    width: 6px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-track {
+    background: rgba(255, 255, 255, 0.05);
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb {
+    background: rgba(255, 255, 255, 0.2);
+    border-radius: 10px;
+  }
+  .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+    background: rgba(255, 255, 255, 0.3);
   }
 }

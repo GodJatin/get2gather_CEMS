@@ -5,6 +5,8 @@ import api from '@/lib/api';
 import Link from 'next/link';
 import MotionWrapper from '@/components/MotionWrapper';
 import { motion } from 'framer-motion';
+import Counter from '@/components/Counter';
+import TextReveal from '@/components/TextReveal';
 
 interface Booking {
     id: number;
@@ -66,25 +68,27 @@ export default function StudentDashboard() {
     return (
         <MotionWrapper className="max-w-7xl mx-auto">
             {/* Hero Section */}
-            <header className="mb-8 relative overflow-hidden rounded-3xl bg-gradient-to-r from-blue-900/40 to-purple-900/40 border border-white/10 p-8 md:p-12">
+            <header className="mb-8 relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary/20 to-secondary/20 border border-white/10 p-8 md:p-12 group">
                 <div className="relative z-10">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
                         transition={{ duration: 0.5 }}
                     >
-                        <h1 className="text-4xl md:text-5xl font-bold mb-4">
-                            {getGreeting()}, <span className="bg-gradient-to-r from-blue-400 to-purple-400 bg-clip-text text-transparent">{user?.name || 'Student'}</span>! 👋
+                        <h1 className="text-4xl md:text-5xl font-bold mb-4 flex flex-wrap gap-x-3">
+                            {getGreeting()}, <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">{user?.name || 'Student'}</span>! 👋
                         </h1>
-                        <p className="text-lg text-neutral-300 max-w-2xl">
-                            Ready to explore what's happening on campus? Check out the latest events and secure your spot today.
-                        </p>
+                        <TextReveal 
+                            text="Ready to explore what's happening on campus? Check out the latest events and secure your spot today."
+                            className="text-lg text-neutral-300 max-w-2xl"
+                            delay={0.2}
+                        />
                     </motion.div>
                 </div>
                 
                 {/* Decorative Background Elements */}
-                <div className="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-blue-500/20 rounded-full blur-3xl" />
-                <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-64 h-64 bg-purple-500/20 rounded-full blur-3xl" />
+                <div className="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-primary/20 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-1000" />
+                <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-64 h-64 bg-secondary/20 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-1000" />
             </header>
 
             {/* Stats Grid */}
@@ -94,17 +98,21 @@ export default function StudentDashboard() {
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
-                        className="p-6 rounded-2xl bg-gradient-to-br from-yellow-500/10 to-orange-500/10 border border-yellow-500/20 hover:border-yellow-500/40 transition-all cursor-pointer h-full relative overflow-hidden group"
+                        whileHover={{ y: -5 }}
+                        className="p-6 rounded-2xl bg-gradient-to-br from-accent/10 to-primary/10 border border-accent/20 hover:border-accent/40 transition-all cursor-pointer h-full relative overflow-hidden group"
                     >
-                        <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity text-6xl">
+                        <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-shine" />
+                        <div className="absolute top-0 right-0 p-4 opacity-20 group-hover:opacity-40 transition-opacity text-6xl group-hover:scale-110 duration-500">
                             🏆
                         </div>
                         <h3 className="text-neutral-400 font-medium mb-2">My Rank</h3>
                         <div className="flex items-baseline gap-2">
-                            <span className="text-4xl font-bold text-yellow-500">#{stats?.rank || '-'}</span>
+                            <span className="text-4xl font-bold text-accent">
+                                #<Counter value={stats?.rank || 0} />
+                            </span>
                             <span className="text-sm text-neutral-500">Overall</span>
                         </div>
-                        <p className="text-xs text-yellow-500/60 mt-2">View Leaderboard →</p>
+                        <p className="text-xs text-accent/60 mt-2 group-hover:translate-x-1 transition-transform">View Leaderboard →</p>
                     </motion.div>
                 </Link>
 
@@ -113,10 +121,14 @@ export default function StudentDashboard() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.1 }}
-                    className="p-6 rounded-2xl bg-neutral-900/50 border border-white/5 h-full"
+                    whileHover={{ y: -5 }}
+                    className="p-6 rounded-2xl bg-neutral-900/50 border border-white/5 h-full relative overflow-hidden group"
                 >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-shine" />
                     <h3 className="text-neutral-400 font-medium mb-2">Registered Events</h3>
-                    <span className="text-4xl font-bold text-blue-400">{stats?.total_bookings || 0}</span>
+                    <span className="text-4xl font-bold text-primary">
+                        <Counter value={stats?.total_bookings || 0} />
+                    </span>
                 </motion.div>
 
                 {/* Volunteer Events */}
@@ -124,10 +136,14 @@ export default function StudentDashboard() {
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: 0.2 }}
-                    className="p-6 rounded-2xl bg-neutral-900/50 border border-white/5 h-full"
+                    whileHover={{ y: -5 }}
+                    className="p-6 rounded-2xl bg-neutral-900/50 border border-white/5 h-full relative overflow-hidden group"
                 >
+                    <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/5 to-transparent -translate-x-full group-hover:animate-shine" />
                     <h3 className="text-neutral-400 font-medium mb-2">Volunteer Events</h3>
-                    <span className="text-4xl font-bold text-purple-400">{stats?.total_volunteer || 0}</span>
+                    <span className="text-4xl font-bold text-secondary">
+                        <Counter value={stats?.total_volunteer || 0} />
+                    </span>
                 </motion.div>
             </div>
 
@@ -137,7 +153,7 @@ export default function StudentDashboard() {
                     <h2 className="text-2xl font-bold flex items-center gap-2">
                         <span>🎟️</span> Your Upcoming Bookings
                     </h2>
-                    <Link href="/student/bookings" className="text-sm text-blue-400 hover:text-blue-300 transition-colors">
+                    <Link href="/student/bookings" className="text-sm text-primary hover:text-primary/80 transition-colors">
                         View All →
                     </Link>
                 </div>
@@ -153,8 +169,8 @@ export default function StudentDashboard() {
                             const dateB = new Date(`${b.event_date} ${b.event_time}`);
                             return dateA.getTime() - dateB.getTime();
                         }).map((booking) => (
-                            <Link key={booking.id} href={`/events/${booking.event_id}`}>
-                                <div className="p-6 rounded-3xl bg-gradient-to-br from-purple-900/50 to-blue-900/50 border border-purple-500/30 shadow-lg shadow-purple-900/20 relative overflow-hidden group hover:scale-[1.02] transition-transform cursor-pointer">
+                            <Link key={`${booking.id}-${booking.event_title}`} href={`/events/${booking.event_id}`}>
+                                <div className="p-6 rounded-3xl bg-gradient-to-br from-secondary/20 to-primary/20 border border-secondary/30 shadow-lg shadow-secondary/10 relative overflow-hidden group hover:scale-[1.02] transition-transform cursor-pointer">
                                     <div className="absolute top-0 right-0 p-4">
                                         <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
                                             booking.status === 'Confirmed' 
@@ -187,7 +203,7 @@ export default function StudentDashboard() {
                 ) : (
                     <div className="p-8 rounded-3xl bg-neutral-900/30 border border-white/5 text-center">
                         <p className="text-neutral-400 mb-4">You haven't booked any events yet.</p>
-                        <Link href="/student/events" className="px-6 py-2 rounded-xl bg-blue-600 text-white font-bold hover:bg-blue-500 transition-colors">
+                        <Link href="/student/events" className="px-6 py-2 rounded-xl bg-primary text-white font-bold hover:bg-primary/80 transition-colors">
                             Explore Events
                         </Link>
                     </div>

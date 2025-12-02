@@ -11,10 +11,10 @@ export default function RegisterRolePage() {
                     {/* Student Card */}
                     <Link
                         href="/register/student"
-                        className="group relative p-8 rounded-3xl bg-neutral-900/50 border border-white/10 hover:border-blue-500/50 transition-all hover:-translate-y-2"
+                        className="group relative p-8 rounded-3xl bg-neutral-900/50 border border-white/10 hover:border-primary/50 transition-all hover:-translate-y-2"
                     >
-                        <div className="absolute inset-0 bg-blue-500/10 opacity-0 group-hover:opacity-100 rounded-3xl transition-opacity" />
-                        <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-blue-500/20 flex items-center justify-center text-4xl">
+                        <div className="absolute inset-0 bg-primary/10 opacity-0 group-hover:opacity-100 rounded-3xl transition-opacity" />
+                        <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-primary/20 flex items-center justify-center text-4xl">
                             🎓
                         </div>
                         <h2 className="text-2xl font-bold text-white mb-4">Student</h2>
@@ -26,10 +26,10 @@ export default function RegisterRolePage() {
                     {/* Organizer Card */}
                     <Link
                         href="/register/organizer"
-                        className="group relative p-8 rounded-3xl bg-neutral-900/50 border border-white/10 hover:border-purple-500/50 transition-all hover:-translate-y-2"
+                        className="group relative p-8 rounded-3xl bg-neutral-900/50 border border-white/10 hover:border-secondary/50 transition-all hover:-translate-y-2"
                     >
-                        <div className="absolute inset-0 bg-purple-500/10 opacity-0 group-hover:opacity-100 rounded-3xl transition-opacity" />
-                        <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-purple-500/20 flex items-center justify-center text-4xl">
+                        <div className="absolute inset-0 bg-secondary/10 opacity-0 group-hover:opacity-100 rounded-3xl transition-opacity" />
+                        <div className="w-20 h-20 mx-auto mb-6 rounded-2xl bg-secondary/20 flex items-center justify-center text-4xl">
                             🎤
                         </div>
                         <h2 className="text-2xl font-bold text-white mb-4">Organizer</h2>
@@ -41,7 +41,7 @@ export default function RegisterRolePage() {
 
                 <div className="mt-12 text-neutral-500 text-sm">
                     Already have an account?{' '}
-                    <Link href="/login" className="text-blue-400 hover:underline">
+                    <Link href="/login" className="text-primary hover:underline">
                         Login here
                     </Link>
                 </div>

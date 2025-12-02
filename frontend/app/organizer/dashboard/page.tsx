@@ -39,9 +39,9 @@ export default function OrganizerDashboard() {
             {/* Stats Grid */}
             <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
                 {[
-                    { label: 'Total Events', value: stats.totalEvents, icon: '📅', color: 'bg-blue-500/10 text-blue-400' },
-                    { label: 'Total Attendees', value: stats.totalBookings, icon: '👥', color: 'bg-purple-500/10 text-purple-400' },
-                    { label: 'Total Volunteers', value: stats.totalVolunteers, icon: '🤝', color: 'bg-green-500/10 text-green-400' },
+                    { label: 'Total Events', value: stats.totalEvents, icon: '📅', color: 'bg-primary/10 text-primary' },
+                    { label: 'Total Attendees', value: stats.totalBookings, icon: '👥', color: 'bg-secondary/10 text-secondary' },
+                    { label: 'Total Volunteers', value: stats.totalVolunteers, icon: '🤝', color: 'bg-accent/10 text-accent' },
                 ].map((stat, i) => (
                     <StaggerItem key={i} className="p-6 rounded-3xl bg-neutral-900/50 border border-white/10 flex items-center gap-4">
                         <div className={`w-12 h-12 rounded-2xl flex items-center justify-center text-2xl ${stat.color}`}>
@@ -61,7 +61,7 @@ export default function OrganizerDashboard() {
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <Link
                         href="/organizer/events/create"
-                        className="group p-6 rounded-3xl bg-gradient-to-br from-blue-600 to-blue-700 text-white shadow-lg shadow-blue-900/20 hover:scale-[1.02] transition-transform"
+                        className="group p-6 rounded-3xl bg-gradient-to-br from-primary to-secondary text-white shadow-lg shadow-primary/20 hover:scale-[1.02] transition-transform"
                     >
                         <div className="flex justify-between items-start mb-4">
                             <span className="text-3xl bg-white/20 w-12 h-12 rounded-2xl flex items-center justify-center">➕</span>
