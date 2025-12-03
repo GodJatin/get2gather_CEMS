@@ -5,7 +5,7 @@ from routers import auth, events, bookings, media, feed, volunteers, leaderboard
 import time
 import models
 
-app = FastAPI(title="Get2Gather API")
+app = FastAPI(title="Get2Gather API", root_path="/api")
 
 @app.on_event("startup")
 def on_startup():
@@ -24,42 +24,43 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Include routers with /api prefix to match Vercel routing
-app.include_router(auth.router, prefix="/api")
-app.include_router(events.router, prefix="/api")
-app.include_router(bookings.router, prefix="/api")
-app.include_router(media.router, prefix="/api")
-app.include_router(feed.router, prefix="/api")
-app.include_router(volunteers.router, prefix="/api")
-app.include_router(leaderboard.router, prefix="/api")
-app.include_router(stats.router, prefix="/api")
-app.include_router(scan.router, prefix="/api")
-app.include_router(social.router, prefix="/api")
-app.include_router(student.router, prefix="/api")
-app.include_router(admin.router, prefix="/api")
+# Routers (No prefix needed because of root_path="/api")
+app.include_router(auth.router)
+app.include_router(events.router)
+app.include_router(bookings.router)
+app.include_router(media.router)
+app.include_router(feed.router)
+app.include_router(volunteers.router)
+app.include_router(leaderboard.router)
+app.include_router(stats.router)
+app.include_router(scan.router)
+app.include_router(social.router)
+app.include_router(student.router)
+app.include_router(admin.router)
 
 @app.get("/")
 def read_root():
     return {"message": "Welcome to Get2Gather API (Root)"}
 
-@app.get("/api")
+@app.get("/debug-status")
 def read_api_root():
     import os
     db_url = os.getenv("DATABASE_URL", "Not Set")
-    # Mask the password if present
-    if "://" in db_url:
-        try:
-            part1, part2 = db_url.split("://")
-            if "@" in part2:
-                creds, host = part2.split("@")
-                db_url = f"{part1}://****@{host}"
-        except:
-            pass
-            
     return {
         "message": "Welcome to Get2Gather API",
         "status": "Running",
-        "db_url_configured": db_url != "Not Set",
-        "db_url_preview": db_url
+        "db_configured": db_url != "Not Set"
+    }
+
+# Catch-all for debugging 404/405
+@app.api_route("/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"])
+async def catch_all(request: Request, path_name: str):
+    return {
+        "status": "DEBUG_CATCH_ALL",
+        "message": "Route not found in routers",
+        "received_path": path_name,
+        "method": request.method,
+        "root_path": request.scope.get("root_path"),
+        "path": request.scope.get("path")
     }
 
