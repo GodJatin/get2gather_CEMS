@@ -1,13 +1,9 @@
-from fastapi import FastAPI, Request
+import sys
+import os
 
-app = FastAPI()
+# Add the backend directory to the sys.path so imports work
+# Since this file is in frontend/api/index.py, and backend is in frontend/backend
+# We need to go up one level to 'frontend' then into 'backend'
+sys.path.append(os.path.join(os.path.dirname(__file__), '../backend'))
 
-@app.api_route("/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"])
-async def catch_all(request: Request, path_name: str):
-    return {
-        "status": "STANDALONE_DEBUG",
-        "message": "If you see this, Vercel routing is WORKING!",
-        "received_path": path_name,
-        "method": request.method,
-        "headers": dict(request.headers)
-    }
+from main import app

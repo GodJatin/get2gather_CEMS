@@ -63,13 +63,3 @@ def read_api_root():
         "db_url_preview": db_url
     }
 
-@app.api_route("/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
-async def catch_all(request: Request, path_name: str):
-    return {
-        "status": "404/405 Debug",
-        "message": "Route not found or method not allowed",
-        "received_path": path_name,
-        "method": request.method,
-        "base_url": str(request.base_url),
-        "routers_loaded": [r.path_format for r in app.routes]
-    }
