@@ -3,18 +3,18 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
 from routers import auth, events, bookings, media, feed, volunteers, leaderboard, stats, scan, social, student, admin
 import time
+import models
 
 app = FastAPI(title="Get2Gather API")
 
 @app.on_event("startup")
 def on_startup():
     try:
-        import models
-        # print(f"Uvicorn Student columns: {models.Student.__table__.columns.keys()}")
-        # Base.metadata.create_all(bind=engine)
-        print("Startup successful (DB creation skipped for safety during debug)")
+        # Create tables
+        Base.metadata.create_all(bind=engine)
+        print("Startup successful")
     except Exception as e:
-        print(f"Startup Error: {e}")
+        print(f"Startup error: {e}")
 
 app.add_middleware(
     CORSMiddleware,
