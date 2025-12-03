@@ -8,9 +8,13 @@ app = FastAPI(title="Get2Gather API")
 
 @app.on_event("startup")
 def on_startup():
-    import models
-    print(f"Uvicorn Student columns: {models.Student.__table__.columns.keys()}")
-    Base.metadata.create_all(bind=engine)
+    try:
+        import models
+        # print(f"Uvicorn Student columns: {models.Student.__table__.columns.keys()}")
+        # Base.metadata.create_all(bind=engine)
+        print("Startup successful (DB creation skipped for safety during debug)")
+    except Exception as e:
+        print(f"Startup Error: {e}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -41,4 +45,21 @@ app.include_router(admin.router)
 
 @app.get("/")
 def read_root():
-    return {"message": "Welcome to Get2Gather API"}
+    import os
+    db_url = os.getenv("DATABASE_URL", "Not Set")
+    # Mask the password if present
+    if "://" in db_url:
+        try:
+            part1, part2 = db_url.split("://")
+            if "@" in part2:
+                creds, host = part2.split("@")
+                db_url = f"{part1}://****@{host}"
+        except:
+            pass
+            
+    return {
+        "message": "Welcome to Get2Gather API",
+        "status": "Running",
+        "db_url_configured": db_url != "Not Set",
+        "db_url_preview": db_url
+    }
