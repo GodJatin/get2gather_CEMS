@@ -1,10 +1,12 @@
 {
-  "rewrites": [
+  "redirects": [
     {
       "source": "/vercel-test",
       "destination": "https://google.com",
       "permanent": false
-    },
+    }
+  ],
+  "rewrites": [
     {
       "source": "/api/(.*)",
       "destination": "/api/index.py"
