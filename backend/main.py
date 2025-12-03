@@ -18,32 +18,36 @@ def on_startup():
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=[
-        "http://localhost:3000", 
-        "http://127.0.0.1:3000",
-        "http://localhost:8000",
-        "http://127.0.0.1:8000",
-        "https://get2gather-cems.vercel.app",
-        "https://get2gather-cems-git-main-godjatins-projects.vercel.app"
-    ],
+    allow_origins=["*"],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Include routers with /backend-api prefix to match Vercel routing
-app.include_router(auth.router, prefix="/backend-api")
-app.include_router(events.router, prefix="/backend-api")
-app.include_router(bookings.router, prefix="/backend-api")
-app.include_router(media.router, prefix="/backend-api")
-app.include_router(feed.router, prefix="/backend-api")
-app.include_router(volunteers.router, prefix="/backend-api")
-app.include_router(leaderboard.router, prefix="/backend-api")
-app.include_router(stats.router, prefix="/backend-api")
-app.include_router(scan.router, prefix="/backend-api")
-app.include_router(social.router, prefix="/backend-api")
-app.include_router(student.router, prefix="/backend-api")
-app.include_router(admin.router, prefix="/backend-api")
+# DEBUG MODE: Routers commented out to test path reception
+# app.include_router(auth.router, prefix="/backend-api")
+# app.include_router(events.router, prefix="/backend-api")
+# app.include_router(bookings.router, prefix="/backend-api")
+# app.include_router(media.router, prefix="/backend-api")
+# app.include_router(feed.router, prefix="/backend-api")
+# app.include_router(volunteers.router, prefix="/backend-api")
+# app.include_router(leaderboard.router, prefix="/backend-api")
+# app.include_router(stats.router, prefix="/backend-api")
+# app.include_router(scan.router, prefix="/backend-api")
+# app.include_router(social.router, prefix="/backend-api")
+# app.include_router(student.router, prefix="/backend-api")
+# app.include_router(admin.router, prefix="/backend-api")
+
+@app.api_route("/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"])
+async def catch_all_debug(request: Request, path_name: str):
+    return {
+        "status": "DEBUG_MODE",
+        "received_path": path_name,
+        "full_url": str(request.url),
+        "method": request.method,
+        "headers": dict(request.headers),
+        "base_url": str(request.base_url)
+    }
 
 @app.get("/")
 def read_root():
