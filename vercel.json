@@ -1,13 +1,7 @@
 {
-  "rewrites": [
-    {
-      "source": "/backend-api/(.*)",
-      "destination": "/api/index.py"
-    }
-  ],
   "headers": [
     {
-      "source": "/backend-api/(.*)",
+      "source": "/api/(.*)",
       "headers": [
         { "key": "Access-Control-Allow-Credentials", "value": "true" },
         { "key": "Access-Control-Allow-Origin", "value": "*" },
