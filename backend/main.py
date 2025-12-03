@@ -10,8 +10,51 @@ app = FastAPI(title="Get2Gather API")
 def on_startup():
     try:
         import models
+        # print(f"Uvicorn Student columns: {models.Student.__table__.columns.keys()}")
+        # Base.metadata.create_all(bind=engine)
+        print("Startup successful (DB creation skipped for safety during debug)")
+    except Exception as e:
+        print(f"Startup Error: {e}")
+
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000", 
+        "http://127.0.0.1:3000",
+        "http://localhost:8000",
+        "http://127.0.0.1:8000",
+        "https://get2gather-cems.vercel.app",
+        "https://get2gather-cems-git-main-godjatins-projects.vercel.app"
     ],
-# ... routers included ...
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Include routers with /backend-api prefix to match Vercel routing
+app.include_router(auth.router, prefix="/backend-api")
+app.include_router(events.router, prefix="/backend-api")
+app.include_router(bookings.router, prefix="/backend-api")
+app.include_router(media.router, prefix="/backend-api")
+app.include_router(feed.router, prefix="/backend-api")
+app.include_router(volunteers.router, prefix="/backend-api")
+app.include_router(leaderboard.router, prefix="/backend-api")
+app.include_router(stats.router, prefix="/backend-api")
+app.include_router(scan.router, prefix="/backend-api")
+app.include_router(social.router, prefix="/backend-api")
+app.include_router(student.router, prefix="/backend-api")
+app.include_router(admin.router, prefix="/backend-api")
+
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to Get2Gather API (Root)"}
+
+@app.middleware("http")
+async def add_debug_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Debug-Path"] = request.url.path
+    response.headers["X-Debug-Method"] = request.method
+    return response
 
 @app.api_route("/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
 async def catch_all(request: Request, path_name: str):
