@@ -8,3 +8,4 @@ python-multipart
 python-dotenv
 resend
 qrcode[pil]
+psycopg2-binary

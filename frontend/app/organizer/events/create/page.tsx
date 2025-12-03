@@ -2,328 +2,398 @@
 
 import { useState } from 'react';
 import api from '@/lib/api';
+import { useRouter } from 'next/navigation';
+import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';
+import { motion, AnimatePresence } from 'framer-motion';
+import DateTimePicker from '@/components/DateTimePicker';
 
 export default function CreateEventPage() {
+    const router = useRouter();
     const [formData, setFormData] = useState({
         title: '',
-        category: 'Technical',
-        capacity: '',
         description: '',
         date: '',
         time: '',
         venue: '',
-        department: 'PICA',
-        open_for: 'Everyone',
-        outcomes: '',
-        images: [] as string[],
-        is_paid: false,
-        price: 0,
-        hashtags: ''
+        capacity: '',
+        price: '0',
+        category: 'Workshop',
+        is_paid: false
     });
-    const [uploading, setUploading] = useState(false);
+    const [images, setImages] = useState<File[]>([]);
+    const [imagePreviews, setImagePreviews] = useState<string[]>([]);
+    const [currentImageIndex, setCurrentImageIndex] = useState(0);
+    const [loading, setLoading] = useState(false);
 
-    const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
-        const { name, value, type } = e.target;
-        setFormData({ 
-            ...formData, 
-            [name]: type === 'checkbox' ? (e.target as HTMLInputElement).checked : value 
-        });
+    const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
+        const { name, value } = e.target;
+        setFormData(prev => ({ ...prev, [name]: value }));
     };
 
-    const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-        const files = e.target.files;
-        if (!files || files.length === 0) return;
+    const handleDateChange = (value: string) => {
+        setFormData(prev => ({ ...prev, date: value }));
+    };
 
-        setUploading(true);
-        const newImages: string[] = [];
+    const handleTimeChange = (value: string) => {
+        setFormData(prev => ({ ...prev, time: value }));
+    };
 
-        for (let i = 0; i < files.length; i++) {
-            const file = files[i];
-            const reader = new FileReader();
+    const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const newFiles = Array.from(e.target.files);
+            const totalImages = images.length + newFiles.length;
             
-            const base64Promise = new Promise<string>((resolve) => {
-                reader.onloadend = () => {
-                    resolve(reader.result as string);
-                };
-            });
-            
-            reader.readAsDataURL(file);
-            const base64 = await base64Promise;
-            newImages.push(base64);
+            if (totalImages > 3) {
+                alert("You can only upload up to 3 images.");
+                return;
+            }
+
+            setImages(prev => [...prev, ...newFiles]);
+            const newPreviews = newFiles.map(file => URL.createObjectURL(file));
+            setImagePreviews(prev => [...prev, ...newPreviews]);
         }
-
-        setFormData(prev => ({
-            ...prev,
-            images: [...prev.images, ...newImages]
-        }));
-        setUploading(false);
     };
 
     const removeImage = (index: number) => {
-        setFormData(prev => ({
-            ...prev,
-            images: prev.images.filter((_, i) => i !== index)
-        }));
+        setImages(prev => prev.filter((_, i) => i !== index));
+        setImagePreviews(prev => prev.filter((_, i) => i !== index));
+        if (currentImageIndex >= index && currentImageIndex > 0) {
+            setCurrentImageIndex(prev => prev - 1);
+        }
+    };
+
+    const nextImage = () => {
+        setCurrentImageIndex(prev => (prev + 1) % imagePreviews.length);
+    };
+
+    const prevImage = () => {
+        setCurrentImageIndex(prev => (prev - 1 + imagePreviews.length) % imagePreviews.length);
     };
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
-        try {
-            // Get current user to extract organizer_id
-            const userResponse = await api.get('/auth/me');
-            const organizerId = userResponse.data.id;
+        setLoading(true);
 
-            await api.post('/events/', {
+        try {
+            // 1. Create Event
+            const eventResponse = await api.post('/events/', {
                 ...formData,
-                capacity: parseInt(formData.capacity) || 0,
-                seats_available: parseInt(formData.capacity) || 0, // Initially all seats available
-                price: formData.is_paid ? (parseInt(formData.price.toString()) || 0) : 0,
-                images: JSON.stringify(formData.images),
-                image_url: formData.images[0] || null, // Use first image as thumbnail
-                organizer_id: organizerId,
-                status: 'Upcoming' // Default status
+                capacity: parseInt(formData.capacity),
+                price: parseFloat(formData.price)
             });
-            alert('Event created successfully!');
-            window.location.href = '/organizer/events';
-        } catch (error: any) {
+
+            const eventId = eventResponse.data.id;
+
+            // 2. Upload Images
+            // Assuming backend handles multiple uploads sequentially or we call the endpoint multiple times
+            for (const image of images) {
+                const formData = new FormData();
+                formData.append('file', image);
+                await api.post(`/events/${eventId}/upload-image`, formData, {
+                    headers: { 'Content-Type': 'multipart/form-data' }
+                });
+            }
+
+            router.push('/organizer/events');
+        } catch (error) {
             console.error('Failed to create event:', error);
-            alert('Failed to create event: ' + (error.response?.data?.detail || 'Unknown error'));
+            alert('Failed to create event. Please try again.');
+        } finally {
+            setLoading(false);
         }
     };
 
     return (
-        <div className="max-w-3xl mx-auto">
-            <h1 className="text-3xl font-bold mb-8">Create New Event</h1>
+        <MotionWrapper className="max-w-4xl mx-auto pb-20">
+            <header className="mb-12 text-center">
+                <h1 className="text-4xl font-bold mb-4 bg-gradient-to-r from-purple-400 to-pink-500 bg-clip-text text-transparent">
+                    Create New Event
+                </h1>
+                <p className="text-neutral-400 text-lg">Launch your next big event in minutes.</p>
+            </header>
 
             <form onSubmit={handleSubmit} className="space-y-8">
-                {/* Basic Details */}
-                <section className="p-6 rounded-3xl bg-neutral-900/50 border border-white/10">
-                    <h2 className="text-xl font-bold mb-6 text-purple-400">Event Details</h2>
-                    <div className="space-y-6">
-                        <div>
-                            <label className="block text-sm font-medium text-neutral-300 mb-2">Event Title</label>
-                            <input
-                                name="title"
-                                value={formData.title}
-                                onChange={handleChange}
-                                type="text"
-                                className="w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white focus:border-purple-500/50 focus:outline-none"
-                                placeholder="e.g. Annual Tech Fest"
-                                required
-                            />
-                        </div>
-
-                        <div className="grid grid-cols-2 gap-6">
+                <StaggerContainer>
+                    {/* Event Details Section */}
+                    <StaggerItem className="bg-neutral-900/50 border border-white/10 rounded-3xl p-8 backdrop-blur-sm relative overflow-hidden group">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-purple-500/5 rounded-full blur-3xl -z-10 group-hover:bg-purple-500/10 transition-colors" />
+                        
+                        <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                            <span className="w-10 h-10 rounded-xl bg-purple-500/10 flex items-center justify-center text-xl">📝</span>
+                            Event Details
+                        </h2>
+                        
+                        <div className="space-y-6">
                             <div>
-                                <label className="block text-sm font-medium text-neutral-300 mb-2">Category</label>
-                                <select
-                                    name="category"
-                                    value={formData.category}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white focus:border-purple-500/50 focus:outline-none"
-                                >
-                                    <option value="Technical">Technical</option>
-                                    <option value="Cultural">Cultural</option>
-                                    <option value="Sports">Sports</option>
-                                    <option value="Workshop">Workshop</option>
-                                </select>
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-neutral-300 mb-2">Capacity</label>
+                                <label className="block text-sm font-medium text-neutral-400 mb-2">Event Title</label>
                                 <input
-                                    name="capacity"
-                                    value={formData.capacity}
-                                    onChange={handleChange}
-                                    type="number"
-                                    className="w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white focus:border-purple-500/50 focus:outline-none"
-                                    placeholder="100"
+                                    type="text"
+                                    name="title"
+                                    value={formData.title}
+                                    onChange={handleInputChange}
+                                    className="w-full bg-neutral-800/50 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:bg-neutral-800 transition-all placeholder:text-neutral-600"
+                                    placeholder="e.g., Annual Tech Symposium 2024"
                                     required
                                 />
                             </div>
-                        </div>
 
-                        <div className="grid grid-cols-2 gap-6">
                             <div>
-                                <label className="block text-sm font-medium text-neutral-300 mb-2">Organized For (Department)</label>
-                                <select
-                                    name="department"
-                                    value={formData.department}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white focus:border-purple-500/50 focus:outline-none"
-                                >
-                                    <option value="PICA">PICA</option>
-                                    <option value="PIET">PIET</option>
-                                    <option value="PIP">PIP</option>
-                                    <option value="PIMR">PIMR</option>
-                                    <option value="PARUL">Parul University (All)</option>
-                                </select>
+                                <label className="block text-sm font-medium text-neutral-400 mb-2">Description</label>
+                                <textarea
+                                    name="description"
+                                    value={formData.description}
+                                    onChange={handleInputChange}
+                                    rows={4}
+                                    className="w-full bg-neutral-800/50 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:bg-neutral-800 transition-all placeholder:text-neutral-600 resize-none"
+                                    placeholder="Describe your event..."
+                                    required
+                                />
                             </div>
-                            <div>
-                                <label className="block text-sm font-medium text-neutral-300 mb-2">Open For</label>
-                                <select
-                                    name="open_for"
-                                    value={formData.open_for}
-                                    onChange={handleChange}
-                                    className="w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white focus:border-purple-500/50 focus:outline-none"
-                                >
-                                    <option value="Everyone">Everyone</option>
-                                    <option value="PICA">PICA Students Only</option>
-                                    <option value="PIET">PIET Students Only</option>
-                                    <option value="Department">My Department Only</option>
-                                </select>
+
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <div>
+                                    <label className="block text-sm font-medium text-neutral-400 mb-2">Category</label>
+                                    <div className="relative">
+                                        <select
+                                            name="category"
+                                            value={formData.category}
+                                            onChange={handleInputChange}
+                                            className="w-full bg-neutral-800/50 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-purple-500 focus:bg-neutral-800 transition-all appearance-none cursor-pointer"
+                                        >
+                                            <option>Workshop</option>
+                                            <option>Seminar</option>
+                                            <option>Competition</option>
+                                            <option>Social</option>
+                                            <option>Other</option>
+                                        </select>
+                                        <div className="absolute right-4 top-1/2 -translate-y-1/2 pointer-events-none text-neutral-500">▼</div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label className="block text-sm font-medium text-neutral-400 mb-2">Event Banners (Max 3)</label>
+                                    <div className="relative group/upload">
+                                        {imagePreviews.length > 0 ? (
+                                            <div className="relative w-full h-[200px] rounded-xl overflow-hidden border border-white/10 bg-neutral-800/30">
+                                                <img 
+                                                    src={imagePreviews[currentImageIndex]} 
+                                                    alt={`Preview ${currentImageIndex}`} 
+                                                    className="w-full h-full object-cover"
+                                                />
+                                                
+                                                {/* Navigation */}
+                                                {imagePreviews.length > 1 && (
+                                                    <>
+                                                        <button 
+                                                            onClick={(e) => { e.preventDefault(); prevImage(); }}
+                                                            className="absolute left-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
+                                                        >
+                                                            ←
+                                                        </button>
+                                                        <button 
+                                                            onClick={(e) => { e.preventDefault(); nextImage(); }}
+                                                            className="absolute right-2 top-1/2 -translate-y-1/2 p-2 bg-black/50 rounded-full text-white hover:bg-black/70 transition-colors"
+                                                        >
+                                                            →
+                                                        </button>
+                                                        <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1">
+                                                            {imagePreviews.map((_, idx) => (
+                                                                <div 
+                                                                    key={idx} 
+                                                                    className={`w-2 h-2 rounded-full ${idx === currentImageIndex ? 'bg-white' : 'bg-white/30'}`} 
+                                                                />
+                                                            ))}
+                                                        </div>
+                                                    </>
+                                                )}
+
+                                                {/* Delete Button */}
+                                                <button 
+                                                    onClick={(e) => { e.preventDefault(); removeImage(currentImageIndex); }}
+                                                    className="absolute top-2 right-2 p-2 bg-red-500/80 rounded-lg text-white hover:bg-red-600 transition-colors"
+                                                >
+                                                    🗑️
+                                                </button>
+
+                                                {/* Add More Button (if < 3) */}
+                                                {imagePreviews.length < 3 && (
+                                                    <label className="absolute top-2 left-2 p-2 bg-purple-600/80 rounded-lg text-white hover:bg-purple-700 transition-colors cursor-pointer">
+                                                        ➕ Add
+                                                        <input
+                                                            type="file"
+                                                            accept="image/*"
+                                                            onChange={handleImageChange}
+                                                            className="hidden"
+                                                            multiple
+                                                        />
+                                                    </label>
+                                                )}
+                                            </div>
+                                        ) : (
+                                            <div className="w-full h-[200px] rounded-xl border border-dashed border-white/20 bg-neutral-800/30 flex flex-col items-center justify-center gap-2 text-neutral-400 hover:border-purple-500/50 hover:bg-purple-500/5 transition-all cursor-pointer relative">
+                                                <input
+                                                    type="file"
+                                                    accept="image/*"
+                                                    onChange={handleImageChange}
+                                                    className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                                                    multiple
+                                                />
+                                                <span className="text-3xl">📷</span>
+                                                <span>Upload Banners (Max 3)</span>
+                                            </div>
+                                        )}
+                                    </div>
+                                </div>
                             </div>
                         </div>
+                    </StaggerItem>
 
-                        <div>
-                            <label className="block text-sm font-medium text-neutral-400 mb-2">Hashtags (comma separated)</label>
-                            <input
-                                type="text"
-                                value={formData.hashtags}
-                                onChange={(e) => setFormData({ ...formData, hashtags: e.target.value })}
-                                className="w-full bg-neutral-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
-                                placeholder="e.g. #Workshop, #Coding, #Free"
+                    {/* Schedule & Venue Section */}
+                    <StaggerItem className="bg-neutral-900/50 border border-white/10 rounded-3xl p-8 backdrop-blur-sm relative group mt-6 z-20">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-pink-500/5 rounded-full blur-3xl -z-10 group-hover:bg-pink-500/10 transition-colors" />
+                        
+                        <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                            <span className="w-10 h-10 rounded-xl bg-pink-500/10 flex items-center justify-center text-xl">📍</span>
+                            Schedule & Venue
+                        </h2>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                            <DateTimePicker 
+                                label="Date" 
+                                value={formData.date} 
+                                onChange={handleDateChange} 
+                                type="date" 
+                            />
+                            <DateTimePicker 
+                                label="Time" 
+                                value={formData.time} 
+                                onChange={handleTimeChange} 
+                                type="time" 
                             />
                         </div>
 
-                        <div className="flex items-center gap-4">
-                            <div className="flex-1">
-                                <label className="block text-sm font-medium text-neutral-400 mb-2">Event Type</label>
-                                <div className="flex items-center gap-4 p-1 bg-neutral-900 rounded-xl border border-white/10">
+                        <div>
+                            <label className="block text-sm font-medium text-neutral-400 mb-2">Venue Location</label>
+                            <input
+                                type="text"
+                                name="venue"
+                                value={formData.venue}
+                                onChange={handleInputChange}
+                                className="w-full bg-neutral-800/50 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-pink-500 focus:bg-neutral-800 transition-all placeholder:text-neutral-600"
+                                placeholder="e.g., Auditorium A, Main Campus"
+                                required
+                            />
+                        </div>
+                    </StaggerItem>
+
+                    {/* Capacity & Pricing Section */}
+                    <StaggerItem className="bg-neutral-900/50 border border-white/10 rounded-3xl p-8 backdrop-blur-sm relative overflow-hidden group mt-6">
+                        <div className="absolute top-0 right-0 w-64 h-64 bg-blue-500/5 rounded-full blur-3xl -z-10 group-hover:bg-blue-500/10 transition-colors" />
+                        
+                        <h2 className="text-2xl font-bold mb-6 flex items-center gap-3">
+                            <span className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-xl">🎟️</span>
+                            Capacity & Pricing
+                        </h2>
+
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <div>
+                                <label className="block text-sm font-medium text-neutral-400 mb-2">Total Capacity</label>
+                                <input
+                                    type="number"
+                                    name="capacity"
+                                    value={formData.capacity}
+                                    onChange={handleInputChange}
+                                    className="w-full bg-neutral-800/50 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 focus:bg-neutral-800 transition-all placeholder:text-neutral-600"
+                                    placeholder="e.g., 100"
+                                    min="1"
+                                    required
+                                />
+                            </div>
+                            <div>
+                                <label className="block text-sm font-medium text-neutral-400 mb-2">Ticket Type</label>
+                                <div className="flex bg-neutral-800/50 rounded-xl p-1 border border-white/10">
                                     <button
                                         type="button"
-                                        onClick={() => setFormData({ ...formData, is_paid: false })}
-                                        className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${!formData.is_paid ? 'bg-blue-600 text-white shadow-lg' : 'text-neutral-400 hover:text-white'}`}
+                                        onClick={() => setFormData(prev => ({ ...prev, is_paid: false, price: '0' }))}
+                                        className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+                                            !formData.is_paid 
+                                                ? 'bg-blue-600 text-white shadow-lg' 
+                                                : 'text-neutral-400 hover:text-white'
+                                        }`}
                                     >
                                         Free
                                     </button>
                                     <button
                                         type="button"
-                                        onClick={() => setFormData({ ...formData, is_paid: true })}
-                                        className={`flex-1 py-2 rounded-lg text-sm font-medium transition-all ${formData.is_paid ? 'bg-blue-600 text-white shadow-lg' : 'text-neutral-400 hover:text-white'}`}
+                                        onClick={() => setFormData(prev => ({ ...prev, is_paid: true }))}
+                                        className={`flex-1 py-2 rounded-lg text-sm font-bold transition-all ${
+                                            formData.is_paid 
+                                                ? 'bg-blue-600 text-white shadow-lg' 
+                                                : 'text-neutral-400 hover:text-white'
+                                        }`}
                                     >
                                         Paid
                                     </button>
                                 </div>
                             </div>
+                        </div>
+
+                        <AnimatePresence>
                             {formData.is_paid && (
-                                <div className="flex-1">
-                                    <label className="block text-sm font-medium text-neutral-400 mb-2">Price (₹)</label>
-                                    <input
-                                        type="number"
-                                        value={formData.price}
-                                        onChange={(e) => setFormData({ ...formData, price: parseInt(e.target.value) })}
-                                        className="w-full bg-neutral-900 border border-white/10 rounded-xl px-4 py-3 focus:outline-none focus:border-blue-500 transition-colors"
-                                    />
-                                </div>
-                            )}
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-neutral-300 mb-2">Description</label>
-                            <textarea
-                                name="description"
-                                value={formData.description}
-                                onChange={handleChange}
-                                className="w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white focus:border-purple-500/50 focus:outline-none h-32"
-                                placeholder="Describe your event..."
-                                required
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-neutral-300 mb-2">Event Outcomes</label>
-                            <textarea
-                                name="outcomes"
-                                value={formData.outcomes}
-                                onChange={handleChange}
-                                className="w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white focus:border-purple-500/50 focus:outline-none h-24"
-                                placeholder="What will students learn or gain?"
-                            />
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-neutral-300 mb-2">Event Images (Max 3)</label>
-                            <div className="grid grid-cols-3 gap-4 mb-4">
-                                {formData.images.map((img, idx) => (
-                                    <div key={idx} className="relative aspect-video rounded-xl overflow-hidden group">
-                                        <img src={img} alt={`Event ${idx + 1}`} className="w-full h-full object-cover" />
-                                        <button
-                                            type="button"
-                                            onClick={() => removeImage(idx)}
-                                            className="absolute top-2 right-2 p-1 bg-red-500 rounded-full text-white opacity-0 group-hover:opacity-100 transition-opacity"
-                                        >
-                                            ✕
-                                        </button>
+                                <motion.div
+                                    initial={{ height: 0, opacity: 0 }}
+                                    animate={{ height: 'auto', opacity: 1 }}
+                                    exit={{ height: 0, opacity: 0 }}
+                                    className="overflow-hidden"
+                                >
+                                    <div className="pt-6">
+                                        <label className="block text-sm font-medium text-neutral-400 mb-2">Ticket Price (₹)</label>
+                                        <div className="relative">
+                                            <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500">₹</span>
+                                            <input
+                                                type="number"
+                                                name="price"
+                                                value={formData.price}
+                                                onChange={handleInputChange}
+                                                className="w-full bg-neutral-800/50 border border-white/10 rounded-xl pl-8 pr-4 py-3 focus:outline-none focus:border-blue-500 focus:bg-neutral-800 transition-all"
+                                                placeholder="0.00"
+                                                min="0"
+                                                step="0.01"
+                                                required={formData.is_paid}
+                                            />
+                                        </div>
                                     </div>
-                                ))}
-                                {formData.images.length < 3 && (
-                                    <label className="flex flex-col items-center justify-center aspect-video rounded-xl border-2 border-dashed border-white/10 hover:border-purple-500/50 hover:bg-white/5 transition-all cursor-pointer">
-                                        <span className="text-2xl mb-2">📷</span>
-                                        <span className="text-xs text-neutral-400">Upload Image</span>
-                                        <input
-                                            type="file"
-                                            accept="image/*"
-                                            multiple
-                                            onChange={handleImageUpload}
-                                            className="hidden"
-                                            disabled={uploading}
-                                        />
-                                    </label>
-                                )}
-                            </div>
-                        </div>
-                    </div>
-                </section>
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+                    </StaggerItem>
+                </StaggerContainer>
 
-                {/* Schedule & Venue */}
-                <section className="p-6 rounded-3xl bg-neutral-900/50 border border-white/10">
-                    <h2 className="text-xl font-bold mb-6 text-blue-400">Schedule & Venue</h2>
-                    <div className="space-y-6">
-                        <div className="grid grid-cols-2 gap-6">
-                            <div>
-                                <label className="block text-sm font-medium text-neutral-300 mb-2">Date</label>
-                                <input
-                                    name="date"
-                                    value={formData.date}
-                                    onChange={handleChange}
-                                    type="date"
-                                    className="w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white focus:border-blue-500/50 focus:outline-none"
-                                    required
-                                />
-                            </div>
-                            <div>
-                                <label className="block text-sm font-medium text-neutral-300 mb-2">Time</label>
-                                <input
-                                    name="time"
-                                    value={formData.time}
-                                    onChange={handleChange}
-                                    type="time"
-                                    className="w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white focus:border-blue-500/50 focus:outline-none"
-                                    required
-                                />
-                            </div>
-                        </div>
-
-                        <div>
-                            <label className="block text-sm font-medium text-neutral-300 mb-2">Venue</label>
-                            <input
-                                name="venue"
-                                value={formData.venue}
-                                onChange={handleChange}
-                                type="text"
-                                className="w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white focus:border-blue-500/50 focus:outline-none"
-                                placeholder="e.g. Main Auditorium"
-                                required
-                            />
-                        </div>
-                    </div>
-                </section>
-
-                <div className="flex justify-end gap-4">
-                    <button type="button" className="px-8 py-3 rounded-xl border border-white/10 hover:bg-white/5 font-bold transition-colors">Cancel</button>
-                    <button type="submit" className="px-8 py-3 rounded-xl bg-purple-600 hover:bg-purple-500 text-white font-bold shadow-lg shadow-purple-900/20 transition-colors">Create Event</button>
+                <div className="flex gap-4 pt-4">
+                    <button
+                        type="button"
+                        onClick={() => router.back()}
+                        className="flex-1 py-4 rounded-xl bg-neutral-800 hover:bg-neutral-700 text-white font-bold transition-colors"
+                    >
+                        Cancel
+                    </button>
+                    <button
+                        type="submit"
+                        disabled={loading}
+                        className="flex-[2] py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold shadow-lg shadow-purple-900/20 transition-all hover:scale-[1.02] active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2"
+                    >
+                        {loading ? (
+                            <>
+                                <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                Creating...
+                            </>
+                        ) : (
+                            <>
+                                <span>🚀</span> Create Event
+                            </>
+                        )}
+                    </button>
                 </div>
             </form>
-        </div>
+        </MotionWrapper>
     );
 }
