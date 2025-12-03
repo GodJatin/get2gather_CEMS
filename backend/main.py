@@ -4,7 +4,7 @@ from database import engine, Base
 from routers import auth, events, bookings, media, feed, volunteers, leaderboard, stats, scan, social, student, admin
 import time
 
-app = FastAPI(title="Get2Gather API")
+app = FastAPI(title="Get2Gather API", root_path="/api")
 
 @app.on_event("startup")
 def on_startup():
