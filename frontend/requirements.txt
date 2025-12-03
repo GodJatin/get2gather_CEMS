@@ -10,3 +10,4 @@ resend
 qrcode[pil]
 psycopg2-binary
 email-validator
+pydantic[email]
