@@ -1,32 +1,30 @@
 import sys
 import os
+import traceback
 
-# Raw ASGI app - No dependencies required
-async def app(scope, receive, send):
-    try:
-        # Check if we can import fastapi
-        import fastapi
-        has_fastapi = True
-    except ImportError:
-        has_fastapi = False
+# Add the backend directory to the sys.path
+# frontend/api/index.py -> frontend/backend
+sys.path.append(os.path.join(os.path.dirname(__file__), '../backend'))
 
-    try:
-        # Check if we can import sqlalchemy
-        import sqlalchemy
-        has_sqlalchemy = True
-    except ImportError:
-        has_sqlalchemy = False
-
-    body_content = f"Dependency Check:\nFastAPI: {has_fastapi}\nSQLAlchemy: {has_sqlalchemy}\nPython: {sys.version}"
+try:
+    # Try to import the real FastAPI app
+    from main import app
+except Exception as e:
+    # Safe Mode: If import fails (e.g. missing library), create a dummy app to show the error
+    from fastapi import FastAPI, Request
+    from fastapi.responses import JSONResponse
     
-    await send({
-        'type': 'http.response.start',
-        'status': 200,
-        'headers': [
-            [b'content-type', b'text/plain'],
-        ],
-    })
-    await send({
-        'type': 'http.response.body',
-        'body': body_content.encode('utf-8'),
-    })
+    app = FastAPI()
+    error_msg = traceback.format_exc()
+    
+    @app.api_route("/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"])
+    async def catch_all_error(request: Request, path_name: str):
+        return JSONResponse(
+            status_code=500,
+            content={
+                "status": "CRITICAL_STARTUP_ERROR",
+                "message": "The backend failed to start.",
+                "error": str(e),
+                "traceback": error_msg.split("\n")
+            }
+        )
