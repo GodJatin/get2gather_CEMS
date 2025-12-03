@@ -1,4 +1,10 @@
 {
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "/vercel_entry/index.py"
+    }
+  ],
   "headers": [
     {
       "source": "/api/(.*)",
