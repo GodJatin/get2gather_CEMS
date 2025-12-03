@@ -49,23 +49,22 @@ app.include_router(admin.router, prefix="/api")
 def read_root():
     return {"message": "Welcome to Get2Gather API (Root)"}
 
-@app.get("/api")
-def read_api_root():
-    import os
-    db_url = os.getenv("DATABASE_URL", "Not Set")
-    # Mask the password if present
-    if "://" in db_url:
-        try:
-            part1, part2 = db_url.split("://")
-            if "@" in part2:
-                creds, host = part2.split("@")
-                db_url = f"{part1}://****@{host}"
-        except:
-            pass
-            
+@app.middleware("http")
+async def add_debug_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Debug-Path"] = request.url.path
+    response.headers["X-Debug-Method"] = request.method
+    return response
+
+# ... routers included ...
+
+@app.api_route("/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
+async def catch_all(request: Request, path_name: str):
     return {
-        "message": "Welcome to Get2Gather API",
-        "status": "Running",
-        "db_url_configured": db_url != "Not Set",
-        "db_url_preview": db_url
+        "status": "404/405 Debug",
+        "message": "Route not found or method not allowed",
+        "received_path": path_name,
+        "method": request.method,
+        "base_url": str(request.base_url),
+        "routers_loaded": [r.path_format for r in app.routes]
     }
