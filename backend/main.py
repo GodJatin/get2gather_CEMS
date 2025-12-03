@@ -25,6 +25,7 @@ app.add_middleware(
         "http://127.0.0.1:8000",
         "https://get2gather-cems.vercel.app",
         "https://get2gather-cems-git-main-godjatins-projects.vercel.app"
+    ],
 # ... routers included ...
 
 @app.api_route("/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"])
