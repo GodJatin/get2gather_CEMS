@@ -25,11 +25,30 @@ async def app(scope, receive, send):
         await app_instance(scope, receive, send)
         return
 
-    # Otherwise, return the startup error as JSON using raw ASGI (No dependencies needed)
+    # Gather debug info
+    cwd = os.getcwd()
+    try:
+        ls_cwd = os.listdir(cwd)
+    except:
+        ls_cwd = "Error listing cwd"
+        
+    try:
+        ls_api = os.listdir(os.path.dirname(__file__))
+    except:
+        ls_api = "Error listing api dir"
+
+    # Return the startup error as JSON using raw ASGI
     error_content = json.dumps({
         "status": "CRITICAL_STARTUP_ERROR",
-        "message": "The backend failed to start. Likely missing dependencies.",
-        "traceback": startup_error.split("\n") if startup_error else ["Unknown error"]
+        "message": "The backend failed to start.",
+        "traceback": startup_error.split("\n") if startup_error else ["Unknown error"],
+        "debug_info": {
+            "cwd": cwd,
+            "ls_cwd": ls_cwd,
+            "api_dir": os.path.dirname(__file__),
+            "ls_api": ls_api,
+            "sys_path": sys.path
+        }
     }).encode('utf-8')
 
     await send({
