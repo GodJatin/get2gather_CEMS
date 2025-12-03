@@ -1,0 +1,9 @@
+{
+  "redirects": [
+    {
+      "source": "/vercel-test-frontend",
+      "destination": "https://google.com",
+      "permanent": false
+    }
+  ]
+}
