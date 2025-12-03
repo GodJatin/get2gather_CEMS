@@ -16,13 +16,22 @@ def on_startup():
     except Exception as e:
         print(f"Startup Error: {e}")
 
+@app.middleware("http")
+async def strip_api_prefix(request: Request, call_next):
+    if request.url.path.startswith("/api"):
+        request.scope["path"] = request.url.path[4:]
+    response = await call_next(request)
+    return response
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
         "http://localhost:3000", 
         "http://127.0.0.1:3000",
         "http://localhost:8000",
-        "http://127.0.0.1:8000"
+        "http://127.0.0.1:8000",
+        "https://get2gather-cems.vercel.app",
+        "https://get2gather-cems-git-main-godjatins-projects.vercel.app"
     ],
     allow_credentials=True,
     allow_methods=["*"],
