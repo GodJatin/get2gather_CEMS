@@ -9,3 +9,4 @@ python-dotenv
 resend
 qrcode[pil]
 psycopg2-binary
+email-validator
