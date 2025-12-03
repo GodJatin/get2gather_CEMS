@@ -5,6 +5,7 @@ import { useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api';
 import BookingSuccessModal from '@/components/BookingSuccessModal';
+import VolunteerSuccessModal from '@/components/VolunteerSuccessModal';
 import { triggerConfetti } from '@/components/Confetti';
 
 interface Event {
@@ -37,6 +38,9 @@ export default function EventDetailsPage() {
     const [toastMessage, setToastMessage] = useState('');
     const [onWaitlist, setOnWaitlist] = useState(false);
     const [showSuccessModal, setShowSuccessModal] = useState(false);
+    const [showVolunteerModal, setShowVolunteerModal] = useState(false);
+    const [bookingStatus, setBookingStatus] = useState<'idle' | 'submitting' | 'confirming' | 'confirmed'>('idle');
+    const [volunteerStatus, setVolunteerStatus] = useState<'idle' | 'submitting' | 'confirming' | 'confirmed'>('idle');
 
     const fetchEvent = async () => {
         try {
@@ -97,12 +101,19 @@ export default function EventDetailsPage() {
     const handleBooking = async () => {
         if (!event) return;
         try {
+            setBookingStatus('submitting');
             await api.post('/bookings/', { event_id: event.id });
-            setShowSuccessModal(true);
-            setIsBooked(true);
-            fetchEvent(); // Refresh seats
-            triggerConfetti();
+            
+            setBookingStatus('confirming');
+            setTimeout(() => {
+                setBookingStatus('confirmed');
+                setShowSuccessModal(true);
+                setIsBooked(true);
+                fetchEvent(); // Refresh seats
+                triggerConfetti();
+            }, 1500);
         } catch (error: any) {
+            setBookingStatus('idle');
             alert(error.response?.data?.detail || 'Booking failed');
         }
     };
@@ -145,6 +156,7 @@ export default function EventDetailsPage() {
             </div>
 
             <BookingSuccessModal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} />
+            <VolunteerSuccessModal isOpen={showVolunteerModal} onClose={() => setShowVolunteerModal(false)} />
             
             {/* Waitlist Warning Modal */}
             <AnimatePresence>
@@ -382,9 +394,29 @@ export default function EventDetailsPage() {
                                             ) : (
                                                 <button
                                                     onClick={handleBooking}
-                                                    className="w-full py-4 rounded-xl bg-primary hover:bg-primary/80 text-white font-bold shadow-lg shadow-primary/20 transition-all"
+                                                    disabled={bookingStatus !== 'idle'}
+                                                    className={`w-full py-4 rounded-xl font-bold shadow-lg transition-all flex items-center justify-center gap-2 ${
+                                                        bookingStatus === 'idle' 
+                                                            ? 'bg-primary hover:bg-primary/80 text-white shadow-primary/20' 
+                                                            : 'bg-neutral-800 text-neutral-400 cursor-wait'
+                                                    }`}
                                                 >
-                                                    Book Seat Now
+                                                    {bookingStatus === 'idle' && 'Book Seat Now'}
+                                                    {bookingStatus === 'submitting' && (
+                                                        <>
+                                                            <span className="animate-spin">⏳</span> Submitting Request...
+                                                        </>
+                                                    )}
+                                                    {bookingStatus === 'confirming' && (
+                                                        <>
+                                                            <span className="animate-pulse">🔒</span> Confirming Seat...
+                                                        </>
+                                                    )}
+                                                    {bookingStatus === 'confirmed' && (
+                                                        <>
+                                                            <span>✅</span> Confirmed!
+                                                        </>
+                                                    )}
                                                 </button>
                                             )
                                         ) : (
@@ -420,17 +452,43 @@ export default function EventDetailsPage() {
                                         <button
                                             onClick={async () => {
                                                 try {
+                                                    setVolunteerStatus('submitting');
                                                     await api.post(`/events/${event.id}/volunteer`);
-                                                    setToastMessage('Applied for volunteer!');
-                                                    setShowToast(true);
-                                                    setTimeout(() => setShowToast(false), 3000);
+                                                    
+                                                    setVolunteerStatus('confirming');
+                                                    setTimeout(() => {
+                                                        setVolunteerStatus('confirmed');
+                                                        setShowVolunteerModal(true);
+                                                        triggerConfetti();
+                                                    }, 1500);
                                                 } catch (error: any) {
+                                                    setVolunteerStatus('idle');
                                                     alert(error.response?.data?.detail || 'Failed to apply');
                                                 }
                                             }}
-                                            className="w-full mt-3 py-3 rounded-xl bg-white/5 hover:bg-white/10 text-neutral-300 font-medium transition-colors border border-white/10"
+                                            disabled={volunteerStatus !== 'idle'}
+                                            className={`w-full mt-3 py-3 rounded-xl font-medium transition-colors border flex items-center justify-center gap-2 ${
+                                                volunteerStatus === 'idle'
+                                                    ? 'bg-white/5 hover:bg-white/10 text-neutral-300 border-white/10'
+                                                    : 'bg-neutral-800 text-neutral-400 border-neutral-700 cursor-wait'
+                                            }`}
                                         >
-                                            ✋ Apply as Volunteer
+                                            {volunteerStatus === 'idle' && '✋ Apply as Volunteer'}
+                                            {volunteerStatus === 'submitting' && (
+                                                <>
+                                                    <span className="animate-spin">⏳</span> Sending Application...
+                                                </>
+                                            )}
+                                            {volunteerStatus === 'confirming' && (
+                                                <>
+                                                    <span className="animate-pulse">📨</span> Verifying...
+                                                </>
+                                            )}
+                                            {volunteerStatus === 'confirmed' && (
+                                                <>
+                                                    <span>✅</span> Application Sent!
+                                                </>
+                                            )}
                                         </button>
                                     </>
                                 );

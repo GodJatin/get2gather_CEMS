@@ -24,6 +24,7 @@ interface UserProfile {
 }
 
 import Counter from '@/components/Counter';
+import LockedFeatureModal from '@/components/LockedFeatureModal';
 
 interface StudentStats {
     rank: number;
@@ -43,6 +44,7 @@ export default function ProfilePage() {
     const [stats, setStats] = useState<StudentStats | null>(null);
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [loading, setLoading] = useState(true);
+    const [showLockedModal, setShowLockedModal] = useState(false);
 
     useEffect(() => {
         const fetchData = async () => {
@@ -149,7 +151,7 @@ export default function ProfilePage() {
                             </div>
                             <span className="text-3xl mb-2 block relative z-10">🎟️</span>
                             <span className="text-3xl font-bold block text-white mb-1 relative z-10">
-                                <Counter value={stats?.total_bookings || 0} />
+                                <Counter value={(stats?.total_bookings || 0) + (stats?.total_volunteer || 0)} />
                             </span>
                             <span className="text-sm text-neutral-400 relative z-10">Events Booked</span>
                             <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-[#F72585] to-[#7209B7]" />
@@ -161,9 +163,21 @@ export default function ProfilePage() {
                             </div>
                             <span className="text-3xl mb-2 block relative z-10">✅</span>
                             <span className="text-3xl font-bold block text-white mb-1 relative z-10">
-                                <Counter value={eventsAttended} />
+                                <Counter value={(user.bookings_count || 0) + (user.volunteer_count || 0)} />
                             </span>
                             <span className="text-sm text-neutral-400 relative z-10">Events Attended</span>
+                            
+                            <div className="mt-4 pt-4 border-t border-white/5 grid grid-cols-2 gap-2 relative z-10">
+                                <div>
+                                    <span className="block text-xs text-neutral-500 uppercase tracking-wider">Attendee</span>
+                                    <span className="text-lg font-bold text-[#00FF94]"><Counter value={user.bookings_count || 0} /></span>
+                                </div>
+                                <div>
+                                    <span className="block text-xs text-neutral-500 uppercase tracking-wider">Volunteer</span>
+                                    <span className="text-lg font-bold text-[#00F0FF]"><Counter value={user.volunteer_count || 0} /></span>
+                                </div>
+                            </div>
+
                             <div className="absolute bottom-0 left-0 w-full h-1 bg-gradient-to-r from-[#00FF94] to-[#00F0FF]" />
                         </motion.div>
 
@@ -242,18 +256,25 @@ export default function ProfilePage() {
                     <div className="bg-neutral-900/50 border border-white/10 rounded-[2rem] p-8">
                         <h3 className="text-xl font-bold mb-6">Account Settings</h3>
                         <div className="space-y-3">
-                            <button className="w-full text-left px-6 py-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all flex justify-between items-center group border border-white/5 hover:border-white/10">
+                            <button onClick={() => setShowLockedModal(true)} className="w-full text-left px-6 py-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all flex justify-between items-center group border border-white/5 hover:border-white/10">
                                 <span className="font-medium group-hover:text-white transition-colors">Edit Profile</span>
                                 <span className="text-neutral-500 group-hover:text-[#00F0FF] transition-colors transform group-hover:translate-x-1">→</span>
                             </button>
-                            <button className="w-full text-left px-6 py-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all flex justify-between items-center group border border-white/5 hover:border-white/10">
+                            <button onClick={() => setShowLockedModal(true)} className="w-full text-left px-6 py-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all flex justify-between items-center group border border-white/5 hover:border-white/10">
                                 <span className="font-medium group-hover:text-white transition-colors">Change Password</span>
                                 <span className="text-neutral-500 group-hover:text-[#00F0FF] transition-colors transform group-hover:translate-x-1">→</span>
                             </button>
-                        </div>
                     </div>
                 </div>
             </div>
+            </div>
+            
+            <LockedFeatureModal 
+                isOpen={showLockedModal} 
+                onClose={() => setShowLockedModal(false)}
+                featureName="Account Settings"
+                requiredPoints={1000}
+            />
         </MotionWrapper>
     );
 }

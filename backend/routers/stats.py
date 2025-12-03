@@ -29,8 +29,10 @@ async def get_student_stats(current_user: User = Depends(get_current_user), db: 
             raise HTTPException(status_code=404, detail="Student profile not found")
 
         # Count bookings
+        print(f"DEBUG: Counting bookings for student_id: {student.id}")
         booking_res = db.execute(select(func.count(Booking.id)).where(Booking.student_id == student.id))
         total_bookings = booking_res.scalar() or 0
+        print(f"DEBUG: Total bookings found: {total_bookings}")
 
         # Count volunteer
         volunteer_res = db.execute(select(func.count(Volunteer.id)).where(Volunteer.user_id == current_user.id, Volunteer.status == "Approved"))

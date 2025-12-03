@@ -3,6 +3,10 @@
 import { useState, useEffect } from 'react';
 import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';
 import api from '@/lib/api';
+import confetti from 'canvas-confetti';
+import RewardCard from '@/components/RewardCard';
+import HistoryItem from '@/components/HistoryItem';
+import Counter from '@/components/Counter';
 
 export default function PointsPage() {
     const [points, setPoints] = useState(0);
@@ -37,13 +41,44 @@ export default function PointsPage() {
         init();
     }, []);
 
-    const handleRedeem = async (cost: number, itemName: string) => {
+    const triggerConfetti = () => {
+        const duration = 3 * 1000;
+        const animationEnd = Date.now() + duration;
+        const defaults = { startVelocity: 30, spread: 360, ticks: 60, zIndex: 0 };
+
+        const random = (min: number, max: number) => Math.random() * (max - min) + min;
+
+        const interval: any = setInterval(function() {
+            const timeLeft = animationEnd - Date.now();
+
+            if (timeLeft <= 0) {
+                return clearInterval(interval);
+            }
+
+            const particleCount = 50 * (timeLeft / duration);
+            confetti({
+                ...defaults, 
+                particleCount,
+                origin: { x: random(0.1, 0.3), y: Math.random() - 0.2 }
+            });
+            confetti({
+                ...defaults, 
+                particleCount,
+                origin: { x: random(0.7, 0.9), y: Math.random() - 0.2 }
+            });
+        }, 250);
+    };
+
+    const handleRedeem = async (id: number, itemName: string, cost: number) => {
         if (confirm(`Are you sure you want to redeem ${itemName} for ${cost} points?`)) {
             try {
                 await api.post('/student/spend', { amount: cost, description: `Redeemed: ${itemName}` });
-                alert('Redemption successful!');
-                fetchPoints(); // Refresh balance
-                fetchHistory(); // Refresh history
+                triggerConfetti();
+                // Optimistic update
+                setPoints(prev => prev - cost);
+                // Refresh real data
+                fetchPoints(); 
+                fetchHistory(); 
             } catch (error) {
                 alert('Failed to redeem. Insufficient points?');
             }
@@ -51,87 +86,110 @@ export default function PointsPage() {
     };
 
     const rewards = [
-        { id: 1, name: 'Canteen Coupon (₹50)', cost: 200, icon: '🍔', color: 'bg-orange-500' },
-        { id: 2, name: 'Library Fine Waiver', cost: 500, icon: '📚', color: 'bg-blue-500' },
-        { id: 3, name: 'Priority Event Pass', cost: 800, icon: '🎫', color: 'bg-purple-500' },
-        { id: 4, name: 'Exclusive Merch', cost: 1500, icon: '👕', color: 'bg-green-500' },
+        { id: 1, name: 'Canteen Coupon (₹50)', cost: 200, icon: '🍔', color: 'from-orange-500 to-red-500' },
+        { id: 2, name: 'Library Fine Waiver', cost: 500, icon: '📚', color: 'from-blue-500 to-indigo-500' },
+        { id: 3, name: 'Priority Event Pass', cost: 800, icon: '🎫', color: 'from-purple-500 to-pink-500' },
+        { id: 4, name: 'Exclusive Merch', cost: 1500, icon: '👕', color: 'from-green-500 to-emerald-500' },
+        { id: 5, name: 'Workshop Discount', cost: 1000, icon: '💡', color: 'from-yellow-500 to-orange-500' },
+        { id: 6, name: 'Profile Badge', cost: 300, icon: '🏅', color: 'from-teal-500 to-cyan-500' },
     ];
 
-    if (loading) return <div className="p-8 text-center text-neutral-400">Loading points...</div>;
+    if (loading) return (
+        <div className="min-h-screen flex items-center justify-center">
+            <div className="animate-spin rounded-full h-12 w-12 border-t-2 border-b-2 border-[#00F0FF]"></div>
+        </div>
+    );
 
     return (
-        <MotionWrapper className="max-w-6xl mx-auto p-6">
-            <header className="mb-12 text-center">
-                <h1 className="text-4xl font-bold mb-4">Points & Rewards</h1>
-                <p className="text-neutral-400">Earn points by participating and redeem them for cool rewards!</p>
+        <MotionWrapper className="max-w-7xl mx-auto p-6 space-y-12">
+            <header className="text-center relative py-10">
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-[#00F0FF]/20 blur-[100px] rounded-full pointer-events-none" />
+                <h1 className="text-6xl font-black mb-4 bg-gradient-to-r from-[#00F0FF] via-white to-[#00FF94] bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(0,240,255,0.5)]">
+                    POINTS SHOP
+                </h1>
+                <p className="text-xl text-neutral-400 max-w-2xl mx-auto">
+                    Turn your participation into premium rewards. Earn points, level up, and claim your prizes.
+                </p>
             </header>
 
-            {/* Points Balance Card */}
-            <div className="mb-12 grid grid-cols-1 md:grid-cols-2 gap-8">
-                <div className="bg-gradient-to-r from-yellow-600/20 to-orange-600/20 border border-yellow-500/30 rounded-3xl p-8 text-center relative overflow-hidden">
-                    <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/stardust.png')] opacity-20"></div>
-                    <h2 className="text-2xl font-bold mb-2 relative z-10">Available Balance</h2>
-                    <div className="text-6xl font-bold text-yellow-400 mb-4 relative z-10">{points}</div>
-                    <p className="text-yellow-200/70 relative z-10">Points ready to spend</p>
+            {/* Points Balance Section */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="relative overflow-hidden bg-neutral-900/50 border border-[#00F0FF]/30 rounded-[2.5rem] p-10 group">
+                    <div className="absolute top-0 right-0 w-64 h-64 bg-[#00F0FF]/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/2 group-hover:bg-[#00F0FF]/20 transition-colors duration-500" />
+                    
+                    <h2 className="text-xl font-bold text-neutral-400 mb-2 uppercase tracking-widest">Available Balance</h2>
+                    <div className="flex items-baseline gap-4">
+                        <span className="text-7xl font-black text-white drop-shadow-[0_0_15px_rgba(255,255,255,0.5)]">
+                            <Counter value={points} />
+                        </span>
+                        <span className="text-2xl text-[#00F0FF] font-bold">PTS</span>
+                    </div>
+                    <p className="mt-4 text-neutral-500">Ready to spend on exclusive rewards</p>
                 </div>
-                <div className="bg-neutral-900/50 border border-white/10 rounded-3xl p-8 text-center flex flex-col justify-center">
-                    <h2 className="text-xl font-bold mb-2 text-neutral-400">Total Collected</h2>
-                    <div className="text-4xl font-bold text-white mb-2">{totalPoints}</div>
-                    <p className="text-sm text-neutral-500">Lifetime earnings</p>
+
+                <div className="relative overflow-hidden bg-neutral-900/50 border border-white/10 rounded-[2.5rem] p-10 flex flex-col justify-center group">
+                    <div className="absolute bottom-0 left-0 w-64 h-64 bg-[#00FF94]/5 rounded-full blur-3xl translate-y-1/2 -translate-x-1/2 group-hover:bg-[#00FF94]/10 transition-colors duration-500" />
+                    
+                    <h2 className="text-xl font-bold text-neutral-400 mb-2 uppercase tracking-widest">Lifetime Earnings</h2>
+                    <div className="flex items-baseline gap-4">
+                        <span className="text-5xl font-bold text-white">
+                            <Counter value={totalPoints} />
+                        </span>
+                        <span className="text-xl text-[#00FF94] font-bold">PTS</span>
+                    </div>
+                    <p className="mt-4 text-neutral-500">Total points accumulated since joining</p>
                 </div>
             </div>
 
-            <div className="grid grid-cols-1 lg:grid-cols-2 gap-12">
-                {/* Rewards Shop */}
-                <section>
-                    <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                        <span>🛍️</span> Rewards Shop
-                    </h2>
-                    <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+                {/* Rewards Grid */}
+                <section className="lg:col-span-2">
+                    <div className="flex items-center justify-between mb-8">
+                        <h2 className="text-3xl font-bold flex items-center gap-3">
+                            <span className="text-4xl">🛍️</span> 
+                            <span className="bg-gradient-to-r from-white to-neutral-400 bg-clip-text text-transparent">Exclusive Rewards</span>
+                        </h2>
+                        <div className="px-4 py-1 rounded-full bg-white/5 border border-white/10 text-xs font-mono text-neutral-400">
+                            REFRESHES WEEKLY
+                        </div>
+                    </div>
+                    
+                    <StaggerContainer className="grid grid-cols-1 sm:grid-cols-2 gap-6">
                         {rewards.map((reward) => (
-                            <StaggerItem key={reward.id} className="bg-neutral-900/50 border border-white/10 rounded-2xl p-4 flex flex-col items-center text-center hover:border-white/20 transition-colors group">
-                                <div className={`w-16 h-16 rounded-2xl ${reward.color} flex items-center justify-center text-3xl mb-4 shadow-lg group-hover:scale-110 transition-transform`}>
-                                    {reward.icon}
-                                </div>
-                                <h3 className="font-bold mb-1">{reward.name}</h3>
-                                <p className="text-yellow-500 font-bold mb-4">{reward.cost} pts</p>
-                                <button 
-                                    onClick={() => handleRedeem(reward.cost, reward.name)}
-                                    disabled={points < reward.cost}
-                                    className={`w-full py-2 rounded-xl font-bold text-sm transition-colors ${
-                                        points >= reward.cost 
-                                            ? 'bg-white text-black hover:bg-neutral-200' 
-                                            : 'bg-white/5 text-neutral-500 cursor-not-allowed'
-                                    }`}
-                                >
-                                    {points >= reward.cost ? 'Redeem' : 'Not Enough Points'}
-                                </button>
+                            <StaggerItem key={reward.id}>
+                                <RewardCard 
+                                    {...reward} 
+                                    canAfford={points >= reward.cost}
+                                    onRedeem={handleRedeem}
+                                />
                             </StaggerItem>
                         ))}
                     </StaggerContainer>
                 </section>
 
-                {/* History */}
+                {/* History Sidebar */}
                 <section>
-                    <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
-                        <span>📜</span> History
+                    <h2 className="text-3xl font-bold mb-8 flex items-center gap-3">
+                        <span className="text-4xl">📜</span>
+                        <span className="bg-gradient-to-r from-white to-neutral-400 bg-clip-text text-transparent">Transaction History</span>
                     </h2>
-                    <div className="bg-neutral-900/50 border border-white/10 rounded-3xl overflow-hidden">
+                    
+                    <div className="bg-neutral-900/30 border border-white/5 rounded-[2rem] p-6 backdrop-blur-sm h-[600px] overflow-y-auto custom-scrollbar">
                         {history.length > 0 ? (
                             history.map((item, i) => (
-                                <div key={item.id} className={`p-4 flex justify-between items-center ${i !== history.length - 1 ? 'border-b border-white/5' : ''}`}>
-                                    <div>
-                                        <p className="font-bold">{item.action}</p>
-                                        <p className="text-xs text-neutral-500">{new Date(item.date).toLocaleDateString()}</p>
-                                    </div>
-                                    <span className={`font-bold ${item.points > 0 ? 'text-green-400' : 'text-red-400'}`}>
-                                        {item.points > 0 ? '+' : ''}{item.points}
-                                    </span>
-                                </div>
+                                <HistoryItem 
+                                    key={item.id}
+                                    action={item.description || item.action} // Handle both fields if backend varies
+                                    date={item.timestamp || item.date}
+                                    points={item.amount || item.points}
+                                    delay={i * 0.05}
+                                />
                             ))
                         ) : (
-                            <div className="p-8 text-center text-neutral-500">
-                                No transactions yet.
+                            <div className="h-full flex flex-col items-center justify-center text-center p-8 opacity-50">
+                                <span className="text-4xl mb-4">🕸️</span>
+                                <p className="text-neutral-400">No transactions yet.</p>
+                                <p className="text-xs text-neutral-600 mt-2">Earn points to see history here.</p>
                             </div>
                         )}
                     </div>

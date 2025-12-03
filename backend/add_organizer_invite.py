@@ -1,9 +1,9 @@
-import asyncio
 import sys
 from database import SessionLocal
 from models import OrganizerInvite
+from sqlalchemy import select
 
-async def add_invite(email: str, invite_code: str):
+def add_invite(email: str, invite_code: str):
     """
     Add a new organizer invite to the database.
     Usage: python add_organizer_invite.py <email> <invite_code>
@@ -12,10 +12,9 @@ async def add_invite(email: str, invite_code: str):
         print(f"❌ Error: Invite code must be exactly 8 characters long. Got: {len(invite_code)}")
         return
     
-    async with SessionLocal() as session:
+    with SessionLocal() as session:
         # Check if invite already exists
-        from sqlalchemy import select
-        result = await session.execute(
+        result = session.execute(
             select(OrganizerInvite).where(OrganizerInvite.email == email)
         )
         existing = result.scalar_one_or_none()
@@ -27,7 +26,7 @@ async def add_invite(email: str, invite_code: str):
             # Update the invite code and reset is_used
             existing.invite_code = invite_code
             existing.is_used = False
-            await session.commit()
+            session.commit()
             print(f"✅ Updated invite code for {email} to: {invite_code}")
         else:
             invite = OrganizerInvite(
@@ -36,7 +35,7 @@ async def add_invite(email: str, invite_code: str):
                 is_used=False
             )
             session.add(invite)
-            await session.commit()
+            session.commit()
             print(f"✅ Created new invite for {email} with code: {invite_code}")
 
 if __name__ == "__main__":
@@ -48,4 +47,4 @@ if __name__ == "__main__":
     email = sys.argv[1]
     invite_code = sys.argv[2]
     
-    asyncio.run(add_invite(email, invite_code))
+    add_invite(email, invite_code)
