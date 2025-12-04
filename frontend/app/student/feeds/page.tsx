@@ -75,7 +75,7 @@ export default function FeedPage() {
         try {
             const params = filter === 'following' ? { following_only: true } : {};
             const response = await api.get('/feed/', { params });
-            setPosts(response.data);
+            setPosts(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
             console.error('Failed to fetch posts:', error);
         } finally {
@@ -86,7 +86,7 @@ export default function FeedPage() {
     const fetchEvents = async () => {
         try {
             const response = await api.get('/events/');
-            setEvents(response.data);
+            setEvents(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
             console.error('Failed to fetch events:', error);
         }

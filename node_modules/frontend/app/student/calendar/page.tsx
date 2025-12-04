@@ -43,7 +43,7 @@ export default function CalendarPage() {
         const fetchEvents = async () => {
             try {
                 const response = await api.get('/events/');
-                setEvents(response.data);
+                setEvents(Array.isArray(response.data) ? response.data : []);
             } catch (error) {
                 console.error('Failed to fetch events:', error);
             } finally {

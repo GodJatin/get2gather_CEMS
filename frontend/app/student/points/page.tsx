@@ -92,7 +92,7 @@ export default function PointsPage() {
         { id: 4, name: 'Exclusive Merch', cost: 1500, icon: '👕', color: 'from-green-500 to-emerald-500' },
         { id: 5, name: 'Workshop Discount', cost: 1000, icon: '💡', color: 'from-yellow-500 to-orange-500' },
         { id: 6, name: 'Profile Badge', cost: 300, icon: '🏅', color: 'from-teal-500 to-cyan-500' },
-    ];
+    ].sort((a, b) => a.cost - b.cost);
 
     if (loading) return (
         <div className="min-h-screen flex items-center justify-center">

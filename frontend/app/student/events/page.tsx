@@ -44,10 +44,10 @@ export default function EventsPage() {
                 setUser(userRes.data);
 
                 const eventsRes = await api.get('/events/');
-                setEvents(eventsRes.data);
+                setEvents(Array.isArray(eventsRes.data) ? eventsRes.data : []);
 
                 const trendingRes = await api.get('/events/trending');
-                setTrendingEvents(trendingRes.data);
+                setTrendingEvents(Array.isArray(trendingRes.data) ? trendingRes.data : []);
 
                 // Fetch user bookings to check status
                 const bookingsRes = await api.get('/bookings/my');
