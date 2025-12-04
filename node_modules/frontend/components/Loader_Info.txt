@@ -1,0 +1,2 @@
+Created File Name: components/Loader.tsx
+Used In: Landing Page (Hero Section) as a decorative element, and available for use in loading states.

@@ -1,0 +1,181 @@
+/* Card Container & 3D Flip */
+.wrapper {
+  position: relative;
+  z-index: 1;
+}
+
+.card {
+  width: 240px; /* Increased slightly from 190px for better fit */
+  height: 320px; /* Increased from 254px */
+  position: relative;
+  border-radius: 40px;
+  transition: all 0.8s;
+  perspective: 600px;
+  perspective-origin: center bottom;
+  background: transparent; /* Let blob show through or handle bg separately */
+  box-shadow: 0px 0px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* Blob / Gradient Light Effect */
+.blob {
+  position: absolute;
+  z-index: -1; /* Behind content */
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  border-radius: 40px;
+  background-color: #F72585; /* Primary color */
+  opacity: 0; /* Hidden by default */
+  filter: blur(25px);
+  transform: scale(0.9);
+  transition: all 0.5s ease;
+}
+
+.card:hover .blob {
+  opacity: 0.6; /* Visible on hover */
+  transform: scale(1.1); /* Glows outside the card */
+}
+
+@keyframes blob-bounce {
+  0% { transform: translate(-100%, -100%) translate3d(0, 0, 0); }
+  25% { transform: translate(-100%, -100%) translate3d(100%, 0, 0); }
+  50% { transform: translate(-100%, -100%) translate3d(100%, 100%, 0); }
+  75% { transform: translate(-100%, -100%) translate3d(0, 100%, 0); }
+  100% { transform: translate(-100%, -100%) translate3d(0, 0, 0); }
+}
+
+/* Upper Part (Image / Role) */
+.upperPart {
+  width: 100%;
+  height: 70%; /* Adjusted ratio */
+  border-radius: 40px 40px 0 0;
+  position: relative;
+  transform-style: preserve-3d;
+  transition: all 0.9s;
+}
+
+.upperPartFace,
+.upperPartBack {
+  background-color: #171717; /* Neutral-900 */
+  color: white;
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  border-radius: 40px 40px 0 0;
+  font-weight: bold;
+  z-index: 2;
+  backface-visibility: hidden;
+  transition: all 0.6s;
+  overflow: hidden;
+}
+
+.upperPartFace {
+  /* Image styles handled inline or via child img */
+  padding: 0;
+}
+
+.upperPartBack {
+  background-color: #7209B7; /* Secondary */
+  color: white;
+  transform: rotateX(180deg);
+  padding: 20px;
+  text-align: center;
+  flex-direction: column;
+}
+
+/* Lower Part (Name / Socials) */
+.lowerPart {
+  width: 100%;
+  height: 30%;
+  border-radius: 0 0 40px 40px;
+  position: relative;
+  transform-style: preserve-3d;
+  transform-origin: center top;
+  transition: all 0.9s;
+}
+
+.lowerPartFace,
+.lowerPartBack {
+  background-color: #7209B7; /* Secondary */
+  width: 100%;
+  height: 100%;
+  color: white;
+  font-weight: bold;
+  position: absolute;
+  border-radius: 0 0 40px 40px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  transform: translate(0, -0.8px);
+  backface-visibility: hidden;
+  z-index: 2;
+}
+
+.lowerPartBack {
+  backface-visibility: visible;
+  border-radius: 40px;
+  color: white;
+  background-color: #171717; /* Neutral-900 */
+  transform: rotateX(180deg);
+  z-index: 1;
+  transition: border-radius 0.6s;
+  gap: 10px; /* Space between icons */
+}
+
+/* Hover Effects */
+.card:hover > .upperPart {
+  transform: rotateX(-0.5turn);
+}
+
+.card:hover > .lowerPart {
+  transform: translateY(88.3px) rotateX(0.5turn); /* Adjusted translateY for height */
+}
+
+.card:hover > .lowerPart > .lowerPartBack {
+  border: 2px solid rgba(255, 255, 255, 0.1);
+  border-radius: 0 0 40px 40px;
+}
+
+/* Social Icons */
+.socialContainer {
+  width: 40px;
+  height: 40px;
+  background-color: rgb(44, 44, 44);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  transition-duration: .3s;
+  border-radius: 50%;
+  cursor: pointer;
+}
+
+.socialSvg {
+  width: 16px;
+  height: 16px;
+}
+
+.socialSvg path {
+  fill: rgb(255, 255, 255);
+}
+
+.socialContainer:hover .socialSvg {
+  animation: slide-in-top 0.3s both;
+}
+
+/* Social Colors */
+.containerGithub:hover { background-color: #333; }
+.containerLinkedin:hover { background-color: #0072b1; }
+.containerTwitter:hover { background-color: #00acee; }
+.containerInstagram:hover { background-color: #d62976; }
+.containerWhatsapp:hover { background-color: #128C7E; }
+
+@keyframes slide-in-top {
+  0% { transform: translateY(-50px); opacity: 0; }
+  100% { transform: translateY(0); opacity: 1; }
+}

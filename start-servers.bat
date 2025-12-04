@@ -21,7 +21,7 @@ if not exist "frontend" (
 
 REM Start Backend
 echo Starting Backend Server (Port 8000)...
-start "Get2Gather Backend" cmd /k "cd backend && .\venv\Scripts\activate && uvicorn main:app --reload"
+start "Get2Gather Backend" cmd /k "cd frontend/backend && .\venv_new\Scripts\activate && uvicorn main:app --reload"
 
 REM Wait a bit for backend to start
 timeout /t 3 /nobreak >nul
