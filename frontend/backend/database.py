@@ -36,7 +36,24 @@ try:
             DATABASE_URL = urlunparse(parsed)
             print(f"Updated DATABASE_URL to use IPv4 IP")
 except Exception as e:
-    print(f"Failed to resolve IPv4: {e}")
+    print(f"Socket resolution failed: {e}")
+    # Fallback: Try DNS-over-HTTPS (Google DNS)
+    try:
+        import urllib.request
+        import json
+        print("Attempting DNS-over-HTTPS resolution...")
+        doh_url = f"https://dns.google/resolve?name={hostname}&type=A"
+        with urllib.request.urlopen(doh_url) as response:
+            data = json.loads(response.read().decode())
+            if "Answer" in data:
+                ipv4_address = data["Answer"][0]["data"]
+                print(f"DoH Resolved {hostname} to {ipv4_address}")
+                netloc = parsed.netloc.replace(hostname, ipv4_address)
+                parsed = parsed._replace(netloc=netloc)
+                DATABASE_URL = urlunparse(parsed)
+                print(f"Updated DATABASE_URL to use IPv4 IP (via DoH)")
+    except Exception as doh_e:
+        print(f"DoH resolution failed: {doh_e}")
 
 connect_args = {}
 if DATABASE_URL.startswith("sqlite"):
