@@ -1,7 +1,5 @@
-import type { NextConfig } from "next";
-
-// @ts-ignore
-const nextConfig: NextConfig = {
+/** @type {import('next').NextConfig} */
+const nextConfig = {
   rewrites: async () => {
     return [
       {
