@@ -13,9 +13,9 @@ load_dotenv()
 default_db = "sqlite:////tmp/temp.db" if os.path.exists("/tmp") else "sqlite:///./test.db"
 DATABASE_URL = os.getenv("DATABASE_URL", default_db)
 
-# FORCE IPv4: Explicitly resolve hostname to IPv4
-# This bypasses psycopg2's internal DNS resolution which might prefer IPv6
-import socket
+# FORCE IPv4: Explicitly resolve hostname to IPv4 using Google DNS
+# This bypasses system DNS entirely to avoid IPv6 issues on Vercel
+import dns.resolver
 from urllib.parse import urlparse, urlunparse
 
 try:
@@ -23,37 +23,23 @@ try:
         parsed = urlparse(DATABASE_URL)
         hostname = parsed.hostname
         if hostname:
-            # Resolve to IPv4 address
-            ipv4_address = socket.gethostbyname(hostname)
+            print(f"Resolving {hostname} via Google DNS...")
+            resolver = dns.resolver.Resolver()
+            resolver.nameservers = ['8.8.8.8', '8.8.4.4']
+            answer = resolver.resolve(hostname, 'A')
+            ipv4_address = answer[0].to_text()
             print(f"Resolved {hostname} to {ipv4_address}")
             
             # Reconstruct URL with IP address
-            # We need to keep the port if it exists
             netloc = parsed.netloc.replace(hostname, ipv4_address)
-            
-            # Update the URL
             parsed = parsed._replace(netloc=netloc)
             DATABASE_URL = urlunparse(parsed)
             print(f"Updated DATABASE_URL to use IPv4 IP")
 except Exception as e:
-    print(f"Socket resolution failed: {e}")
-    # Fallback: Try DNS-over-HTTPS (Google DNS)
-    try:
-        import urllib.request
-        import json
-        print("Attempting DNS-over-HTTPS resolution...")
-        doh_url = f"https://dns.google/resolve?name={hostname}&type=A"
-        with urllib.request.urlopen(doh_url) as response:
-            data = json.loads(response.read().decode())
-            if "Answer" in data:
-                ipv4_address = data["Answer"][0]["data"]
-                print(f"DoH Resolved {hostname} to {ipv4_address}")
-                netloc = parsed.netloc.replace(hostname, ipv4_address)
-                parsed = parsed._replace(netloc=netloc)
-                DATABASE_URL = urlunparse(parsed)
-                print(f"Updated DATABASE_URL to use IPv4 IP (via DoH)")
-    except Exception as doh_e:
-        print(f"DoH resolution failed: {doh_e}")
+    print(f"DNS resolution failed: {e}")
+    # If resolution fails, we might want to fail hard or let it try the hostname
+    # But since we know hostname fails, let's print a big warning
+    print("WARNING: Using original DATABASE_URL which may cause IPv6 errors.")
 
 connect_args = {}
 if DATABASE_URL.startswith("sqlite"):
