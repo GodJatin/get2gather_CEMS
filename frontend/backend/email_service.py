@@ -20,14 +20,15 @@ def send_otp_email(email: str, otp: str, user_type: str = "user") -> bool:
         user_type: Type of user (student/organizer)
     
     Returns:
-        bool: True if email sent successfully, False otherwise
+        tuple[bool, str]: (Success status, Error message or success message)
     """
     smtp_email = os.getenv("SMTP_EMAIL")
     smtp_password = os.getenv("SMTP_PASSWORD")
 
     if not smtp_email or not smtp_password:
-        print("❌ SMTP credentials missing in .env")
-        return False
+        msg = "SMTP credentials missing in .env"
+        print(f"❌ {msg}")
+        return False, msg
 
     try:
         subject = "Get2Gather - Email Verification Code"
@@ -145,11 +146,12 @@ def send_otp_email(email: str, otp: str, user_type: str = "user") -> bool:
             server.send_message(msg)
             
         print(f"✅ OTP email sent to {email} via SMTP")
-        return True
+        return True, "Email sent successfully"
         
     except Exception as e:
-        print(f"❌ Failed to send OTP email to {email}: {str(e)}")
-        return False
+        error_msg = str(e)
+        print(f"❌ Failed to send OTP email to {email}: {error_msg}")
+        return False, error_msg
 
 def send_booking_ticket(email: str, student_name: str, event_title: str, event_date: str, event_time: str, event_venue: str, qr_image: str, qr_data: str = None, ticket_type: str = "attendee") -> bool:
     """

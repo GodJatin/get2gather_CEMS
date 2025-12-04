@@ -91,7 +91,10 @@ async def read_users_me(current_user: User = Depends(get_current_user), db: Sess
             print(f"ERROR in /auth/me: {e}")
             import traceback
             traceback.print_exc()
-            raise e
+            raise HTTPException(
+                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                detail=f"Profile fetch failed: {str(e)}"
+            )
             
     elif current_user.role == UserRole.ORGANIZER:
         # Fetch organizer profile
@@ -170,9 +173,9 @@ async def initiate_student_signup(data: StudentSignupInitiate, db: Session = Dep
     otp = generate_otp()
     
     # Send OTP via email
-    email_sent = send_otp_email(data.email, otp, user_type="student")
+    email_sent, error_msg = send_otp_email(data.email, otp, user_type="student")
     if not email_sent:
-        raise HTTPException(status_code=500, detail="Failed to send verification email. Please try again.")
+        raise HTTPException(status_code=500, detail=f"Failed to send verification email: {error_msg}")
     
     print(f"\nOTP for {data.email}: {otp}\n")
     
@@ -321,9 +324,9 @@ async def initiate_organizer_signup(data: OrganizerSignupInitiate, db: Session =
     otp = generate_otp()
     
     # Send OTP via email
-    email_sent = send_otp_email(data.email, otp, user_type="organizer")
+    email_sent, error_msg = send_otp_email(data.email, otp, user_type="organizer")
     if not email_sent:
-        raise HTTPException(status_code=500, detail="Failed to send verification email. Please try again.")
+        raise HTTPException(status_code=500, detail=f"Failed to send verification email: {error_msg}")
     
     print(f"\nOTP for {data.email}: {otp}\n")
 
@@ -423,10 +426,20 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         result = db.execute(select(User).where(User.email == form_data.username))
         user = result.scalar_one_or_none()
         
-        if not user or not verify_password(form_data.password, user.hashed_password):
+        if not user:
+            print(f"Login failed: User {form_data.username} not found in DB")
+            # For security, we still return generic 401, but log the specific reason
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password",
+                detail="Incorrect username or password (User not found)",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
+            
+        if not verify_password(form_data.password, user.hashed_password):
+            print(f"Login failed: Password mismatch for {form_data.username}")
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Incorrect username or password (Password mismatch)",
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
