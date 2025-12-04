@@ -48,7 +48,8 @@ async def app(scope, receive, send):
                 "ls_cwd": ls_cwd,
                 "api_dir": os.path.dirname(__file__),
                 "ls_api": ls_api,
-                "sys_path": sys.path
+                "sys_path": sys.path,
+                "db_configured": os.getenv("DATABASE_URL") is not None
             }
         }).encode('utf-8')
 

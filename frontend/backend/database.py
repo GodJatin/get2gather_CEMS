@@ -7,7 +7,11 @@ from dotenv import load_dotenv
 load_dotenv()
 
 # Use sqlite directly
-DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///C:/Users/HP/.gemini/test_sync_final.db")
+# Use sqlite directly
+# Default to a temporary file in /tmp for Vercel if no env var is set
+# This ensures it doesn't crash, but data won't persist on Vercel without a real DB
+default_db = "sqlite:////tmp/temp.db" if os.path.exists("/tmp") else "sqlite:///./test.db"
+DATABASE_URL = os.getenv("DATABASE_URL", default_db)
 
 connect_args = {}
 if DATABASE_URL.startswith("sqlite"):
@@ -18,7 +22,12 @@ else:
     if DATABASE_URL.startswith("postgres://"):
         DATABASE_URL = DATABASE_URL.replace("postgres://", "postgresql://", 1)
 
-engine = create_engine(DATABASE_URL, echo=True, connect_args=connect_args)
+try:
+    engine = create_engine(DATABASE_URL, echo=True, connect_args=connect_args)
+except Exception as e:
+    print(f"Failed to create engine with URL {DATABASE_URL}: {e}")
+    # Fallback to in-memory for safety if everything fails
+    engine = create_engine("sqlite:///:memory:", connect_args={"check_same_thread": False})
 
 SessionLocal = sessionmaker(
     autocommit=False,
