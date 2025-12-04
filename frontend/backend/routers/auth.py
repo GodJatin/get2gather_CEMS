@@ -26,35 +26,67 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
         headers={"WWW-Authenticate": "Bearer"},
     )
     try:
+        print(f"DEBUG: get_current_user called with token: {token[:10]}...")
         payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=[os.getenv("ALGORITHM", "HS256")])
         email: str = payload.get("sub")
         role: str = payload.get("role")
         if email is None:
+            print("DEBUG: Email is None in token payload")
             raise credentials_exception
         token_data = TokenData(email=email, role=role)
-    except JWTError:
+    except JWTError as e:
+        print(f"DEBUG: JWTError: {e}")
+        raise credentials_exception
+    except Exception as e:
+        print(f"DEBUG: Unexpected error in JWT decode: {e}")
         raise credentials_exception
     
-    result = db.execute(select(User).where(User.email == token_data.email))
-    user = result.scalar_one_or_none()
-    if user is None:
-        raise credentials_exception
-    return user
+    try:
+        print(f"DEBUG: Querying user {token_data.email}")
+        result = db.execute(select(User).where(User.email == token_data.email))
+        user = result.scalar_one_or_none()
+        if user is None:
+            print(f"DEBUG: User {token_data.email} not found in DB")
+            raise credentials_exception
+        print(f"DEBUG: User found: {user.id}")
+        return user
+    except Exception as e:
+        print(f"CRITICAL ERROR in get_current_user DB query: {e}")
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Auth Dependency Failed: {str(e)}"
+        )
 
 @router.get("/auth/me")
 async def read_users_me(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """
     Get current user details including profile information
     """
-    user_data = {
-        "id": current_user.id,
-        "email": current_user.email,
-        "role": current_user.role,
-        "is_active": current_user.is_active
-    }
+    try:
+        print(f"DEBUG: /auth/me called for user {current_user.email} ({current_user.role})")
+        
+        user_data = {
+            "id": current_user.id,
+            "email": current_user.email,
+            "role": current_user.role,
+            "is_active": current_user.is_active,
+            # Defaults to prevent frontend crash if profile is missing
+            "name": "Student",
+            "department": "N/A",
+            "enrollment_number": "N/A",
+            "total_points": 0,
+            "spent_points": 0,
+            "available_points": 0,
+            "bookings_count": 0,
+            "posts_count": 0,
+            "volunteer_count": 0,
+            "title": "Newcomer",
+            "badges": []
+        }
 
-    if current_user.role == UserRole.STUDENT:
-        try:
+        if current_user.role == UserRole.STUDENT:
             print("Fetching student profile...")
             # Fetch student profile (Columns only to avoid MissingGreenlet)
             result = db.execute(select(
@@ -87,43 +119,48 @@ async def read_users_me(current_user: User = Depends(get_current_user), db: Sess
                 
                 user_data["title"] = gamification_data["title"]
                 user_data["badges"] = gamification_data["badges"]
-        except Exception as e:
-            print(f"ERROR in /auth/me: {e}")
-            import traceback
-            traceback.print_exc()
-            raise HTTPException(
-                status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-                detail=f"Profile fetch failed: {str(e)}"
-            )
-            
-    elif current_user.role == UserRole.ORGANIZER:
-        # Fetch organizer profile
-        result = db.execute(select(Organizer).where(Organizer.user_id == current_user.id))
-        organizer = result.scalar_one_or_none()
-        if organizer:
-            from models import Event, Booking
-            from sqlalchemy import func
-            
-            user_data["name"] = organizer.organization_name
-            user_data["contact"] = organizer.contact
-            user_data["organizer_id"] = organizer.id
-            
-            # Get event statistics
-            events_result = db.execute(select(func.count()).select_from(Event).where(Event.organizer_id == organizer.id))
-            total_events = events_result.scalar() or 0
-            user_data["total_events"] = total_events
-            
-            # Get total bookings across all events
-            bookings_result = db.execute(
-                select(func.count())
-                .select_from(Booking)
-                .join(Event, Event.id == Booking.event_id)
-                .where(Event.organizer_id == organizer.id)
-            )
-            total_attendees = bookings_result.scalar() or 0
-            user_data["total_attendees"] = total_attendees
+            else:
+                print("Student profile not found, returning defaults")
+                
+        elif current_user.role == UserRole.ORGANIZER:
+            # Fetch organizer profile
+            result = db.execute(select(Organizer).where(Organizer.user_id == current_user.id))
+            organizer = result.scalar_one_or_none()
+            if organizer:
+                from models import Event, Booking
+                from sqlalchemy import func
+                
+                user_data["name"] = organizer.organization_name
+                user_data["contact"] = organizer.contact
+                user_data["organizer_id"] = organizer.id
+                
+                # Get event statistics
+                events_result = db.execute(select(func.count()).select_from(Event).where(Event.organizer_id == organizer.id))
+                total_events = events_result.scalar() or 0
+                user_data["total_events"] = total_events
+                
+                # Get total bookings across all events
+                bookings_result = db.execute(
+                    select(func.count())
+                    .select_from(Booking)
+                    .join(Event, Event.id == Booking.event_id)
+                    .where(Event.organizer_id == organizer.id)
+                )
+                total_attendees = bookings_result.scalar() or 0
+                user_data["total_attendees"] = total_attendees
 
-    return user_data
+        return user_data
+
+    except Exception as e:
+        print(f"CRITICAL ERROR in /auth/me: {e}")
+        import traceback
+        traceback.print_exc()
+        # Return JSONResponse to ensure the error is visible to the client
+        from fastapi.responses import JSONResponse
+        return JSONResponse(
+            status_code=500,
+            content={"detail": f"Profile fetch failed: {str(e)}", "trace": traceback.format_exc()}
+        )
 
 @router.get("/auth/leaderboard")
 async def get_leaderboard(db: Session = Depends(get_db)):
