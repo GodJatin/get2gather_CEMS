@@ -441,7 +441,18 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         print(f"Login error: {e}")
         import traceback
         traceback.print_exc()
+        
+        # Import debug info
+        from database import resolution_log, resolution_status, final_db_url_masked
+        
+        error_detail = {
+            "message": f"Login failed: {str(e)}",
+            "dns_resolution_status": resolution_status,
+            "dns_resolution_log": resolution_log,
+            "db_url_used": final_db_url_masked
+        }
+        
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=f"Login failed: {str(e)}"
+            detail=error_detail
         )

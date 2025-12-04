@@ -18,27 +18,45 @@ DATABASE_URL = os.getenv("DATABASE_URL", default_db)
 import dns.resolver
 from urllib.parse import urlparse, urlunparse
 
+# Debug globals
+resolution_log = []
+resolution_status = "NOT_ATTEMPTED"
+final_db_url_masked = "NOT_SET"
+
 try:
     if "supabase.co" in DATABASE_URL and "@" in DATABASE_URL:
         parsed = urlparse(DATABASE_URL)
         hostname = parsed.hostname
         if hostname:
-            print(f"Resolving {hostname} via Google DNS...")
-            resolver = dns.resolver.Resolver()
-            resolver.nameservers = ['8.8.8.8', '8.8.4.4']
-            answer = resolver.resolve(hostname, 'A')
-            ipv4_address = answer[0].to_text()
-            print(f"Resolved {hostname} to {ipv4_address}")
-            
-            # Reconstruct URL with IP address
-            netloc = parsed.netloc.replace(hostname, ipv4_address)
-            parsed = parsed._replace(netloc=netloc)
-            DATABASE_URL = urlunparse(parsed)
-            print(f"Updated DATABASE_URL to use IPv4 IP")
+            resolution_log.append(f"Attempting to resolve {hostname} via Google DNS...")
+            try:
+                resolver = dns.resolver.Resolver()
+                resolver.nameservers = ['8.8.8.8', '8.8.4.4']
+                answer = resolver.resolve(hostname, 'A')
+                ipv4_address = answer[0].to_text()
+                resolution_log.append(f"Resolved to {ipv4_address}")
+                
+                # Reconstruct URL with IP address
+                netloc = parsed.netloc.replace(hostname, ipv4_address)
+                parsed = parsed._replace(netloc=netloc)
+                DATABASE_URL = urlunparse(parsed)
+                resolution_log.append("Updated DATABASE_URL to use IPv4 IP")
+                resolution_status = "SUCCESS"
+            except Exception as e:
+                resolution_log.append(f"Resolution failed: {str(e)}")
+                resolution_status = "FAILED"
+    else:
+        resolution_log.append("Skipping resolution: Not a Supabase URL or no credentials")
+        resolution_status = "SKIPPED"
+
+    # Store masked URL for debug
+    if DATABASE_URL:
+        final_db_url_masked = DATABASE_URL.split("@")[-1] if "@" in DATABASE_URL else "NO_CREDENTIALS"
+
 except Exception as e:
     print(f"DNS resolution failed: {e}")
-    # If resolution fails, we might want to fail hard or let it try the hostname
-    # But since we know hostname fails, let's print a big warning
+    resolution_log.append(f"Global exception: {str(e)}")
+    resolution_status = "CRASHED"
     print("WARNING: Using original DATABASE_URL which may cause IPv6 errors.")
 
 connect_args = {}
