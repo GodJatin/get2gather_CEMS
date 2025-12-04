@@ -444,6 +444,7 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         
         # Import debug info
         from database import resolution_log, resolution_status, final_db_url_masked
+        import json
         
         error_detail = {
             "message": f"Login failed: {str(e)}",
@@ -454,5 +455,5 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=error_detail
+            detail=json.dumps(error_detail, default=str)
         )
