@@ -11,7 +11,7 @@ from schemas import (
     OrganizerSignupInitiate, OrganizerSignupVerify, OrganizerSignupComplete, 
     StudentSignupInitiate, StudentSignupVerify, StudentSignupComplete
 )
-from .security_utils import get_password_hash, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES
+from .security_utils import get_password_hash, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY
 from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import JWTError, jwt
@@ -27,7 +27,7 @@ async def get_current_user(token: str = Depends(oauth2_scheme), db: Session = De
     )
     try:
         print(f"DEBUG: get_current_user called with token: {token[:10]}...")
-        payload = jwt.decode(token, os.getenv("SECRET_KEY"), algorithms=[os.getenv("ALGORITHM", "HS256")])
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[os.getenv("ALGORITHM", "HS256")])
         email: str = payload.get("sub")
         role: str = payload.get("role")
         if email is None:
