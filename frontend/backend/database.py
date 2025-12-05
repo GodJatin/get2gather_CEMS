@@ -11,8 +11,12 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 # Default to a temporary file in /tmp for Vercel if no env var is set
 # This ensures it doesn't crash, but data won't persist on Vercel without a real DB
 SUPABASE_URL = "postgresql://postgres:J%40tin224@db.vqfnndepdzdewugdcwjg.supabase.co:5432/postgres"
-default_db = SUPABASE_URL 
-DATABASE_URL = os.getenv("DATABASE_URL", default_db)
+
+# CRITICAL FIX: Force usage of KNOWN GOOD URL.
+# Vercel might have a different DATABASE_URL set (on port 6543) which is empty/different.
+# We force the one we successfully seeded (port 5432).
+DATABASE_URL = SUPABASE_URL 
+# DATABASE_URL = os.getenv("DATABASE_URL", default_db)
 
 print(f"--- DB CONFIG ---")
 print(f"Loading .env from: {os.path.join(os.path.dirname(__file__), '.env')}")
