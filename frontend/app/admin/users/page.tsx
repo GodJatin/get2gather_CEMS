@@ -41,11 +41,39 @@ export default function AdminUsersPage() {
         }
     };
 
+    const [filter, setFilter] = useState<'all' | 'student' | 'organizer' | 'admin'>('all');
+
+    const filteredUsers = users.filter(user => filter === 'all' || user.role === filter);
+
+    const tabs = [
+        { id: 'all', label: 'All Users' },
+        { id: 'student', label: 'Students' },
+        { id: 'organizer', label: 'Organizers' },
+        { id: 'admin', label: 'Admins' },
+    ];
+
     if (loading) return <div className="p-8 text-center text-gray-500">Loading users...</div>;
 
     return (
         <div className="space-y-6">
-            <h1 className="text-3xl font-bold text-gray-800">User Management</h1>
+            <div className="flex justify-between items-center">
+                <h1 className="text-3xl font-bold text-gray-800">User Management</h1>
+                <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+                    {tabs.map(tab => (
+                        <button
+                            key={tab.id}
+                            onClick={() => setFilter(tab.id as any)}
+                            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                                filter === tab.id 
+                                    ? 'bg-white text-gray-800 shadow-sm' 
+                                    : 'text-gray-500 hover:text-gray-700'
+                            }`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
+            </div>
             
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
                 <table className="w-full text-left">
@@ -59,7 +87,13 @@ export default function AdminUsersPage() {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-gray-100">
-                        {users.map((user) => (
+                        {filteredUsers.length === 0 ? (
+                            <tr>
+                                <td colSpan={5} className="p-8 text-center text-gray-400">
+                                    No {filter !== 'all' ? filter : ''} users found.
+                                </td>
+                            </tr>
+                        ) : filteredUsers.map((user) => (
                             <tr key={user.id} className="hover:bg-gray-50 transition-colors">
                                 <td className="p-4 text-gray-600">#{user.id}</td>
                                 <td className="p-4 font-medium text-gray-800">{user.email}</td>

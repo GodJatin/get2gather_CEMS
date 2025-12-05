@@ -37,6 +37,18 @@ async def create_event(event: schemas.EventCreate, current_user: User = Depends(
     db.refresh(new_event)
     return new_event
 
+@router.get("/events/my", response_model=List[schemas.EventResponse])
+async def get_my_events(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.role != UserRole.ORGANIZER:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    organizer = db.query(Organizer).filter(Organizer.user_id == current_user.id).first()
+    if not organizer:
+        return []
+        
+    events = db.query(Event).filter(Event.organizer_id == organizer.id).all()
+    return events
+
 @router.get("/events/trending", response_model=List[schemas.EventResponse])
 async def get_trending_events(db: Session = Depends(get_db)):
     # Get all events

@@ -25,8 +25,9 @@ def get_current_admin(current_user: User = Depends(get_current_user)):
 @router.get("/stats")
 def get_admin_stats(db: Session = Depends(get_db), current_user: User = Depends(get_current_admin)):
     total_users = db.query(User).count()
-    total_students = db.query(Student).count()
-    total_organizers = db.query(Organizer).count()
+    # Count by Role for accuracy (Profile tables might catch up later)
+    total_students = db.query(User).filter(User.role == UserRole.STUDENT).count()
+    total_organizers = db.query(User).filter(User.role == UserRole.ORGANIZER).count()
     total_events = db.query(Event).count()
     total_bookings = db.query(Booking).count()
     
