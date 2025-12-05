@@ -25,19 +25,17 @@ print(f"Original URL: {DATABASE_URL}")
 # Vercel resolves Supabase to IPv6, which fails with "Cannot assign requested address".
 # We must manually resolve to IPv4 to force the connection to work.
 try:
-    import dns.resolver
+    import socket
     from urllib.parse import urlparse, urlunparse
 
     parsed = urlparse(DATABASE_URL)
     hostname = parsed.hostname
     
     if hostname:
-        print(f"Resolving {hostname} to IPv4...")
-        resolver = dns.resolver.Resolver()
-        # Use Google DNS to ensure we get a result
-        resolver.nameservers = ['8.8.8.8', '8.8.4.4'] 
-        answer = resolver.resolve(hostname, 'A')
-        ipv4_address = answer[0].to_text()
+        print(f"Resolving {hostname} to IPv4 using native socket...")
+        # AF_INET forces IPv4
+        info = socket.getaddrinfo(hostname, 6543, family=socket.AF_INET, proto=socket.IPPROTO_TCP)
+        ipv4_address = info[0][4][0]
         print(f"Resolved to IPv4: {ipv4_address}")
         
         # Replace hostname with IP in the URL
@@ -47,7 +45,10 @@ try:
         print(f"Modified URL (IPv4): {DATABASE_URL.split('@')[-1]}") # Masked
 
 except Exception as e:
-    print(f"WARNING: DNS Resolution failed ({e}). Falling back to system DNS.")
+    print(f"WARNING: Native IPv4 Resolution failed ({e}). usage of IPv6 may crash on Vercel.")
+    # We do NOT raise here, because maybe standard resolution will work if lucky.
+    # But likely it won't.
+
 
 print(f"Using UNIFIED Database: Supabase (Pooler Mode)")
 print(f"-----------------")
