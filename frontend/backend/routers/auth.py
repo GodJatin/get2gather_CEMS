@@ -508,23 +508,13 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         return {"access_token": access_token, "token_type": "bearer", "role": user.role.value}
     except HTTPException:
         raise
+    except HTTPException:
+        raise
     except Exception as e:
-        print(f"Login error: {e}")
         import traceback
-        traceback.print_exc()
-        
-        # Import debug info
-        from database import resolution_log, resolution_status, final_db_url_masked
-        import json
-        
-        error_detail = {
-            "message": f"Login failed: {str(e)}",
-            "dns_resolution_status": resolution_status,
-            "dns_resolution_log": resolution_log,
-            "db_url_used": final_db_url_masked
-        }
-        
+        tb = traceback.format_exc()
+        print(f"LOGIN CRASH: {tb}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
-            detail=json.dumps(error_detail, default=str)
+            detail=f"Login Handler Crashed: {str(e)}"
         )
