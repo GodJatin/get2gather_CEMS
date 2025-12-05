@@ -8,21 +8,6 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 # Use sqlite directly
 # Use sqlite directly
-# Default to a temporary file in /tmp for Vercel if no env var is set
-# This ensures it doesn't crash, but data won't persist on Vercel without a real DB
-# CRITICAL: Vercel must use Port 6543 (Pooler) to avoid IPv6 errors.
-# We verified 6543 connects (but was empty before). Now it is seeded.
-SUPABASE_URL = "postgresql://postgres:J%40tin224@db.vqfnndepdzdewugdcwjg.supabase.co:6543/postgres"
-
-# CRITICAL FIX: Force usage of KNOWN GOOD URL.
-DATABASE_URL = SUPABASE_URL 
-# DATABASE_URL = os.getenv("DATABASE_URL", default_db)
-
-print(f"--- DB CONFIG ---")
-print(f"Loading .env from: {os.path.join(os.path.dirname(__file__), '.env')}")
-print(f"Resolved DATABASE_URL: {DATABASE_URL}")
-print(f"-----------------")
-
 # FORCE IPv4: Explicitly resolve hostname to IPv4 using Google DNS
 # This bypasses system DNS entirely to avoid IPv6 issues on Vercel
 import dns.resolver
