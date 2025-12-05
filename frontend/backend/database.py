@@ -19,10 +19,10 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 # CRITICAL FIX: FORCE IPv4 via HARDCODED IP
 # The hostname 'db.vqfnndepdzdewugdcwjg.supabase.co' resolves ONLY to IPv6 (AAAA record).
 # Vercel serverless functions fail on IPv6 ("Cannot assign requested address").
-# We found the IPv4 address of the underlying Supavisor Pooler (ap-south-1): 3.108.251.216
+# We found the IPv4 address of the underlying Supavisor Pooler (ap-southeast-1): 52.77.146.31
 # We use this IP directly to guarantee an IPv4 connection.
 
-HARDCODED_IPV4 = "3.108.251.216"
+HARDCODED_IPV4 = "52.77.146.31"
 # Explicitly use 'postgres.PROJECT_ID' as username so Supavisor knows the tenant
 # even when connecting via raw IP.
 DATABASE_URL = f"postgresql://postgres.vqfnndepdzdewugdcwjg:J%40tin224@{HARDCODED_IPV4}:6543/postgres?sslmode=require"
