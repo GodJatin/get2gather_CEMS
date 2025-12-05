@@ -28,7 +28,7 @@ REGIONAL_POOLER_HOST = "aws-0-ap-southeast-1.pooler.supabase.com"
 DATABASE_URL = f"postgresql://postgres.vqfnndepdzdewugdcwjg:J%40tin224@{REGIONAL_POOLER_HOST}:6543/postgres?sslmode=require"
 
 print(f"--- DB CONFIG ---")
-print(f"Using Hardcoded IPv4: {HARDCODED_IPV4} (Bypassing IPv6 DNS)")
+print(f"Using Regional Pooler: {REGIONAL_POOLER_HOST} (Bypassing IPv6)")
 
 
 
