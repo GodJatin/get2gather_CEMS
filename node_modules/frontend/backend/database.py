@@ -13,7 +13,7 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 # 2. It works Locally (standard IPv4).
 # 3. It creates a SINGLE Source of Truth for data.
 # ---------------------------------------------------------
-DATABASE_URL = "postgresql://postgres:J%40tin224@db.vqfnndepdzdewugdcwjg.supabase.co:6543/postgres"
+DATABASE_URL = "postgresql://postgres:J%40tin224@db.vqfnndepdzdewugdcwjg.supabase.co:6543/postgres?sslmode=require"
 
 print(f"--- DB CONFIG ---")
 print(f"Using UNIFIED Database: Supabase (Pooler Mode)")
