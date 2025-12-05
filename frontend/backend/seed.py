@@ -2,7 +2,7 @@ import asyncio
 import random
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession
 from sqlalchemy.orm import sessionmaker
-from models import Base, User, Student, Organizer, Event, Booking, UserRole, FeedPost, user_follows
+from models import Base, User, Student, Organizer, Event, Booking, UserRole, FeedPost, user_follows, OrganizerInvite
 import bcrypt
 from datetime import datetime, timedelta
 
@@ -157,6 +157,35 @@ async def seed_data():
 
         await db.commit()
         print("Seeding complete!")
+
+        # 6. Create Specific Organizer Invite
+        invite = OrganizerInvite(
+            email="224jatin2006@gmail.com",
+            invite_code="ABCD1234",
+            is_used=False
+        )
+        # Check if exists
+        from sqlalchemy import select
+        result = await db.execute(select(OrganizerInvite).where(OrganizerInvite.email == "224jatin2006@gmail.com"))
+        existing_invite = result.scalar_one_or_none()
+        if not existing_invite:
+            db.add(invite)
+            print("Added invite code for 224jatin2006@gmail.com")
+        
+        # 7. Create Admin User
+        result = await db.execute(select(User).where(User.email == "admin@get2gather.com"))
+        existing_admin = result.scalar_one_or_none()
+        if not existing_admin:
+            admin_user = User(
+                email="admin@get2gather.com",
+                hashed_password=get_password_hash("admin123"),
+                role=UserRole.ADMIN,
+                is_active=True
+            )
+            db.add(admin_user)
+            print("Added Admin User: admin@get2gather.com / admin123")
+
+        await db.commit()
 
 if __name__ == "__main__":
     asyncio.run(init_db())

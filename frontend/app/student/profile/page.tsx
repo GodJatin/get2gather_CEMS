@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import Link from 'next/link';
 import MotionWrapper from '@/components/MotionWrapper';
 import { motion } from 'framer-motion';
 
@@ -85,9 +86,14 @@ export default function ProfilePage() {
     return (
         <MotionWrapper className="max-w-5xl mx-auto">
             <header className="mb-8 flex justify-between items-end">
-                <div>
-                    <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-[#00F0FF] to-[#00FF94] bg-clip-text text-transparent">My Profile</h1>
-                    <p className="text-neutral-400">Manage your account and view your activity.</p>
+                <div className="flex items-center gap-4">
+                    <Link href="/student/dashboard" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors border border-white/10">
+                        ←
+                    </Link>
+                    <div>
+                        <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-[#00F0FF] to-[#00FF94] bg-clip-text text-transparent">My Profile</h1>
+                        <p className="text-neutral-400">Manage your account and view your activity.</p>
+                    </div>
                 </div>
                 <div className="text-right">
                     <div className="text-3xl font-bold text-[#00F0FF] drop-shadow-[0_0_10px_rgba(0,240,255,0.5)]">

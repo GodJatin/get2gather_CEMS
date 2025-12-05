@@ -248,11 +248,19 @@ export default function EventsPage() {
              {/* All Events Grid */}
              <section>
                 <h2 className="text-2xl font-bold mb-6">All Events</h2>
-                <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
-                    {filterEvents().map(event => (
-                        <EventCard key={event.id} event={event} />
-                    ))}
-                </div>
+                {filterEvents().length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
+                        {filterEvents().map(event => (
+                            <EventCard key={event.id} event={event} />
+                        ))}
+                    </div>
+                ) : (
+                    <div className="text-center py-20 bg-neutral-900/30 rounded-3xl border border-white/5">
+                        <div className="text-6xl mb-4">📅</div>
+                        <h3 className="text-xl font-bold text-white mb-2">No Events Found</h3>
+                        <p className="text-neutral-400">Try adjusting your filters or check back later.</p>
+                    </div>
+                )}
             </section>
         </MotionWrapper>
     );

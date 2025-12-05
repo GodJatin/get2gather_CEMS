@@ -5,8 +5,8 @@ echo ====================================
 echo.
 
 REM Check if in correct directory
-if not exist "backend" (
-    echo ERROR: backend folder not found!
+if not exist "frontend\backend" (
+    echo ERROR: frontend\backend folder not found!
     echo Please run this script from the project root directory.
     pause
     exit /b 1

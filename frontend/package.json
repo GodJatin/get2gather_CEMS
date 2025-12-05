@@ -21,8 +21,8 @@
     "react-dom": "19.2.0"
   },
   "optionalDependencies": {
-    "lightningcss-linux-x64-gnu": "*",
-    "@tailwindcss/oxide-linux-x64-gnu": "*"
+    "@tailwindcss/oxide-linux-x64-gnu": "*",
+    "lightningcss-linux-x64-gnu": "*"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
