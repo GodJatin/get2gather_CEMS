@@ -16,19 +16,18 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 # ---------------------------------------------------------
 # UNIFIED DATABASE CONFIGURATION (Supabase Only)
 # ---------------------------------------------------------
-# CRITICAL FIX: REGIONAL POOLER ENDPOINT
-# The custom project hostname 'db.vqfnnd...' is IPv6 only.
-# The 'hostaddr' fix failed to route tenant correctly.
-# WE USE THE REGIONAL POOLER HOSTNAME: 'aws-0-ap-southeast-1.pooler.supabase.com'
-# - It resolves to IPv4.
-# - It accepts connection routing via 'postgres.PROJECT_ID'.
+# CRITICAL FIX: MUMBAI POOLER IPv4 + SNI
+# The project is likely in Mumbai (ap-south-1) based on user location.
+# Previous attempts with Singapore IP failed ("Tenant not found").
+# We use the Mumbai IPv4 (3.108.251.216) but send the Project Hostname in SNI.
 
-REGIONAL_POOLER_HOST = "aws-0-ap-southeast-1.pooler.supabase.com"
-# User format: postgres.PROJECT_ID
-DATABASE_URL = f"postgresql://postgres.vqfnndepdzdewugdcwjg:J%40tin224@{REGIONAL_POOLER_HOST}:6543/postgres?sslmode=require"
+MUMBAI_IPV4 = "3.108.251.216"
+# Host: db.vqfnnd... (SNI)
+# HostAddr: 3.108... (Physical Connection)
+# User: postgres (Standard, SNI routes the tenant)
+DATABASE_URL = f"postgresql://postgres:J%40tin224@db.vqfnndepdzdewugdcwjg.supabase.co:6543/postgres?sslmode=require&hostaddr={MUMBAI_IPV4}"
 
-print(f"--- DB CONFIG ---")
-print(f"Using Regional Pooler: {REGIONAL_POOLER_HOST} (Bypassing IPv6)")
+print(f"Using Mumbai Pooler IP: {MUMBAI_IPV4} (with SNI)")
 
 
 
