@@ -60,7 +60,11 @@ def calculate_gamification(student, points_data):
     
     # Safely access attributes
     title = getattr(student, "title", None)
-    badges = getattr(student, "badges", []) or []
+    badges = getattr(student, "badges", [])
+    
+    # Ensure badges is a list (handle None or other types)
+    if not isinstance(badges, list):
+        badges = []
     
     if not title:
         if score > 1000:
@@ -73,7 +77,12 @@ def calculate_gamification(student, points_data):
             title = "Rising Star"
             
     # Avoid duplicates
-    existing_badges = {b['name'] for b in badges}
+    # badges is list of dicts: [{"name": "Bronze", "icon": ...}, ...]
+    try:
+        existing_badges = {b.get('name') for b in badges if isinstance(b, dict)}
+    except Exception:
+        existing_badges = set()
+        badges = [] # Reset if corrupt
     
     if score >= 500 and "Bronze" not in existing_badges:
         badges.append({"name": "Bronze", "icon": "🥉"})
