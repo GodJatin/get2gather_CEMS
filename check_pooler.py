@@ -13,14 +13,12 @@ try:
     
     cur = conn.cursor()
     
-    # Check Admin
-    print("Checking Admin via Pooler...")
-    cur.execute("SELECT email, role FROM users WHERE email='admin@get2gather.com'")
-    user = cur.fetchone()
-    if user:
-        print(f"✅ Found Admin via Pooler: {user}")
-    else:
-        print("❌ Admin NOT found via Pooler (Sync Issue?)")
+    # DETECT REGION via TimeZone and IP
+    cur.execute("SELECT current_setting('TIMEZONE'), inet_server_addr(), version();")
+    tz, ip, ver = cur.fetchone()
+    print(f"🌍 DB TimeZone: {tz}")
+    print(f"💻 DB Server IP: {ip}")
+    print(f"📜 Version: {ver}")
     
     conn.close()
 

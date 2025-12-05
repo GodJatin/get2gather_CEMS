@@ -16,15 +16,15 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 # ---------------------------------------------------------
 # UNIFIED DATABASE CONFIGURATION (Supabase Only)
 # ---------------------------------------------------------
-# CRITICAL FIX: MUMBAI REGIONAL POOLER (Standard IPv4)
-# 1. Host: aws-0-ap-south-1.pooler.supabase.com (Mumbai standard pooler)
-# 2. User: postgres.vqfnndepdzdewugdcwjg (Explicit tenant routing)
-# 3. Port: 6543 (Transaction Mode)
+# CRITICAL FIX: MUMBAI REGIONAL POOLER + OPTIONS ROUTING
+# Host: aws-0-ap-south-1.pooler.supabase.com (Mumbai)
+# User: postgres.PROJECT (Standard)
+# Options: project=PROJECT (Explicit Fallback Routing)
+# This triple-checks the destination tenant to avoid "Tenant Not Found".
 
-# This resolves to IPv4 natively, satisfying Vercel.
-# It uses the Explicit User to route to the correct project.
 REGIONAL_POOLER_HOST = "aws-0-ap-south-1.pooler.supabase.com"
-DATABASE_URL = f"postgresql://postgres.vqfnndepdzdewugdcwjg:J%40tin224@{REGIONAL_POOLER_HOST}:6543/postgres?sslmode=require"
+PROJECT_ID = "vqfnndepdzdewugdcwjg"
+DATABASE_URL = f"postgresql://postgres.{PROJECT_ID}:J%40tin224@{REGIONAL_POOLER_HOST}:6543/postgres?sslmode=require&options=project%3D{PROJECT_ID}"
 
 print(f"Using Mumbai Regional Host: {REGIONAL_POOLER_HOST}")
 
