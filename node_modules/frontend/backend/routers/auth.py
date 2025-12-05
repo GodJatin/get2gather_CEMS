@@ -480,19 +480,24 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
         user = result.scalar_one_or_none()
         
         if not user:
-            print(f"Login failed: User {form_data.username} not found in DB")
-            # For security, we still return generic 401, but log the specific reason
+            # DEBUG: User not found
+            from database import DATABASE_URL
+            masked_url = DATABASE_URL.split("@")[-1] if "@" in DATABASE_URL else "NO_CREDENTIALS"
+            detail_msg = f"User {form_data.username} NOT FOUND in DB connected to: {masked_url}"
+            print(detail_msg)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password (User not found)",
+                detail=detail_msg,
                 headers={"WWW-Authenticate": "Bearer"},
             )
             
         if not verify_password(form_data.password, user.hashed_password):
-            print(f"Login failed: Password mismatch for {form_data.username}")
+            # DEBUG: Password mismatch
+            detail_msg = f"Password MISMATCH for {form_data.username}"
+            print(detail_msg)
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Incorrect username or password (Password mismatch)",
+                detail=detail_msg,
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
