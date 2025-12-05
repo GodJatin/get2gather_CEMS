@@ -13,3 +13,4 @@ dnspython
 email-validator
 aiosqlite
 bcrypt
+psycopg2-binary
