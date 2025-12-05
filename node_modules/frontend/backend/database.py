@@ -23,7 +23,9 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 # We use this IP directly to guarantee an IPv4 connection.
 
 HARDCODED_IPV4 = "3.108.251.216"
-DATABASE_URL = f"postgresql://postgres:J%40tin224@{HARDCODED_IPV4}:6543/postgres?sslmode=require"
+# Explicitly use 'postgres.PROJECT_ID' as username so Supavisor knows the tenant
+# even when connecting via raw IP.
+DATABASE_URL = f"postgresql://postgres.vqfnndepdzdewugdcwjg:J%40tin224@{HARDCODED_IPV4}:6543/postgres?sslmode=require"
 
 print(f"--- DB CONFIG ---")
 print(f"Using Hardcoded IPv4: {HARDCODED_IPV4} (Bypassing IPv6 DNS)")
