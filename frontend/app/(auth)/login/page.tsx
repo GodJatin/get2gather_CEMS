@@ -60,9 +60,8 @@ export default function LoginPage() {
                 </div>
 
                 {/* Home Link */}
-                <Link href="/" className="absolute top-8 left-8 z-50 flex items-center gap-3 hover:opacity-80 transition-opacity">
-                    <Image src="/logo.png" alt="Get2Gather" width={40} height={40} className="w-10 h-10 object-contain" />
-                    <span className="text-xl font-bold text-white">Get2Gather</span>
+                <Link href="/" className="absolute top-8 left-8 z-50 hover:opacity-80 transition-opacity">
+                    <Image src="/logo.png" alt="Get2Gather" width={140} height={40} className="h-10 w-auto object-contain" />
                 </Link>
 
                 <motion.div 

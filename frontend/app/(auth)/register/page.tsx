@@ -4,9 +4,8 @@ import Image from 'next/image';
 export default function RegisterRolePage() {
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-950 p-6 relative">
-            <Link href="/" className="absolute top-8 left-8 z-50 flex items-center gap-3 hover:opacity-80 transition-opacity">
-                <Image src="/logo.png" alt="Get2Gather" width={40} height={40} className="w-10 h-10 object-contain" />
-                <span className="text-xl font-bold text-white">Get2Gather</span>
+            <Link href="/" className="absolute top-8 left-8 z-50 hover:opacity-80 transition-opacity">
+                <Image src="/logo.png" alt="Get2Gather" width={140} height={40} className="h-10 w-auto object-contain" />
             </Link>
             <div className="w-full max-w-4xl text-center">
                 <h1 className="text-4xl font-bold text-white mb-2">Join Get2Gather</h1>
