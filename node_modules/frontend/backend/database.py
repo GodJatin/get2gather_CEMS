@@ -4,14 +4,18 @@ import os
 
 from dotenv import load_dotenv
 
-load_dotenv()
+load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
-# Use sqlite directly
 # Use sqlite directly
 # Default to a temporary file in /tmp for Vercel if no env var is set
 # This ensures it doesn't crash, but data won't persist on Vercel without a real DB
 default_db = "sqlite:////tmp/temp.db" if os.path.exists("/tmp") else "sqlite:///./test.db"
 DATABASE_URL = os.getenv("DATABASE_URL", default_db)
+
+print(f"--- DB CONFIG ---")
+print(f"Loading .env from: {os.path.join(os.path.dirname(__file__), '.env')}")
+print(f"Resolved DATABASE_URL: {DATABASE_URL}")
+print(f"-----------------")
 
 # FORCE IPv4: Explicitly resolve hostname to IPv4 using Google DNS
 # This bypasses system DNS entirely to avoid IPv6 issues on Vercel

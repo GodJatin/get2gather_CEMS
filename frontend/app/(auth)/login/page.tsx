@@ -4,6 +4,7 @@ import { useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import api from '@/lib/api';
+import AnimatedTitle from '@/components/AnimatedTitle';
 import { motion } from 'framer-motion';
 
 export default function LoginPage() {
@@ -60,8 +61,8 @@ export default function LoginPage() {
                 </div>
 
                 {/* Home Link */}
-                <Link href="/" className="absolute top-8 left-8 z-50 hover:opacity-80 transition-opacity">
-                    <Image src="/logo.png" alt="Get2Gather" width={140} height={40} className="h-10 w-auto object-contain" />
+                <Link href="/" className="absolute top-8 left-8 z-50 hover:opacity-80 transition-opacity scale-50 origin-top-left">
+                    <AnimatedTitle />
                 </Link>
 
                 <motion.div 

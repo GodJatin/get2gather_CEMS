@@ -1,11 +1,12 @@
 import Link from 'next/link';
 import Image from 'next/image';
+import AnimatedTitle from '@/components/AnimatedTitle';
 
 export default function RegisterRolePage() {
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-950 p-6 relative">
-            <Link href="/" className="absolute top-8 left-8 z-50 hover:opacity-80 transition-opacity">
-                <Image src="/logo.png" alt="Get2Gather" width={140} height={40} className="h-10 w-auto object-contain" />
+            <Link href="/" className="absolute top-8 left-8 z-50 hover:opacity-80 transition-opacity scale-50 origin-top-left">
+                <AnimatedTitle />
             </Link>
             <div className="w-full max-w-4xl text-center">
                 <h1 className="text-4xl font-bold text-white mb-2">Join Get2Gather</h1>
