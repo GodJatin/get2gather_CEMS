@@ -16,24 +16,19 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 # ---------------------------------------------------------
 # UNIFIED DATABASE CONFIGURATION (Supabase Only)
 # ---------------------------------------------------------
-# REVERTING TO ORIGINAL CONFIGURATION (As requested)
-# Host: db.vqfnndepdzdewugdcwjg.supabase.co
-# User: postgres
-# Port: 6543
+# CRITICAL FIX: CORRECT REGIONAL POOLER (CLUSTER 1)
+# User Dashboard confirms the project is on 'aws-1-ap-southeast-1', NOT 'aws-0'.
+# 'aws-0' returned "Tenant Not Found" because the tenant is on Cluster 1.
+# This hostname resolves to IPv4 and works on Vercel.
 
-DATABASE_URL = "postgresql://postgres:J%40tin224@db.vqfnndepdzdewugdcwjg.supabase.co:6543/postgres?sslmode=require"
+REGIONAL_POOLER_HOST = "aws-1-ap-southeast-1.pooler.supabase.com"
+PROJECT_ID = "vqfnndepdzdewugdcwjg"
 
-try:
-    import socket
-    from urllib.parse import urlparse
-    hostname = urlparse(DATABASE_URL).hostname
-    print(f"Resolving {hostname}...")
-    ip_info = socket.getaddrinfo(hostname, 6543)
-    print(f"DEBUG: Resolved IPs: {[x[4][0] for x in ip_info]}")
-except Exception as e:
-    print(f"DEBUG: Resolution Failed: {e}")
+# Exact URL from Dashboard:
+# postgresql://postgres.PROJECT:[PASSWORD]@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres
+DATABASE_URL = f"postgresql://postgres.{PROJECT_ID}:J%40tin224@{REGIONAL_POOLER_HOST}:6543/postgres?sslmode=require"
 
-print(f"Using Original Config: {DATABASE_URL.split('@')[-1]}")
+print(f"Using Regional Pooler (Cluster 1): {REGIONAL_POOLER_HOST}")
 
 
 
