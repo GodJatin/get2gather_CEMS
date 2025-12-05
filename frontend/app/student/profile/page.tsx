@@ -87,9 +87,6 @@ export default function ProfilePage() {
         <MotionWrapper className="max-w-5xl mx-auto">
             <header className="mb-8 flex justify-between items-end">
                 <div className="flex items-center gap-4">
-                    <Link href="/student/dashboard" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors border border-white/10">
-                        ←
-                    </Link>
                     <div>
                         <h1 className="text-4xl font-bold mb-2 bg-gradient-to-r from-[#00F0FF] to-[#00FF94] bg-clip-text text-transparent">My Profile</h1>
                         <p className="text-neutral-400">Manage your account and view your activity.</p>

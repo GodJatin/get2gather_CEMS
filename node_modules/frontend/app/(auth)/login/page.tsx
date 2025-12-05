@@ -59,6 +59,12 @@ export default function LoginPage() {
                     <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/20 rounded-full blur-[100px]" />
                 </div>
 
+                {/* Home Link */}
+                <Link href="/" className="absolute top-8 left-8 z-50 flex items-center gap-3 hover:opacity-80 transition-opacity">
+                    <Image src="/logo.png" alt="Get2Gather" width={40} height={40} className="w-10 h-10 object-contain" />
+                    <span className="text-xl font-bold text-white">Get2Gather</span>
+                </Link>
+
                 <motion.div 
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}

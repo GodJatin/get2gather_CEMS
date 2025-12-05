@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import Link from 'next/link';
 import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';
 import api from '@/lib/api';
 import confetti from 'canvas-confetti';
@@ -103,8 +104,11 @@ export default function PointsPage() {
     return (
         <MotionWrapper className="max-w-7xl mx-auto p-6 space-y-12">
             <header className="text-center relative py-10">
+                <Link href="/student/profile" className="absolute left-0 top-10 w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors border border-white/10 z-10">
+                    ←
+                </Link>
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[300px] bg-[#00F0FF]/20 blur-[100px] rounded-full pointer-events-none" />
-                <h1 className="text-6xl font-black mb-4 bg-gradient-to-r from-[#00F0FF] via-white to-[#00FF94] bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(0,240,255,0.5)]">
+                <h1 className="text-6xl font-black mb-4 bg-gradient-to-r from-[#00F0FF] via-[#ffffff] to-[#00FF94] hover:from-[#FF0080] hover:via-[#ffffff] hover:to-[#7928CA] transition-all duration-500 bg-clip-text text-transparent drop-shadow-[0_0_30px_rgba(0,240,255,0.5)] cursor-default">
                     POINTS SHOP
                 </h1>
                 <p className="text-xl text-neutral-400 max-w-2xl mx-auto">
