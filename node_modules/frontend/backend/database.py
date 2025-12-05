@@ -16,17 +16,24 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 # ---------------------------------------------------------
 # UNIFIED DATABASE CONFIGURATION (Supabase Only)
 # ---------------------------------------------------------
-# CRITICAL FIX: MUMBAI REGIONAL POOLER + OPTIONS ROUTING
-# Host: aws-0-ap-south-1.pooler.supabase.com (Mumbai)
-# User: postgres.PROJECT (Standard)
-# Options: project=PROJECT (Explicit Fallback Routing)
-# This triple-checks the destination tenant to avoid "Tenant Not Found".
+# REVERTING TO ORIGINAL CONFIGURATION (As requested)
+# Host: db.vqfnndepdzdewugdcwjg.supabase.co
+# User: postgres
+# Port: 6543
 
-REGIONAL_POOLER_HOST = "aws-0-ap-south-1.pooler.supabase.com"
-PROJECT_ID = "vqfnndepdzdewugdcwjg"
-DATABASE_URL = f"postgresql://postgres.{PROJECT_ID}:J%40tin224@{REGIONAL_POOLER_HOST}:6543/postgres?sslmode=require&options=project%3D{PROJECT_ID}"
+DATABASE_URL = "postgresql://postgres:J%40tin224@db.vqfnndepdzdewugdcwjg.supabase.co:6543/postgres?sslmode=require"
 
-print(f"Using Mumbai Regional Host: {REGIONAL_POOLER_HOST}")
+try:
+    import socket
+    from urllib.parse import urlparse
+    hostname = urlparse(DATABASE_URL).hostname
+    print(f"Resolving {hostname}...")
+    ip_info = socket.getaddrinfo(hostname, 6543)
+    print(f"DEBUG: Resolved IPs: {[x[4][0] for x in ip_info]}")
+except Exception as e:
+    print(f"DEBUG: Resolution Failed: {e}")
+
+print(f"Using Original Config: {DATABASE_URL.split('@')[-1]}")
 
 
 
