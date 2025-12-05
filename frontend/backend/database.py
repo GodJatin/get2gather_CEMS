@@ -16,18 +16,17 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 # ---------------------------------------------------------
 # UNIFIED DATABASE CONFIGURATION (Supabase Only)
 # ---------------------------------------------------------
-# CRITICAL FIX: MUMBAI POOLER IPv4 + SNI
-# The project is likely in Mumbai (ap-south-1) based on user location.
-# Previous attempts with Singapore IP failed ("Tenant not found").
-# We use the Mumbai IPv4 (3.108.251.216) but send the Project Hostname in SNI.
+# CRITICAL FIX: MUMBAI REGIONAL POOLER (Standard IPv4)
+# 1. Host: aws-0-ap-south-1.pooler.supabase.com (Mumbai standard pooler)
+# 2. User: postgres.vqfnndepdzdewugdcwjg (Explicit tenant routing)
+# 3. Port: 6543 (Transaction Mode)
 
-MUMBAI_IPV4 = "3.108.251.216"
-# Host: db.vqfnnd... (SNI)
-# HostAddr: 3.108... (Physical Connection)
-# User: postgres (Standard, SNI routes the tenant)
-DATABASE_URL = f"postgresql://postgres:J%40tin224@db.vqfnndepdzdewugdcwjg.supabase.co:6543/postgres?sslmode=require&hostaddr={MUMBAI_IPV4}"
+# This resolves to IPv4 natively, satisfying Vercel.
+# It uses the Explicit User to route to the correct project.
+REGIONAL_POOLER_HOST = "aws-0-ap-south-1.pooler.supabase.com"
+DATABASE_URL = f"postgresql://postgres.vqfnndepdzdewugdcwjg:J%40tin224@{REGIONAL_POOLER_HOST}:6543/postgres?sslmode=require"
 
-print(f"Using Mumbai Pooler IP: {MUMBAI_IPV4} (with SNI)")
+print(f"Using Mumbai Regional Host: {REGIONAL_POOLER_HOST}")
 
 
 
