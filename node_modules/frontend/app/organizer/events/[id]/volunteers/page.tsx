@@ -12,6 +12,7 @@ interface Volunteer {
     created_at: string;
     student_name?: string;
     student_email?: string;
+    attended?: boolean;
 }
 
 export default function VolunteerManagementPage() {
@@ -67,6 +68,7 @@ export default function VolunteerManagementPage() {
                             <th className="p-4 font-medium">Email</th>
                             <th className="p-4 font-medium">Date</th>
                             <th className="p-4 font-medium">Status</th>
+                            <th className="p-4 font-medium">Attended</th>
                             <th className="p-4 font-medium">Actions</th>
                         </tr>
                     </thead>
@@ -86,6 +88,13 @@ export default function VolunteerManagementPage() {
                                     }`}>
                                         {vol.status}
                                     </span>
+                                </td>
+                                <td className="p-4">
+                                    {vol.attended ? (
+                                        <span className="text-green-500 px-2 py-1 bg-green-500/10 rounded-full text-xs font-bold">Yes</span>
+                                    ) : (
+                                        <span className="text-neutral-500 px-2 py-1 bg-neutral-800 rounded-full text-xs">No</span>
+                                    )}
                                 </td>
                                 <td className="p-4">
                                     {vol.status === 'Pending' && (

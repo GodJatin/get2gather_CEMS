@@ -89,6 +89,14 @@ export default function OrganizerRegisterPage() {
 
     return (
         <div className="min-h-screen flex flex-col items-center justify-center bg-neutral-950 p-6">
+            <Link href="/" className="absolute top-8 left-8 z-50 flex items-center gap-2 group hover:opacity-80 transition-opacity">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-xl shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
+                    🎓
+                </div>
+                <span className="text-xl font-bold bg-gradient-to-r from-white to-neutral-400 bg-clip-text text-transparent">
+                    Get2Gather
+                </span>
+            </Link>
             <div className="w-full max-w-md">
                 <div className="mb-8 text-center">
                     <h1 className="text-3xl font-bold text-white mb-2">Organizer Registration</h1>

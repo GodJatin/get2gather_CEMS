@@ -5,7 +5,7 @@ from routers import auth, events, bookings, media, feed, volunteers, leaderboard
 import time
 import models
 
-app = FastAPI(title="Get2Gather API", root_path="/api")
+app = FastAPI(title="Get2Gather API")
 
 @app.on_event("startup")
 def on_startup():
@@ -24,19 +24,32 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-# Routers (No prefix needed because of root_path="/api")
-app.include_router(auth.router)
-app.include_router(events.router)
-app.include_router(bookings.router)
-app.include_router(media.router)
-app.include_router(feed.router)
-app.include_router(volunteers.router)
-app.include_router(leaderboard.router)
-app.include_router(stats.router)
-app.include_router(scan.router)
-app.include_router(social.router)
-app.include_router(student.router)
-app.include_router(admin.router)
+from fastapi.staticfiles import StaticFiles
+import os
+
+# Create static directory if it doesn't exist
+os.makedirs("static/events", exist_ok=True)
+
+# Mount static files
+app.mount("/static", StaticFiles(directory="static"), name="static")
+
+# Routers
+# Note: Next.js forwards to /api/..., so we need to capture that in the routes.
+# Using prefix here to match incoming requests.
+API_PREFIX = "/api"
+
+app.include_router(auth.router, prefix=API_PREFIX)
+app.include_router(events.router, prefix=API_PREFIX)
+app.include_router(bookings.router, prefix=API_PREFIX)
+app.include_router(media.router, prefix=API_PREFIX)
+app.include_router(feed.router, prefix=API_PREFIX)
+app.include_router(volunteers.router, prefix=API_PREFIX)
+app.include_router(leaderboard.router, prefix=API_PREFIX)
+app.include_router(stats.router, prefix=API_PREFIX)
+app.include_router(scan.router, prefix=API_PREFIX)
+app.include_router(social.router, prefix=API_PREFIX)
+app.include_router(student.router, prefix=API_PREFIX)
+app.include_router(admin.router, prefix=API_PREFIX)
 
 @app.get("/")
 def read_root():

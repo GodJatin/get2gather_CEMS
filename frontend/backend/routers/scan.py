@@ -65,10 +65,19 @@ async def checkin_scan(
         
         # Check if scan is allowed (1 hour before event)
         try:
+            # Try parsing with AM/PM first
             event_datetime = datetime.strptime(f"{event.date} {event.time}", "%Y-%m-%d %I:%M %p")
-        except:
-            # If time parsing fails, allow scan (fallback)
-            event_datetime = datetime.now()
+        except ValueError:
+            try:
+                # Try 24hr format
+                event_datetime = datetime.strptime(f"{event.date} {event.time}", "%Y-%m-%d %H:%M")
+            except ValueError:
+                # Last resort: Try parsing just date
+                try: 
+                     event_datetime = datetime.strptime(event.date, "%Y-%m-%d")
+                except:
+                    # If time parsing fails, allow scan (fallback)
+                    event_datetime = datetime.now()
         
         hours_before_event = (event_datetime - datetime.now()).total_seconds() / 3600
         if hours_before_event > 1:

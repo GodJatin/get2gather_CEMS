@@ -11,7 +11,7 @@ from datetime import datetime
 
 router = APIRouter(tags=["Bookings"])
 
-@router.post("/bookings/", response_model=schemas.BookingResponse)
+@router.post("/bookings", response_model=schemas.BookingResponse)
 async def create_booking(booking: schemas.BookingCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.role != UserRole.STUDENT:
         raise HTTPException(status_code=403, detail="Only students can book events")
@@ -20,15 +20,20 @@ async def create_booking(booking: schemas.BookingCreate, current_user: User = De
     result = db.execute(select(Student).where(Student.user_id == current_user.id))
     student = result.scalar_one_or_none()
     if not student:
+        print(f"DEBUG: Booking failed - No student profile for user {current_user.id}")
         raise HTTPException(status_code=404, detail="Student profile not found")
+
+    print(f"DEBUG: Creating booking for Student {student.id}, Event {booking.event_id}")
 
     # Check if event exists and has seats
     result = db.execute(select(Event).where(Event.id == booking.event_id))
     event = result.scalar_one_or_none()
     if not event:
+        print("DEBUG: Event not found")
         raise HTTPException(status_code=404, detail="Event not found")
     
     if event.seats_available <= 0:
+        print("DEBUG: Event full")
         raise HTTPException(status_code=400, detail="Event is fully booked")
 
     # Check if already booked
@@ -38,6 +43,7 @@ async def create_booking(booking: schemas.BookingCreate, current_user: User = De
     ))
     existing_booking = result.scalar_one_or_none()
     if existing_booking:
+        print("DEBUG: Already booked")
         raise HTTPException(status_code=400, detail="You have already booked this event")
 
     # Create Booking
@@ -51,18 +57,28 @@ async def create_booking(booking: schemas.BookingCreate, current_user: User = De
     # Decrement seats
     event.seats_available -= 1
     
-    db.add(new_booking)
-    db.commit()
-    db.refresh(new_booking)
+    try:
+        db.add(new_booking)
+        db.commit()
+        db.refresh(new_booking)
+        print(f"DEBUG: Booking committed. ID: {new_booking.id}")
+    except Exception as e:
+        print(f"DEBUG: DB Commit failed: {e}")
+        db.rollback()
+        raise HTTPException(status_code=500, detail="Database commit failed")
     
     # Generate QR code after booking is created (to get ID)
-    from qr_utils import generate_qr_code
-    qr_data, qr_image = generate_qr_code("booking", new_booking.id)
-    new_booking.qr_code = qr_data
-    db.commit()
-    db.refresh(new_booking)
-    
-    # Send booking confirmation email with ticket
+    try:
+        from qr_utils import generate_qr_code
+        qr_data, qr_image = generate_qr_code("booking", new_booking.id)
+        new_booking.qr_code = qr_data
+        db.commit()
+        db.refresh(new_booking)
+    except Exception as e:
+        print(f"DEBUG: QR Generation failed: {e}")
+        # Non-critical
+
+    # ... email code ...
     try:
         from email_service import send_booking_ticket
         send_booking_ticket(
@@ -79,7 +95,7 @@ async def create_booking(booking: schemas.BookingCreate, current_user: User = De
     except Exception as e:
         print(f"Failed to send booking email: {e}")
         # Don't fail booking if email fails
-    
+
     return new_booking
 
 @router.get("/bookings/my", response_model=List[schemas.BookingResponse])
@@ -92,6 +108,8 @@ async def read_my_bookings(current_user: User = Depends(get_current_user), db: S
     if not student:
         raise HTTPException(status_code=404, detail="Student profile not found")
 
+    print(f"DEBUG: Fetching bookings for Student ID {student.id}")
+
     # Join with Event to get details
     result = db.execute(
         select(Booking, Event)
@@ -101,36 +119,45 @@ async def read_my_bookings(current_user: User = Depends(get_current_user), db: S
     
     bookings_with_events = []
     rows = result.all()
-    print(f"DEBUG: Found {len(rows)} bookings for student {student.id}")
+    print(f"DEBUG: Found {len(rows)} raw booking records in DB")
     
     for booking, event in rows:
         print(f"DEBUG: Processing booking {booking.id} for event {event.title}")
         # Determine status based on date
         status = booking.status
         try:
-            event_datetime = datetime.strptime(f"{event.date} {event.time}", "%Y-%m-%d %I:%M %p")
-        except:
-            # Try 24hr format if 12hr fails
-            try:
-                event_datetime = datetime.strptime(f"{event.date} {event.time}", "%Y-%m-%d %H:%M")
-            except:
-                event_datetime = datetime.max # Fallback
+            # Try ISO/Standard formats
+            for fmt in ["%Y-%m-%d %I:%M %p", "%Y-%m-%d %H:%M", "%d-%m-%Y %I:%M %p", "%d-%m-%Y %H:%M", "%d/%m/%Y %I:%M %p", "%d/%m/%Y %H:%M"]:
+                try:
+                    event_datetime = datetime.strptime(f"{event.date} {event.time}", fmt)
+                    break
+                except ValueError:
+                    continue
+            else:
+                event_datetime = datetime.max
+        except Exception as e:
+            print(f"Date parse error: {e}")
+            event_datetime = datetime.max
 
         if datetime.now() > event_datetime:
             status = "Completed"
 
-        booking_resp = schemas.BookingResponse(
-            id=booking.id,
-            event_id=booking.event_id,
-            student_id=booking.student_id,
-            status=status,
-            booking_date=booking.booking_date,
-            event_title=event.title,
-            event_date=event.date,
-            event_time=event.time,
-            event_venue=event.venue
-        )
-        bookings_with_events.append(booking_resp)
+        try:
+            booking_resp = schemas.BookingResponse(
+                id=booking.id,
+                event_id=booking.event_id,
+                student_id=booking.student_id,
+                status=status,
+                booking_date=booking.booking_date,
+                event_title=event.title,
+                event_date=event.date,
+                event_time=event.time,
+                event_venue=event.venue
+            )
+            bookings_with_events.append(booking_resp)
+        except Exception as e:
+            print(f"Error mapping booking {booking.id}: {e}")
+            continue
         
     # bookings_with_events populated above
 
@@ -149,12 +176,17 @@ async def read_my_bookings(current_user: User = Depends(get_current_user), db: S
         # Determine status based on date
         status = "Confirmed" # Volunteer approved means confirmed
         try:
-            event_datetime = datetime.strptime(f"{event.date} {event.time}", "%Y-%m-%d %I:%M %p")
-        except:
-            try:
-                event_datetime = datetime.strptime(f"{event.date} {event.time}", "%Y-%m-%d %H:%M")
-            except:
+            # Try ISO/Standard formats
+            for fmt in ["%Y-%m-%d %I:%M %p", "%Y-%m-%d %H:%M", "%d-%m-%Y %I:%M %p", "%d-%m-%Y %H:%M", "%d/%m/%Y %I:%M %p", "%d/%m/%Y %H:%M"]:
+                try:
+                    event_datetime = datetime.strptime(f"{event.date} {event.time}", fmt)
+                    break
+                except ValueError:
+                    continue
+            else:
                 event_datetime = datetime.max
+        except Exception:
+            event_datetime = datetime.max
 
         if datetime.now() > event_datetime:
             status = "Completed"

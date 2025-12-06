@@ -47,9 +47,11 @@ export default function OrganizerScanPage() {
         try {
             const response = await api.get('/events/');
             // Filter to show only organizer's events in production
-            setEvents(response.data);
+            // Filter to show only organizer's events in production
+            setEvents(Array.isArray(response.data) ? response.data : []);
         } catch (error) {
             console.error('Failed to fetch events:', error);
+            setEvents([]);
         }
     };
 
@@ -57,7 +59,31 @@ export default function OrganizerScanPage() {
         if (!selectedEvent) return;
 
         try {
-            const eventDateTime = new Date(`${selectedEvent.date} ${selectedEvent.time}`);
+            let timeStr = selectedEvent.time;
+            let dateStr = selectedEvent.date;
+
+            // Handle DD-MM-YYYY format if present
+            if (dateStr.match(/^\d{2}[-/]\d{2}[-/]\d{4}$/)) {
+                const [d, m, y] = dateStr.split(/[-/]/);
+                dateStr = `${y}-${m}-${d}`;
+            }
+
+            // Handle 12h format to 24h for consistent parsing
+            if (timeStr.match(/PM|AM/i)) {
+                const [time, modifier] = timeStr.split(' ');
+                let [hours, minutes] = time.split(':');
+                if (hours === '12') hours = '00';
+                if (modifier.toUpperCase() === 'PM') hours = (parseInt(hours, 10) + 12).toString();
+                timeStr = `${hours}:${minutes}`;
+            }
+
+            // Construct ISO-like string
+            const eventDateTime = new Date(`${dateStr}T${timeStr}`);
+            
+            if (isNaN(eventDateTime.getTime())) {
+                throw new Error("Invalid Date");
+            }
+
             const now = new Date();
             
             // Strict check: If current time is past event start time, disable scanning

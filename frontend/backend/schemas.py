@@ -106,6 +106,7 @@ class EventBase(BaseModel):
 
     class Config:
         orm_mode = True
+        from_attributes = True
 
 class EventCreate(EventBase):
     # Optional fields that frontend may send
@@ -138,6 +139,7 @@ class EventResponse(EventBase):
 
     class Config:
         orm_mode = True
+        from_attributes = True
 
 class WaitlistBase(BaseModel):
     event_id: int
@@ -152,6 +154,7 @@ class WaitlistResponse(WaitlistBase):
 
     class Config:
         orm_mode = True
+        from_attributes = True
 
 class BookingCreate(BaseModel):
     event_id: int
@@ -175,6 +178,7 @@ class BookingResponse(BaseModel):
 
     class Config:
         orm_mode = True
+        from_attributes = True
 
 class MediaCreate(BaseModel):
     event_id: int
@@ -194,6 +198,7 @@ class MediaResponse(BaseModel):
 
     class Config:
         orm_mode = True
+        from_attributes = True
 
 class FeedPostCreate(BaseModel):
     content: Optional[str] = None
@@ -216,6 +221,7 @@ class FeedCommentResponse(BaseModel):
 
     class Config:
         orm_mode = True
+        from_attributes = True
 
 class FeedPostResponse(BaseModel):
     id: int
@@ -238,6 +244,7 @@ class FeedPostResponse(BaseModel):
 
     class Config:
         orm_mode = True
+        from_attributes = True
 
 class VolunteerCreate(BaseModel):
     pass
@@ -260,3 +267,4 @@ class VolunteerResponse(BaseModel):
 
     class Config:
         orm_mode = True
+        from_attributes = True

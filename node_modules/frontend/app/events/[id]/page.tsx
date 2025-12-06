@@ -86,7 +86,23 @@ export default function EventDetailsPage() {
     // Slideshow Auto-Rotation
     useEffect(() => {
         if (!event) return;
-        const images = event.images ? JSON.parse(event.images) : (event.image_url ? [event.image_url] : []);
+        
+        let images: string[] = [];
+        try {
+            if (event.images) {
+                // Try parsing as JSON array
+                images = JSON.parse(event.images);
+                if (!Array.isArray(images)) images = [event.images];
+            } else if (event.image_url) {
+                images = [event.image_url];
+            }
+        } catch (e) {
+            // Fallback: treat as comma-separated string or single URL
+            if (event.images) {
+                images = event.images.split(',').map(s => s.trim()).filter(Boolean);
+            }
+        }
+
         if (images.length <= 1) return;
 
         const interval = setInterval(() => {
@@ -102,7 +118,9 @@ export default function EventDetailsPage() {
         if (!event) return;
         try {
             setBookingStatus('submitting');
-            await api.post('/bookings/', { event_id: event.id });
+            console.log('DEBUG: Attempting to book event', event.id);
+            const response = await api.post('/bookings/', { event_id: event.id });
+            console.log('DEBUG: Booking API response:', response.status, response.data);
             
             setBookingStatus('confirming');
             setTimeout(() => {
@@ -113,6 +131,7 @@ export default function EventDetailsPage() {
                 triggerConfetti();
             }, 1500);
         } catch (error: any) {
+            console.error('DEBUG: Booking failed', error);
             setBookingStatus('idle');
             alert(error.response?.data?.detail || 'Booking failed');
         }
@@ -145,7 +164,21 @@ export default function EventDetailsPage() {
     if (loading) return <div className="min-h-screen flex items-center justify-center text-neutral-400">Loading...</div>;
     if (!event) return <div className="min-h-screen flex items-center justify-center text-red-400">Event not found</div>;
 
-    const eventImages = event.images ? JSON.parse(event.images) : (event.image_url ? [event.image_url] : []);
+    const eventImages = (() => {
+        if (!event) return [];
+        try {
+            if (event.images) {
+                const parsed = JSON.parse(event.images);
+                return Array.isArray(parsed) ? parsed : [event.images];
+            }
+            return event.image_url ? [event.image_url] : [];
+        } catch (e) {
+             if (event.images) {
+                return event.images.split(',').map(s => s.trim()).filter(Boolean);
+            }
+            return event.image_url ? [event.image_url] : [];
+        }
+    })();
 
     return (
         <div className="min-h-screen bg-neutral-950 text-white p-6 md:p-12 relative overflow-hidden">

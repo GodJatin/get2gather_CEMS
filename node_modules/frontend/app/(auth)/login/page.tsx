@@ -8,6 +8,7 @@ import { motion } from 'framer-motion';
 
 export default function LoginPage() {
     const [role, setRole] = useState<'student' | 'organizer' | 'admin'>('student');
+    const [showPassword, setShowPassword] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
@@ -128,20 +129,29 @@ export default function LoginPage() {
                             />
                         </div>
 
-                        <div>
+                        <div className="relative">
                             <label className="block text-sm font-medium text-neutral-300 mb-2">Password</label>
                             <input
                                 name="password"
-                                type="password"
+                                type={showPassword ? "text" : "password"}
                                 defaultValue={role === 'admin' ? 'admin123' : ''}
                                 placeholder="••••••••"
-                                className="w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white placeholder:text-neutral-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all"
+                                className="w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white placeholder:text-neutral-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all pr-12"
                             />
+                            <button
+                                type="button"
+                                onClick={() => setShowPassword(!showPassword)}
+                                className="absolute right-4 top-[38px] text-neutral-500 hover:text-white transition-colors"
+                            >
+                                {showPassword ? '👁️' : '🙈'}
+                            </button>
                         </div>
 
-                        <button
+                        <motion.button
                             type="submit"
-                            className={`w-full py-3.5 rounded-xl font-bold text-white shadow-lg transition-all hover:scale-[1.02] ${role === 'student'
+                            whileHover={{ scale: 1.02, boxShadow: "0 0 15px rgba(124, 58, 237, 0.3)" }}
+                            whileTap={{ scale: 0.98 }}
+                            className={`w-full py-3.5 rounded-xl font-bold text-white shadow-lg transition-all ${role === 'student'
                                 ? 'bg-primary hover:bg-primary/80 shadow-primary/20'
                                 : role === 'organizer'
                                     ? 'bg-secondary hover:bg-secondary/80 shadow-secondary/20'
@@ -149,7 +159,7 @@ export default function LoginPage() {
                                 }`}
                         >
                             Sign In
-                        </button>
+                        </motion.button>
                     </form>
 
                     <div className="mt-8 text-center text-sm text-neutral-500">

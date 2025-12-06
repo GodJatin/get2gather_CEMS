@@ -106,7 +106,23 @@ export default function EventsPage() {
     };
 
     const EventCard = ({ event }: { event: Event }) => {
-        const image = event.images ? JSON.parse(event.images)[0] : (event.image_url || null);
+        const image = (() => {
+            try {
+                if (event.images) {
+                    const parsed = JSON.parse(event.images);
+                    return Array.isArray(parsed) ? parsed[0] : event.images;
+                }
+                return event.image_url || null;
+            } catch (e) {
+                if (event.images) {
+                     // Assume comma separated or single string
+                     const parts = event.images.split(',');
+                     return parts[0].trim();
+                }
+                return event.image_url || null;
+            }
+        })();
+
         const isBooked = bookings.includes(event.id);
 
         let eventDate = parse(`${event.date} ${event.time}`, 'yyyy-MM-dd h:mm aa', new Date());

@@ -10,6 +10,7 @@ interface Booking {
     student_email: string;
     booking_date: string;
     status: string;
+    attended: boolean;
 }
 
 export default function AttendeesPage() {
@@ -56,6 +57,7 @@ export default function AttendeesPage() {
                             <th className="p-4 font-medium">Email</th>
                             <th className="p-4 font-medium">Date</th>
                             <th className="p-4 font-medium">Status</th>
+                            <th className="p-4 font-medium">Attended</th>
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-white/10">
@@ -70,6 +72,13 @@ export default function AttendeesPage() {
                                     <span className="px-2 py-1 rounded-full bg-green-500/20 text-green-400 text-xs font-bold">
                                         {booking.status}
                                     </span>
+                                </td>
+                                <td className="p-4">
+                                    {booking.attended ? (
+                                        <span className="text-green-500 px-2 py-1 bg-green-500/10 rounded-full text-xs font-bold">Yes</span>
+                                    ) : (
+                                        <span className="text-neutral-500 px-2 py-1 bg-neutral-800 rounded-full text-xs">No</span>
+                                    )}
                                 </td>
                             </tr>
                         ))}

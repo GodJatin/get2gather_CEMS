@@ -181,6 +181,14 @@ export default function StudentRegisterPage() {
 
     return (
         <div className="min-h-screen flex items-center justify-center bg-neutral-950 p-6">
+            <Link href="/" className="absolute top-8 left-8 z-50 flex items-center gap-2 group hover:opacity-80 transition-opacity">
+                <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-xl shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
+                    🎓
+                </div>
+                <span className="text-xl font-bold bg-gradient-to-r from-white to-neutral-400 bg-clip-text text-transparent">
+                    Get2Gather
+                </span>
+            </Link>
             <div className="w-full max-w-lg p-8 rounded-3xl bg-neutral-900/50 border border-white/10 backdrop-blur-xl relative overflow-hidden">
                 {/* Progress Bar */}
                 <div className="absolute top-0 left-0 h-1 bg-neutral-800 w-full">

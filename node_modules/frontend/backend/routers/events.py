@@ -1,18 +1,73 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy.future import select
 from database import get_db
 from models import Event, User, Organizer, UserRole, Waitlist, Booking
 import schemas
-# print("DEBUG: schemas dir:", dir(schemas))
-# from schemas import EventCreate, EventResponse, WaitlistCreate, WaitlistResponse, BookingResponse
 from typing import List
 from routers.auth import get_current_user
 from datetime import datetime
+import shutil
+import os
+import uuid
 
 router = APIRouter(tags=["Events"])
 
-@router.post("/events/", response_model=schemas.EventResponse)
+
+@router.post("/events/{event_id}/upload-image")
+async def upload_event_image(
+    event_id: int, 
+    file: UploadFile = File(...), 
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    if current_user.role != UserRole.ORGANIZER:
+        raise HTTPException(status_code=403, detail="Only organizers can upload images")
+
+    # Check ownership
+    result = db.execute(select(Event).join(Organizer).where(Event.id == event_id, Organizer.user_id == current_user.id))
+    event = result.scalar_one_or_none()
+    
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found or permission denied")
+
+    # 1. Validate File matches
+    if not file.content_type.startswith('image/'):
+        raise HTTPException(status_code=400, detail="File must be an image")
+
+    # 2. Save File locally (or upload to cloud storage)
+    # Ensure directory exists
+    UPLOAD_DIR = "static/events"
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    
+    # Generate unique filename
+    file_ext = file.filename.split(".")[-1]
+    filename = f"{event_id}_{uuid.uuid4()}.{file_ext}"
+    file_path = f"{UPLOAD_DIR}/{filename}"
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    # 3. Update Event Record
+    # Append to existing images list (comma separated string for now, or JSON)
+    # The schema uses 'images' as optional string. Let's assume comma-separated URLs.
+    
+    # URL construction (assuming static serving is set up)
+    # Ideally should be a full URL or relative path handled by frontend
+    image_url = f"/static/events/{filename}"
+    
+    if event.images:
+        event.images = f"{event.images},{image_url}"
+    else:
+        event.images = image_url
+        event.image_url = image_url # Set primary image if none
+        
+    db.commit()
+    db.refresh(event)
+    
+    return {"message": "Image uploaded successfully", "url": image_url}
+
+@router.post("/events", response_model=schemas.EventResponse)
 async def create_event(event: schemas.EventCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.role != UserRole.ORGANIZER:
         raise HTTPException(status_code=403, detail="Only organizers can create events")
@@ -37,18 +92,6 @@ async def create_event(event: schemas.EventCreate, current_user: User = Depends(
     db.refresh(new_event)
     return new_event
 
-@router.get("/events/my", response_model=List[schemas.EventResponse])
-async def get_my_events(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if current_user.role != UserRole.ORGANIZER:
-        raise HTTPException(status_code=403, detail="Not authorized")
-    
-    organizer = db.query(Organizer).filter(Organizer.user_id == current_user.id).first()
-    if not organizer:
-        return []
-        
-    events = db.query(Event).filter(Event.organizer_id == organizer.id).all()
-    return events
-
 @router.get("/events/trending", response_model=List[schemas.EventResponse])
 async def get_trending_events(db: Session = Depends(get_db)):
     # Get all events
@@ -56,7 +99,6 @@ async def get_trending_events(db: Session = Depends(get_db)):
     all_events = result.scalars().all()
     
     active_events = []
-    from datetime import datetime
     
     for e in all_events:
         try:
@@ -111,7 +153,7 @@ async def get_waitlist_status(event_id: int, current_user: User = Depends(get_cu
     existing = result.scalar_one_or_none()
     return {"on_waitlist": existing is not None}
 
-@router.get("/events/", response_model=List[schemas.EventResponse])
+@router.get("/events", response_model=List[schemas.EventResponse])
 async def read_events(skip: int = 0, limit: int = 100, db: Session = Depends(get_db)):
     result = db.execute(select(Event).offset(skip).limit(limit))
     events = result.scalars().all()

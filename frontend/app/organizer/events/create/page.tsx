@@ -24,6 +24,7 @@ export default function CreateEventPage() {
     const [imagePreviews, setImagePreviews] = useState<string[]>([]);
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
     const [loading, setLoading] = useState(false);
+    const [showSuccessModal, setShowSuccessModal] = useState(false);
 
     const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
         const { name, value } = e.target;
@@ -76,13 +77,22 @@ export default function CreateEventPage() {
 
         try {
             // 1. Create Event
+            console.log('Sending event data:', formData);
             const eventResponse = await api.post('/events/', {
                 ...formData,
                 capacity: parseInt(formData.capacity),
                 price: parseFloat(formData.price)
             });
 
-            const eventId = eventResponse.data.id;
+            console.log('Event Response:', eventResponse);
+            console.log('Event Data:', eventResponse.data);
+
+            const eventId = eventResponse.data?.id;
+
+            if (!eventId) {
+                console.error('Event ID missing from response data:', eventResponse.data);
+                throw new Error('Event created but ID is missing from response');
+            }
 
             // 2. Upload Images
             // Assuming backend handles multiple uploads sequentially or we call the endpoint multiple times
@@ -94,11 +104,44 @@ export default function CreateEventPage() {
                 });
             }
 
-            router.push('/organizer/events');
+            // Success Implementation
+            setLoading(false);
+            
+            // Trigger Confetti
+            const confetti = (await import('canvas-confetti')).default;
+            const duration = 3000;
+            const end = Date.now() + duration;
+
+            const frame = () => {
+                confetti({
+                    particleCount: 2,
+                    angle: 60,
+                    spread: 55,
+                    origin: { x: 0 },
+                    colors: ['#a855f7', '#ec4899', '#3b82f6']
+                });
+                confetti({
+                    particleCount: 2,
+                    angle: 120,
+                    spread: 55,
+                    origin: { x: 1 },
+                    colors: ['#a855f7', '#ec4899', '#3b82f6']
+                });
+
+                if (Date.now() < end) {
+                    requestAnimationFrame(frame);
+                }
+            };
+            frame();
+
+            // Show Success Dialog (using simple alert for now, effectively replacing with custom UI if needed later or just route)
+            // User requested a dialog, let's use a state to show a modal instead of redirecting immediately
+            setShowSuccessModal(true);
+            
+            // router.push('/organizer/events'); // Moved to modal close
         } catch (error) {
             console.error('Failed to create event:', error);
             alert('Failed to create event. Please try again.');
-        } finally {
             setLoading(false);
         }
     };
@@ -394,6 +437,38 @@ export default function CreateEventPage() {
                     </button>
                 </div>
             </form>
+            {/* Success Modal */}
+            <AnimatePresence>
+                {showSuccessModal && (
+                    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm">
+                        <motion.div
+                            initial={{ opacity: 0, scale: 0.9 }}
+                            animate={{ opacity: 1, scale: 1 }}
+                            exit={{ opacity: 0, scale: 0.9 }}
+                            className="bg-neutral-900 border border-white/10 rounded-2xl p-8 max-w-md w-full shadow-2xl relative overflow-hidden"
+                        >
+                            <div className="absolute inset-0 bg-gradient-to-br from-purple-500/10 to-transparent pointer-events-none" />
+                            <div className="text-center mb-6 relative z-10">
+                                <div className="w-20 h-20 bg-green-500/20 text-green-500 rounded-full flex items-center justify-center text-4xl mx-auto mb-6 border border-green-500/30 shadow-[0_0_15px_rgba(34,197,94,0.3)]">
+                                    🎉
+                                </div>
+                                <h3 className="text-2xl font-bold mb-2">Event Created!</h3>
+                                <p className="text-neutral-400">
+                                    Your event "{formData.title}" has been successfully published. Students can now view and book it.
+                                </p>
+                            </div>
+                            <div className="relative z-10">
+                                <button
+                                    onClick={() => router.push('/organizer/events')}
+                                    className="w-full py-3.5 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold transition-all shadow-lg hover:shadow-purple-500/25"
+                                >
+                                    Go to Dashboard
+                                </button>
+                            </div>
+                        </motion.div>
+                    </div>
+                )}
+            </AnimatePresence>
         </MotionWrapper>
     );
 }

@@ -28,14 +28,14 @@ async def get_student_stats(current_user: User = Depends(get_current_user), db: 
         if not student:
             raise HTTPException(status_code=404, detail="Student profile not found")
 
-        # Count bookings
+        # Count bookings - CONFIRMED ATTENDANCE ONLY
         print(f"DEBUG: Counting bookings for student_id: {student.id}")
-        booking_res = db.execute(select(func.count(Booking.id)).where(Booking.student_id == student.id))
+        booking_res = db.execute(select(func.count(Booking.id)).where(Booking.student_id == student.id, Booking.attended == True))
         total_bookings = booking_res.scalar() or 0
         print(f"DEBUG: Total bookings found: {total_bookings}")
 
-        # Count volunteer
-        volunteer_res = db.execute(select(func.count(Volunteer.id)).where(Volunteer.user_id == current_user.id, Volunteer.status == "Approved"))
+        # Count volunteer - CONFIRMED ATTENDANCE ONLY
+        volunteer_res = db.execute(select(func.count(Volunteer.id)).where(Volunteer.user_id == current_user.id, Volunteer.status == "Approved", Volunteer.attended == True))
         total_volunteer = volunteer_res.scalar() or 0
 
         # Count posts
@@ -95,20 +95,20 @@ async def get_organizer_stats(current_user: User = Depends(get_current_user), db
     events_res = db.execute(select(func.count(Event.id)).where(Event.organizer_id == organizer_id))
     total_events = events_res.scalar() or 0
 
-    # Count Bookings (Attendees) for these events
+    # Count Bookings (Attendees) for these events - CONFIRMED ATTENDANCE ONLY
     # Join Booking with Event to check organizer_id
     bookings_res = db.execute(
         select(func.count(Booking.id))
         .join(Event, Booking.event_id == Event.id)
-        .where(Event.organizer_id == organizer_id)
+        .where(Event.organizer_id == organizer_id, Booking.attended == True)
     )
     total_bookings = bookings_res.scalar() or 0
 
-    # Count Volunteers for these events
+    # Count Volunteers for these events - CONFIRMED ATTENDANCE ONLY
     volunteers_res = db.execute(
         select(func.count(Volunteer.id))
         .join(Event, Volunteer.event_id == Event.id)
-        .where(Event.organizer_id == organizer_id)
+        .where(Event.organizer_id == organizer_id, Volunteer.attended == True)
     )
     total_volunteers = volunteers_res.scalar() or 0
 
