@@ -28,10 +28,15 @@ from fastapi.staticfiles import StaticFiles
 import os
 
 # Create static directory if it doesn't exist
-os.makedirs("static/events", exist_ok=True)
-
-# Mount static files
-app.mount("/static", StaticFiles(directory="static"), name="static")
+try:
+    os.makedirs("static/events", exist_ok=True)
+    app.mount("/static", StaticFiles(directory="static"), name="static")
+except OSError:
+    # Fallback for read-only file systems (like Vercel)
+    # We use /tmp which is writable in Lambda environments
+    print("Read-only filesystem detected. Using /tmp/static")
+    os.makedirs("/tmp/static/events", exist_ok=True)
+    app.mount("/static", StaticFiles(directory="/tmp/static"), name="static")
 
 # Routers
 # Note: Next.js forwards to /api/..., so we need to capture that in the routes.
