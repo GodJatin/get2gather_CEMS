@@ -90,46 +90,76 @@ export default function Home() {
           <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 justify-items-center">
             {[
               { 
-                name: "Alex Johnson", 
+                name: "Jatin Jalpesh Shah", 
                 role: "Lead Developer", 
-                image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Alex&backgroundColor=b6e3f4",
+                image: "/pfp/Jatin Jalpesh Shah.png",
                 contribution: "Architected the entire backend microservices and real-time notification system.",
-                socials: { github: "#", linkedin: "#", instagram: "#", whatsapp: "#" }
+                socials: { 
+                  github: "https://github.com/GodJatin", 
+                  linkedin: "https://www.linkedin.com/in/jatin-jalpesh-shah-6961842bb/", 
+                  instagram: "https://www.instagram.com/jatin_jalpesh_shah?igsh=bXVxMTY4bThmNmMz", 
+                  whatsapp: "https://wa.me/918511666675?text=Hello%2C%20I%E2%80%99m%20contacting%20through%20your%20website%20(%22Get2Gather%22).%20Kindly%20respond%20me." 
+                }
               },
               { 
-                name: "Sam Smith", 
+                name: "Gaurav Vijay Upadhyay", 
                 role: "UI/UX Designer", 
-                image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Sam&backgroundColor=c0aede",
+                image: "/pfp/Gaurav Vijay Upadhyay.png",
                 contribution: "Designed the vibrant neon theme and crafted the seamless user experience.",
-                socials: { github: "#", linkedin: "#", instagram: "#", whatsapp: "#" }
+                socials: { 
+                  github: "https://github.com/Gaurav00321", 
+                  linkedin: "https://www.linkedin.com/in/gauravupadhyay-tech", 
+                  instagram: "https://www.instagram.com/gauravxupadhyay", 
+                  whatsapp: "https://wa.me/917275742642?text=Hello%2C%20I%E2%80%99m%20contacting%20through%20your%20website%20(%22Get2Gather%22).%20Kindly%20respond%20me." 
+                }
               },
               { 
-                name: "Jordan Lee", 
+                name: "Arunav Roy Sarkar", 
                 role: "Backend Engineer", 
-                image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Jordan&backgroundColor=ffdfbf",
+                image: "/pfp/Arunav Roy Sarkar.png",
                 contribution: "Optimized database queries and implemented the secure authentication flow.",
-                socials: { github: "#", linkedin: "#", instagram: "#", whatsapp: "#" }
+                socials: { 
+                  github: "https://share.google/KAMOpciWHCPdyH5rb", 
+                  linkedin: "https://www.linkedin.com/in/arunav-roy-36502a2a4?utm_source=share_via&utm_content=profile&utm_medium=member_android", 
+                  instagram: "https://www.instagram.com/arunav696?igsh=MWNjcGR4aHNtNHFhNA==", 
+                  whatsapp: "https://wa.me/917002781019?text=Hello%2C%20I%E2%80%99m%20contacting%20through%20your%20website%20(%22Get2Gather%22).%20Kindly%20respond%20me." 
+                }
               },
               { 
-                name: "Casey Taylor", 
+                name: "Ravi Ranjan", 
                 role: "Project Manager", 
-                image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Casey&backgroundColor=ffdfbf",
+                image: "/pfp/Ravi Ranjan.png",
                 contribution: "Coordinated the sprint cycles and ensured timely delivery of all features.",
-                socials: { github: "#", linkedin: "#", instagram: "#", whatsapp: "#" }
+                socials: { 
+                  github: "https://github.com/RaviR659", 
+                  linkedin: "https://www.linkedin.com/in/ravi-ranjan-909623372", 
+                  instagram: "https://www.instagram.com/raviranjan6834?igsh=MWhwdzdub2FwMjVh", 
+                  whatsapp: "https://wa.me/919274868331?text=Hello%2C%20I%E2%80%99m%20contacting%20through%20your%20website%20(%22Get2Gather%22).%20Kindly%20respond%20me." 
+                }
               },
               { 
-                name: "Riley Davis", 
+                name: "R Jan Steve Daniel", 
                 role: "Frontend Dev", 
-                image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Riley&backgroundColor=b6e3f4",
+                image: "/pfp/R Jan Steve Daniel.png",
                 contribution: "Built the responsive dashboard and implemented the complex animation logic.",
-                socials: { github: "#", linkedin: "#", instagram: "#", whatsapp: "#" }
+                socials: { 
+                  github: "https://github.com/JanSteve", 
+                  linkedin: "https://linkedin.com/in/r-jan-steve-daniel-248630275", 
+                  instagram: "https://instagram.com/_stevexdd", 
+                  whatsapp: "https://wa.me/919384670536?text=Hello%2C%20I%E2%80%99m%20contacting%20through%20your%20website%20(%22Get2Gather%22).%20Kindly%20respond%20me." 
+                }
               },
               { 
-                name: "Morgan White", 
+                name: "Smit Patel", 
                 role: "QA Engineer", 
-                image: "https://api.dicebear.com/7.x/avataaars/svg?seed=Morgan&backgroundColor=c0aede",
+                image: "/pfp/Smit Patel.png",
                 contribution: "Conducted rigorous testing to ensure a bug-free and smooth launch.",
-                socials: { github: "#", linkedin: "#", instagram: "#", whatsapp: "#" }
+                socials: { 
+                  github: "https://github.com/smitp6832-lang", 
+                  linkedin: "https://www.linkedin.com/in/smit-patel-35ab772b3?utm_source=share_via&utm_content=profile&utm_medium=member_android", 
+                  instagram: "https://www.instagram.com/smit__patel_0070?igsh=ZXFjNGh1c3g3dWZj", 
+                  whatsapp: "https://wa.me/919016093364?text=Hello%2C%20I%E2%80%99m%20contacting%20through%20your%20website%20(%22Get2Gather%22).%20Kindly%20respond%20me." 
+                }
               }
             ].map((member, i) => (
               <StaggerItem key={i}>
