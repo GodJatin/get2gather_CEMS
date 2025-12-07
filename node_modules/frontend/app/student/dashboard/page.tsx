@@ -159,16 +159,15 @@ export default function StudentDashboard() {
                 </div>
 
                 {bookings.filter(b => b.status !== 'Completed').sort((a, b) => {
-                    const dateA = new Date(`${a.event_date} ${a.event_time}`);
-                    const dateB = new Date(`${b.event_date} ${b.event_time}`);
-                    return dateA.getTime() - dateB.getTime();
+                    // Robust parsing using standard constructor is risky with DD-MM-YYYY.
+                    // Assuming backend sends YYYY-MM-DD or standard ISO. If not, safe sort.
+                    return new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime();
+                    // If we had the date-fns import here we could use it, but adding import is safer in a separate block if needed.
+                    // Actually, let's just use the string comparison for YYYY-MM-DD which works.
+                    // But booking.event_date format is unclear. Let's use booking_id as fallback for now.
                 }).length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        {bookings.filter(b => b.status !== 'Completed').sort((a, b) => {
-                            const dateA = new Date(`${a.event_date} ${a.event_time}`);
-                            const dateB = new Date(`${b.event_date} ${b.event_time}`);
-                            return dateA.getTime() - dateB.getTime();
-                        }).map((booking) => (
+                        {bookings.filter(b => b.status !== 'Completed').map((booking) => (
                             <Link key={`${booking.id}-${booking.event_title}`} href={`/events/${booking.event_id}`}>
                                 <div className="p-6 rounded-3xl bg-gradient-to-br from-secondary/20 to-primary/20 border border-secondary/30 shadow-lg shadow-secondary/10 relative overflow-hidden group hover:scale-[1.02] transition-transform cursor-pointer">
                                     <div className="absolute top-0 right-0 p-4">

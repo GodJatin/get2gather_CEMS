@@ -259,18 +259,24 @@ export default function MyEventsPage() {
                                             View
                                         </Link>
                                     </div>
-                                    <div className="grid grid-cols-2 gap-3">
+                                    <div className="grid grid-cols-3 gap-2">
                                         <Link 
                                             href={`/organizer/events/${event.id}/attendees`}
-                                            className="py-2.5 rounded-xl bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 border border-purple-500/20 font-medium transition-colors text-center text-sm"
+                                            className="py-2.5 rounded-xl bg-purple-500/10 text-purple-400 hover:bg-purple-500/20 border border-purple-500/20 font-medium transition-colors text-center text-xs flex items-center justify-center"
                                         >
                                             Attendees
                                         </Link>
                                         <Link 
                                             href={`/organizer/events/${event.id}/volunteers`}
-                                            className="py-2.5 rounded-xl bg-pink-500/10 text-pink-400 hover:bg-pink-500/20 border border-pink-500/20 font-medium transition-colors text-center text-sm"
+                                            className="py-2.5 rounded-xl bg-pink-500/10 text-pink-400 hover:bg-pink-500/20 border border-pink-500/20 font-medium transition-colors text-center text-xs flex items-center justify-center"
                                         >
                                             Volunteers
+                                        </Link>
+                                        <Link 
+                                            href={`/organizer/events/${event.id}/reviews`}
+                                            className="py-2.5 rounded-xl bg-yellow-500/10 text-yellow-400 hover:bg-yellow-500/20 border border-yellow-500/20 font-medium transition-colors text-center text-xs flex items-center justify-center"
+                                        >
+                                            Reviews
                                         </Link>
                                     </div>
                                 </div>

@@ -230,7 +230,9 @@ async def get_event_bookings(event_id: int, current_user: User = Depends(get_cur
             status=booking.status,
             booking_date=booking.booking_date,
             student_name=student.name,
-            student_email=user.email
+            student_email=user.email,
+            rating=getattr(booking, 'rating', None),
+            review=getattr(booking, 'review', None)
         )
         bookings_with_details.append(booking_resp)
 

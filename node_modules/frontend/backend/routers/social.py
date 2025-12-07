@@ -22,6 +22,7 @@ class ProfileResponse(BaseModel):
     followers_count: int
     following_count: int
     recent_activity: List[dict]
+    active_effect: Optional[str] = None
 
 @router.post("/social/follow/{user_id}")
 async def follow_user(user_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -113,6 +114,7 @@ async def get_profile(student_id: int, current_user: User = Depends(get_current_
         "department": student.department,
         "title": student.title,
         "badges": student.badges or [],
+        "active_effect": student.active_effect,
         "stats": {
             "events_attended": total_bookings,
             "volunteer_count": 0 # Placeholder, would need volunteer table query
@@ -120,5 +122,36 @@ async def get_profile(student_id: int, current_user: User = Depends(get_current_
         "is_following": is_following,
         "followers_count": followers_count,
         "following_count": following_count,
-        "recent_activity": recent_activity
     }
+
+@router.get("/social/search")
+async def search_users(q: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if not q:
+        return []
+    
+    q_lower = q.lower()
+    
+    # Search Students
+    # Simple like query
+    result = db.execute(select(Student).where(func.lower(Student.name).contains(q_lower)).limit(20))
+    students = result.scalars().all()
+    
+    results = []
+    for student in students:
+        # Check if following
+        f_res = db.execute(select(user_follows).where(
+            (user_follows.c.follower_id == current_user.id) & 
+            (user_follows.c.followed_id == student.user_id)
+        ))
+        is_following = f_res.first() is not None
+        
+        results.append({
+            "id": student.id,
+            "user_id": student.user_id,
+            "name": student.name,
+            "department": student.department,
+            "role": "student",
+            "is_following": is_following
+        })
+        
+    return results

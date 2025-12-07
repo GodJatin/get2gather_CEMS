@@ -1,10 +1,11 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
-import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';
+import MotionWrapper from '@/components/MotionWrapper';
 import { parse } from 'date-fns';
+import { Dialog, Transition } from '@headlessui/react';
 
 interface Event {
     id: number;
@@ -33,9 +34,19 @@ export default function EventsPage() {
     const [trendingEvents, setTrendingEvents] = useState<Event[]>([]);
     const [user, setUser] = useState<UserProfile | null>(null);
     const [bookings, setBookings] = useState<number[]>([]); // Store booked event IDs
+    const [bookingsData, setBookingsData] = useState<any[]>([]); // Full booking objects
     const [loading, setLoading] = useState(true);
     const [filter, setFilter] = useState('All');
     const [searchTag, setSearchTag] = useState('');
+
+    // Review Modal State
+    const [reviewModal, setReviewModal] = useState({
+        isOpen: false,
+        bookingId: 0,
+        eventTitle: '',
+        rating: 0,
+        review: ''
+    });
 
     useEffect(() => {
         const fetchData = async () => {
@@ -49,11 +60,6 @@ export default function EventsPage() {
                 const trendingRes = await api.get('/events/trending');
                 setTrendingEvents(Array.isArray(trendingRes.data) ? trendingRes.data : []);
 
-                // Fetch user bookings to check status
-                const bookingsRes = await api.get('/bookings/my');
-                const bookedEventIds = bookingsRes.data.map((b: any) => b.event_id);
-                setBookings(bookedEventIds);
-
             } catch (error) {
                 console.error('Failed to fetch data:', error);
             } finally {
@@ -61,13 +67,54 @@ export default function EventsPage() {
             }
         };
 
+        const fetchBookings = async () => {
+             try {
+                const res = await api.get('/bookings/my');
+                setBookingsData(res.data);
+                setBookings(res.data.map((b: any) => b.event_id));
+             } catch (e) { console.error(e); }
+        };
+
         fetchData();
+        fetchBookings();
     }, []);
+
+    const openReviewModal = (booking: any) => {
+        setReviewModal({
+            isOpen: true,
+            bookingId: booking.id,
+            eventTitle: booking.event_title || 'Event',
+            rating: booking.rating || 0,
+            review: booking.review || ''
+        });
+    };
+
+    const submitReview = async () => {
+        try {
+            await api.post(`/bookings/${reviewModal.bookingId}/feedback`, {
+                rating: reviewModal.rating,
+                review: reviewModal.review
+            });
+            
+            // Update local state
+            setBookingsData(prev => prev.map(b => 
+                b.id === reviewModal.bookingId 
+                    ? { ...b, rating: reviewModal.rating, review: reviewModal.review }
+                    : b
+            ));
+            
+            setReviewModal(prev => ({ ...prev, isOpen: false }));
+            alert('Review submitted successfully!');
+        } catch (error) {
+            console.error(error);
+            alert('Failed to submit review');
+        }
+    };
 
     const filterEvents = (section?: string) => {
         let filtered = events;
 
-        // Apply Category Filter (from Dropdown)
+        // Apply Category Filter
         if (filter !== 'All') {
             if (filter === 'Department') {
                 filtered = filtered.filter(e => e.department === user?.department);
@@ -90,8 +137,7 @@ export default function EventsPage() {
             filtered = filtered.filter(e => e.open_for === 'Everyone' || !e.department);
         }
 
-        // Filter out past events for specific sections (Trending, Department, Open)
-        // Only show them in "All Events" (when section is undefined AND filter is All)
+        // Filter out past events for specific sections
         if (section || filter !== 'All') {
              filtered = filtered.filter(e => {
                 let eventDate = parse(`${e.date} ${e.time}`, 'yyyy-MM-dd h:mm aa', new Date());
@@ -115,7 +161,6 @@ export default function EventsPage() {
                 return event.image_url || null;
             } catch (e) {
                 if (event.images) {
-                     // Assume comma separated or single string
                      const parts = event.images.split(',');
                      return parts[0].trim();
                 }
@@ -129,7 +174,13 @@ export default function EventsPage() {
         if (isNaN(eventDate.getTime())) {
             eventDate = parse(`${event.date} ${event.time}`, 'yyyy-MM-dd HH:mm', new Date());
         }
-        const isCompleted = !isNaN(eventDate.getTime()) && eventDate < new Date();
+        
+        const now = new Date();
+        const timeDiff = eventDate.getTime() - now.getTime();
+        const minutesUntilStart = timeDiff / (1000 * 60);
+        
+        const isCompleted = !isNaN(eventDate.getTime()) && eventDate < now;
+        const isBookingClosed = isCompleted || (minutesUntilStart <= 30 && minutesUntilStart > -1000);
 
         return (
             <Link href={`/events/${event.id}`} className="group block">
@@ -170,12 +221,45 @@ export default function EventsPage() {
 
                         <div className="mt-auto pt-4 border-t border-white/5 flex justify-between items-center">
                             <span className="text-xs text-neutral-500">
-                                {isCompleted ? '' : `${event.seats_available} seats left`}
+                                {isBookingClosed ? 'Booking Closed' : `${event.seats_available} seats left`}
                             </span>
                             {isCompleted ? (
-                                <span className="text-xs font-bold bg-neutral-700 text-neutral-400 px-3 py-1.5 rounded-lg">Completed</span>
+                                (() => {
+                                    const booking = bookingsData.find(b => b.event_id === event.id);
+                                    
+                                    if (booking && booking.attended) {
+                                        if (booking.event_title && booking.event_title.includes('(Volunteer)')) {
+                                            return <span className="text-xs font-bold bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded-lg border border-blue-500/20">Volunteer Attended</span>;
+                                        }
+
+                                        return (
+                                            <button 
+                                                onClick={(e) => {
+                                                    e.preventDefault();
+                                                    e.stopPropagation();
+                                                    openReviewModal(booking);
+                                                }}
+                                                className="px-4 py-1.5 rounded-lg bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 text-xs font-bold hover:bg-yellow-500/20 transition-colors flex items-center gap-1"
+                                            >
+                                                {booking.rating ? (
+                                                    <>
+                                                        <span>{booking.rating} ★</span>
+                                                        <span className="opacity-75 font-normal ml-1">Edit</span>
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <span>★ Leave Review</span>
+                                                    </>
+                                                )}
+                                            </button>
+                                        );
+                                    }
+                                    return <span className="text-xs font-bold bg-neutral-700 text-neutral-400 px-3 py-1.5 rounded-lg">Completed</span>;
+                                })()
                             ) : isBooked ? (
                                 <span className="text-xs font-bold bg-green-500/20 text-green-400 px-3 py-1.5 rounded-lg border border-green-500/20">Booked</span>
+                            ) : isBookingClosed ? (
+                                <span className="text-sm font-bold text-red-500">Closed</span>
                             ) : (
                                 <span className="text-sm font-bold text-primary group-hover:translate-x-1 transition-transform">Book Now →</span>
                             )}
@@ -188,11 +272,95 @@ export default function EventsPage() {
 
     return (
         <MotionWrapper className="max-w-7xl mx-auto p-6 md:p-12">
+            {/* Review Modal */}
+            <Transition appear show={reviewModal.isOpen} as={Fragment}>
+                <Dialog as="div" className="relative z-50" onClose={() => setReviewModal(prev => ({ ...prev, isOpen: false }))}>
+                    <Transition.Child
+                        as={Fragment}
+                        enter="ease-out duration-300"
+                        enterFrom="opacity-0"
+                        enterTo="opacity-100"
+                        leave="ease-in duration-200"
+                        leaveFrom="opacity-100"
+                        leaveTo="opacity-0"
+                    >
+                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" />
+                    </Transition.Child>
+
+                    <div className="fixed inset-0 overflow-y-auto">
+                        <div className="flex min-h-full items-center justify-center p-4 text-center">
+                            <Transition.Child
+                                as={Fragment}
+                                enter="ease-out duration-300"
+                                enterFrom="opacity-0 scale-95"
+                                enterTo="opacity-100 scale-100"
+                                leave="ease-in duration-200"
+                                leaveFrom="opacity-100 scale-100"
+                                leaveTo="opacity-0 scale-95"
+                            >
+                                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-neutral-900 border border-white/10 p-8 text-left align-middle shadow-2xl transition-all">
+                                    <Dialog.Title as="h3" className="text-2xl font-bold leading-6 text-white mb-2">
+                                        Rate & Review
+                                    </Dialog.Title>
+                                    <p className="text-neutral-400 mb-6">
+                                        How was your experience at <span className="text-[#00F0FF]">{reviewModal.eventTitle}</span>?
+                                    </p>
+
+                                    <div className="space-y-6">
+                                        <div className="flex justify-center gap-2">
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                <button
+                                                    key={star}
+                                                    onClick={() => setReviewModal(prev => ({ ...prev, rating: star }))}
+                                                    className={`text-4xl transition-transform hover:scale-110 ${
+                                                        reviewModal.rating >= star ? 'text-yellow-400' : 'text-neutral-700 hover:text-yellow-400/50'
+                                                    }`}
+                                                >
+                                                    ★
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-neutral-400 mb-2">Feedback (Optional)</label>
+                                            <textarea
+                                                rows={4}
+                                                className="w-full rounded-xl bg-neutral-800 border border-white/5 p-4 text-white focus:outline-none focus:border-primary/50 transition-colors"
+                                                placeholder="Share your thoughts..."
+                                                value={reviewModal.review}
+                                                onChange={(e) => setReviewModal(prev => ({ ...prev, review: e.target.value }))}
+                                            />
+                                        </div>
+
+                                        <div className="flex gap-3 mt-6">
+                                            <button
+                                                type="button"
+                                                className="flex-1 rounded-xl bg-neutral-800 px-4 py-3 text-sm font-medium text-neutral-300 hover:bg-neutral-700 transition-colors"
+                                                onClick={() => setReviewModal(prev => ({ ...prev, isOpen: false }))}
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`flex-1 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-white hover:bg-primary/80 transition-colors shadow-lg shadow-primary/20 ${reviewModal.rating === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                onClick={submitReview}
+                                                disabled={reviewModal.rating === 0}
+                                            >
+                                                Submit Review
+                                            </button>
+                                        </div>
+                                    </div>
+                                </Dialog.Panel>
+                            </Transition.Child>
+                        </div>
+                    </div>
+                </Dialog>
+            </Transition>
+            
             <header className="mb-12">
                 <h1 className="text-4xl font-bold mb-4">Discover Events</h1>
                 <p className="text-neutral-400">Find workshops, seminars, and fun activities happening around you.</p>
                 
-                {/* Search / Filter Bar */}
                 <div className="mt-8 flex flex-col md:flex-row gap-4">
                     <div className="relative flex-1">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500">🔍</span>
@@ -221,7 +389,7 @@ export default function EventsPage() {
                 </div>
             </header>
 
-            {/* Trending Section - Only show when no filter/search is active */}
+            {/* Trending Section */}
             {filter === 'All' && !searchTag && (
                 <section className="mb-16">
                     <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">

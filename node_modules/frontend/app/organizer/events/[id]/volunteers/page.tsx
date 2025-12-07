@@ -21,9 +21,14 @@ export default function VolunteerManagementPage() {
     const [volunteers, setVolunteers] = useState<Volunteer[]>([]);
     const [loading, setLoading] = useState(true);
 
+    const [eventTitle, setEventTitle] = useState('Event');
+
     const fetchVolunteers = async () => {
         if (!params?.id) return;
         try {
+            // Fetch Event Details for Title
+            api.get(`/events/${params.id}`).then(res => setEventTitle(res.data.title)).catch(() => {});
+
             const res = await api.get(`/events/${params.id}/volunteers`);
             setVolunteers(res.data);
         } catch (error) {
@@ -46,18 +51,53 @@ export default function VolunteerManagementPage() {
         }
     };
 
+    const downloadCSV = () => {
+        if (!volunteers.length) return alert('No data to export');
+
+        const headers = ['Name', 'Email', 'Date', 'Status', 'Attended'];
+        const rows = volunteers.map(v => [
+            v.student_name || `User ${v.user_id}`,
+            v.student_email || '-',
+            new Date(v.created_at).toLocaleDateString(),
+            v.status,
+            v.attended ? 'Yes' : 'No'
+        ]);
+
+        const csvContent = [
+            headers.join(','),
+            ...rows.map(row => row.join(','))
+        ].join('\n');
+
+        const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+        const url = URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.setAttribute('download', `${eventTitle.replace(/[^a-zA-Z0-9]/g, '_')}_volunteers.csv`);
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
     if (loading) return <div className="p-8 text-center">Loading...</div>;
 
     return (
         <div className="max-w-5xl mx-auto">
             <div className="flex items-center justify-between mb-8">
                 <h1 className="text-3xl font-bold">Manage Volunteers</h1>
-                <button 
-                    onClick={() => router.back()}
-                    className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
-                >
-                    Back
-                </button>
+                <div className="flex gap-3">
+                    <button 
+                        onClick={downloadCSV}
+                        className="px-4 py-2 rounded-lg bg-[#00F0FF]/10 text-[#00F0FF] hover:bg-[#00F0FF]/20 border border-[#00F0FF]/20 font-bold transition-all flex items-center gap-2"
+                    >
+                        <span>⬇️</span> Export CSV
+                    </button>
+                    <button 
+                        onClick={() => router.back()}
+                        className="px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors"
+                    >
+                        Back
+                    </button>
+                </div>
             </div>
 
             <div className="bg-neutral-900/50 rounded-3xl border border-white/10 overflow-hidden">

@@ -98,10 +98,39 @@ async def create_booking(booking: schemas.BookingCreate, current_user: User = De
 
     return new_booking
 
+class FeedbackCreate(schemas.BaseModel):
+    rating: int
+    review:  schemas.Optional[str] = None
+
+@router.post("/bookings/{booking_id}/feedback")
+async def submit_feedback(booking_id: int, feedback: FeedbackCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.role != UserRole.STUDENT:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    result = db.execute(select(Booking).where(Booking.id == booking_id))
+    booking = result.scalar_one_or_none()
+    
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+        
+    # Verify ownership (booking.student_id -> student -> user_id)
+    student_res = db.execute(select(Student).where(Student.id == booking.student_id))
+    student = student_res.scalar_one()
+    if student.user_id != current_user.id:
+         raise HTTPException(status_code=403, detail="Not your booking")
+         
+    booking.rating = feedback.rating
+    booking.review = feedback.review
+    db.commit()
+    
+    return {"message": "Feedback submitted"}
+
 @router.get("/bookings/my", response_model=List[schemas.BookingResponse])
 async def read_my_bookings(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    print(f"DEBUG: read_my_bookings called. User Role: {current_user.role} (Type: {type(current_user.role)})")
     if current_user.role != UserRole.STUDENT:
-        raise HTTPException(status_code=403, detail="Only students can access this")
+        print(f"DEBUG: Access Denied. Required: {UserRole.STUDENT}")
+        raise HTTPException(status_code=403, detail=f"Only students can access this. Your role: {current_user.role}")
     
     result = db.execute(select(Student).where(Student.user_id == current_user.id))
     student = result.scalar_one_or_none()
@@ -127,20 +156,34 @@ async def read_my_bookings(current_user: User = Depends(get_current_user), db: S
         status = booking.status
         try:
             # Try ISO/Standard formats
+            # Backend usually stores as YYYY-MM-DD and HH:MM
+            combined_str = f"{event.date} {event.time}"
+            event_datetime = datetime.max
+            
             for fmt in ["%Y-%m-%d %I:%M %p", "%Y-%m-%d %H:%M", "%d-%m-%Y %I:%M %p", "%d-%m-%Y %H:%M", "%d/%m/%Y %I:%M %p", "%d/%m/%Y %H:%M"]:
                 try:
-                    event_datetime = datetime.strptime(f"{event.date} {event.time}", fmt)
+                    event_datetime = datetime.strptime(combined_str, fmt)
                     break
                 except ValueError:
                     continue
-            else:
-                event_datetime = datetime.max
-        except Exception as e:
-            print(f"Date parse error: {e}")
-            event_datetime = datetime.max
+            
+            if event_datetime == datetime.max:
+                # Fallback: try just date
+                for fmt in ["%Y-%m-%d", "%d-%m-%Y", "%d/%m/%Y"]:
+                    try:
+                        event_datetime = datetime.strptime(event.date, fmt)
+                        # Set to end of day if only date is known? Or start? Let's say end of day to be safe.
+                        event_datetime = event_datetime.replace(hour=23, minute=59)
+                        break
+                    except ValueError:
+                        continue
 
-        if datetime.now() > event_datetime:
-            status = "Completed"
+            if datetime.now() > event_datetime:
+                status = "Completed"
+        except Exception as e:
+            print(f"Date parse error for event {event.id}: {e}")
+            # Keep original status if parsing fails
+            pass
 
         try:
             booking_resp = schemas.BookingResponse(
@@ -152,7 +195,13 @@ async def read_my_bookings(current_user: User = Depends(get_current_user), db: S
                 event_title=event.title,
                 event_date=event.date,
                 event_time=event.time,
-                event_venue=event.venue
+                event_venue=event.venue,
+                # Ensure rating/review attributes exist (handle different object types if necessary)
+                rating=getattr(booking, 'rating', None),
+                review=getattr(booking, 'review', None),
+                attended=booking.attended,
+                checked_in_at=booking.checked_in_at,
+                qr_code=booking.qr_code
             )
             bookings_with_events.append(booking_resp)
         except Exception as e:
@@ -205,7 +254,10 @@ async def read_my_bookings(current_user: User = Depends(get_current_user), db: S
             event_title=f"{event.title} (Volunteer)",
             event_date=event.date,
             event_time=event.time,
-            event_venue=event.venue
+            event_venue=event.venue,
+            attended=volunteer.attended,
+            checked_in_at=volunteer.checked_in_at,
+            qr_code=volunteer.qr_code
         )
         bookings_with_events.append(booking_resp)
         

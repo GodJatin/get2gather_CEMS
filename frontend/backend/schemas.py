@@ -175,6 +175,8 @@ class BookingResponse(BaseModel):
     attended: Optional[bool] = False
     qr_code: Optional[str] = None
     checked_in_at: Optional[str] = None
+    rating: Optional[int] = None
+    review: Optional[str] = None
 
     class Config:
         orm_mode = True
@@ -202,12 +204,13 @@ class MediaResponse(BaseModel):
 
 class FeedPostCreate(BaseModel):
     content: Optional[str] = None
-    media_url: Optional[str] = None
-    media_type: Optional[str] = None
+    media_urls: Optional[List[str]] = []
+    media_type: Optional[str] = "image"
     event_id: Optional[int] = None
     location: Optional[str] = None
     feeling: Optional[str] = None
-    tagged_users: Optional[List[int]] = None
+    tagged_users: Optional[List[int]] = []
+    tagged_events: Optional[List[int]] = []
 
 class FeedCommentCreate(BaseModel):
     content: str
@@ -227,12 +230,13 @@ class FeedPostResponse(BaseModel):
     id: int
     user_id: int
     content: Optional[str]
-    media_url: Optional[str]
+    media_urls: Optional[List[str]]
     media_type: Optional[str]
     event_id: Optional[int]
     location: Optional[str]
     feeling: Optional[str]
-    tagged_users: Optional[str]
+    tagged_users: Optional[List[int]]
+    tagged_events: Optional[List[int]]
     created_at: str
     user_name: Optional[str] = None
     user_role: Optional[str] = None
@@ -240,6 +244,8 @@ class FeedPostResponse(BaseModel):
     likes_count: int
     comments_count: int
     is_liked: bool = False
+    current_user_reaction: Optional[str] = None
+    is_following: bool = False
     comments: List[FeedCommentResponse] = []
 
     class Config:

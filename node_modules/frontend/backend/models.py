@@ -55,9 +55,11 @@ class Student(Base):
     
     # Gamification
     badges = Column(JSON, default=list) # List of badge objects
+    inventory = Column(JSON, default=list) # List of all purchased items (badges, effects, etc.)
     unlocked_features = Column(JSON, default=list) # List of unlocked feature strings
     weekly_rank = Column(Integer, default=0)
     title = Column(String, nullable=True) # e.g. "Tech Wizard"
+    active_effect = Column(String, nullable=True) # Currently equipped profile effect
     spent_points = Column(Integer, default=0)
 
     user = relationship("User", back_populates="student_profile")
@@ -126,6 +128,10 @@ class Booking(Base):
     attended = Column(Boolean, default=False)
     qr_code = Column(String, unique=True, nullable=True, index=True)
     checked_in_at = Column(String, nullable=True) 
+    
+    # Feedback
+    rating = Column(Integer, nullable=True)
+    review = Column(String, nullable=True) 
 
     event = relationship("Event", back_populates="bookings")
     student = relationship("Student", back_populates="bookings")
@@ -184,12 +190,13 @@ class FeedPost(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"))
     content = Column(String, nullable=True)
-    media_url = Column(String, nullable=True)
-    media_type = Column(String, nullable=True) 
-    event_id = Column(Integer, ForeignKey("events.id"), nullable=True)
+    media_urls = Column(JSON, nullable=True) # List of image URLs
+    media_type = Column(String, default="image") 
+    event_id = Column(Integer, ForeignKey("events.id"), nullable=True) # Main relevant event
     location = Column(String, nullable=True)
     feeling = Column(String, nullable=True)
-    tagged_users = Column(String, nullable=True) 
+    tagged_users = Column(JSON, nullable=True) # List of user IDs
+    tagged_events = Column(JSON, nullable=True) # List of event IDs
     created_at = Column(String) 
     
     user = relationship("User", back_populates="posts")
@@ -203,6 +210,7 @@ class FeedLike(Base):
     id = Column(Integer, primary_key=True, index=True)
     post_id = Column(Integer, ForeignKey("feed_posts.id"))
     user_id = Column(Integer, ForeignKey("users.id"))
+    reaction_type = Column(String, default="like") # like, love, fire, haha, wow, sad
     created_at = Column(String)
 
     post = relationship("FeedPost", back_populates="likes")

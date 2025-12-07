@@ -41,6 +41,31 @@ export default function AdminUsersPage() {
         }
     };
 
+    const downloadCSV = () => {
+        if (users.length === 0) return;
+
+        const headers = ["ID", "Email", "Role", "Organization", "Contact"];
+        const csvContent = [
+            headers.join(","),
+            ...filteredUsers.map(u => [
+                u.id, 
+                u.email, 
+                u.role, 
+                u.organization_name || "", 
+                u.contact || ""
+            ].join(","))
+        ].join("\n");
+
+        const blob = new Blob([csvContent], { type: 'text/csv' });
+        const url = window.URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `users_${filter}_${new Date().toISOString().split('T')[0]}.csv`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+    };
+
     const [filter, setFilter] = useState<'all' | 'student' | 'organizer' | 'admin'>('all');
 
     const filteredUsers = users.filter(user => filter === 'all' || user.role === filter);
@@ -58,20 +83,28 @@ export default function AdminUsersPage() {
         <div className="space-y-6">
             <div className="flex justify-between items-center">
                 <h1 className="text-3xl font-bold text-gray-800">User Management</h1>
-                <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
-                    {tabs.map(tab => (
-                        <button
-                            key={tab.id}
-                            onClick={() => setFilter(tab.id as any)}
-                            className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
-                                filter === tab.id 
-                                    ? 'bg-white text-gray-800 shadow-sm' 
-                                    : 'text-gray-500 hover:text-gray-700'
-                            }`}
-                        >
-                            {tab.label}
-                        </button>
-                    ))}
+                <div className="flex gap-4 items-center">
+                    <button 
+                        onClick={downloadCSV}
+                        className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                    >
+                        <span>⬇️</span> Export CSV
+                    </button>
+                    <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+                        {tabs.map(tab => (
+                            <button
+                                key={tab.id}
+                                onClick={() => setFilter(tab.id as any)}
+                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                                    filter === tab.id 
+                                        ? 'bg-white text-gray-800 shadow-sm' 
+                                        : 'text-gray-500 hover:text-gray-700'
+                                }`}
+                            >
+                                {tab.label}
+                            </button>
+                        ))}
+                    </div>
                 </div>
             </div>
             

@@ -22,6 +22,8 @@ interface UserProfile {
     };
     available_points?: number;
     total_points?: number;
+    active_effect?: string | null;
+    inventory?: { name: string; type: string; id: number, metadata?: any }[];
 }
 
 import Counter from '@/components/Counter';
@@ -50,9 +52,10 @@ export default function ProfilePage() {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // 1. Get basic auth info
-                const authRes = await api.get('/auth/me');
-                setUser(authRes.data);
+                // 1. Get detailed student profile (includes active_effect, inventory, badges)
+                const profileRes = await api.get('/student/profile');
+                console.log("DEBUG: Profile Response:", profileRes.data);
+                setUser(profileRes.data);
 
                 // 2. Get student stats (for total bookings)
                 const statsRes = await api.get('/stats/student');
@@ -80,8 +83,10 @@ export default function ProfilePage() {
     const nextUnlock = 1000;
     const progress = Math.min((points / nextUnlock) * 100, 100);
 
-    // Calculate attended events from bookings list
-    const eventsAttended = bookings.filter(b => b.attended).length;
+    // Calculate attended events - prioritize backend stats
+    const eventsAttended = user.events_attended !== undefined ? user.events_attended : bookings.filter(b => b.attended).length;
+    const volunteerCount = user.volunteer_count !== undefined ? user.volunteer_count : 0;
+    const totalEvents = eventsAttended + volunteerCount;
 
     return (
         <MotionWrapper className="max-w-5xl mx-auto">
@@ -106,7 +111,12 @@ export default function ProfilePage() {
                     <div className="bg-neutral-900/80 backdrop-blur-xl border border-[#00F0FF]/20 rounded-[2rem] p-8 flex flex-col items-center text-center relative overflow-hidden shadow-[0_0_30px_rgba(0,240,255,0.1)] group">
                         <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#00F0FF]/10 to-transparent opacity-50" />
                         
-                        <div className="relative w-36 h-36 rounded-full p-1 bg-gradient-to-br from-[#00F0FF] to-[#00FF94] mb-6 shadow-[0_0_20px_rgba(0,240,255,0.3)]">
+                        <div className={`relative w-36 h-36 rounded-full p-1 mb-6 transition-all duration-500 ${
+                            user.active_effect === 'Neon Blue Glow' ? 'shadow-[0_0_40px_#00F0FF] border-2 border-[#00F0FF]' :
+                            user.active_effect === 'Golden Aura' ? 'shadow-[0_0_40px_#FFD700] border-2 border-[#FFD700]' :
+                            user.active_effect === 'Cyber Glitch' ? 'shadow-[0_0_20px_#00FF94] animate-pulse border-2 border-[#00FF94]' :
+                            'bg-gradient-to-br from-[#00F0FF] to-[#00FF94] shadow-[0_0_20px_rgba(0,240,255,0.3)]'
+                        }`}>
                             <div className="w-full h-full rounded-full bg-neutral-900 flex items-center justify-center text-5xl font-bold text-white overflow-hidden relative">
                                 <span className="z-10">{user.name?.[0] || 'U'}</span>
                                 <div className="absolute inset-0 bg-gradient-to-br from-[#00F0FF]/20 to-[#00FF94]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
@@ -166,18 +176,18 @@ export default function ProfilePage() {
                             </div>
                             <span className="text-3xl mb-2 block relative z-10">✅</span>
                             <span className="text-3xl font-bold block text-white mb-1 relative z-10">
-                                <Counter value={(user.bookings_count || 0) + (user.volunteer_count || 0)} />
+                                <Counter value={totalEvents} />
                             </span>
                             <span className="text-sm text-neutral-400 relative z-10">Events Attended</span>
                             
                             <div className="mt-4 pt-4 border-t border-white/5 grid grid-cols-2 gap-2 relative z-10">
                                 <div>
                                     <span className="block text-xs text-neutral-500 uppercase tracking-wider">Attendee</span>
-                                    <span className="text-lg font-bold text-[#00FF94]"><Counter value={user.bookings_count || 0} /></span>
+                                    <span className="text-lg font-bold text-[#00FF94]"><Counter value={eventsAttended} /></span>
                                 </div>
                                 <div>
                                     <span className="block text-xs text-neutral-500 uppercase tracking-wider">Volunteer</span>
-                                    <span className="text-lg font-bold text-[#00F0FF]"><Counter value={user.volunteer_count || 0} /></span>
+                                    <span className="text-lg font-bold text-[#00F0FF]"><Counter value={volunteerCount} /></span>
                                 </div>
                             </div>
 
@@ -253,6 +263,50 @@ export default function ProfilePage() {
                                 <p className="text-xs text-neutral-600">Participate in events to unlock your first badge!</p>
                             </div>
                         )}
+                    </div>
+                    
+                    {/* Inventory & Effects */}
+                    <div className="bg-neutral-900/50 border border-white/10 rounded-[2rem] p-8 mt-8">
+                        <h3 className="text-xl font-bold mb-6 flex items-center gap-3">
+                            <span className="text-2xl">🎒</span> 
+                            <span className="bg-gradient-to-r from-white to-neutral-400 bg-clip-text text-transparent">Inventory & Effects</span>
+                        </h3>
+
+                        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                            {user.inventory?.filter(i => i.type === 'effect').map((item, i) => (
+                                <div key={i} className="flex items-center justify-between p-4 rounded-xl bg-white/5 border border-white/5 hover:border-[#00F0FF]/20 transition-all">
+                                    <span className="font-medium text-white">{item.name}</span>
+                                    
+                                    {user.active_effect === item.name ? (
+                                        <button 
+                                            onClick={async () => {
+                                                await api.post('/student/equip', { item_name: 'None', item_type: 'effect' });
+                                                setUser(prev => prev ? { ...prev, active_effect: null } : null);
+                                            }}
+                                            className="px-3 py-1 rounded-lg bg-red-500/20 text-red-400 text-xs font-bold border border-red-500/20 hover:bg-red-500/30"
+                                        >
+                                            Unequip
+                                        </button>
+                                    ) : (
+                                        <button 
+                                            onClick={async () => {
+                                                await api.post('/student/equip', { item_name: item.name, item_type: 'effect' });
+                                                setUser(prev => prev ? { ...prev, active_effect: item.name } : null);
+                                            }}
+                                            className="px-3 py-1 rounded-lg bg-[#00F0FF]/10 text-[#00F0FF] text-xs font-bold border border-[#00F0FF]/20 hover:bg-[#00F0FF]/20"
+                                        >
+                                            Equip
+                                        </button>
+                                    )}
+                                </div>
+                            ))}
+                            
+                            {(!user.inventory || user.inventory.filter(i => i.type === 'effect').length === 0) && (
+                                <div className="col-span-full text-center text-neutral-500 py-4">
+                                    No effects purchased yet. Visit the <Link href="/student/points" className="text-[#00F0FF] underline">Shop</Link>!
+                                </div>
+                            )}
+                        </div>
                     </div>
 
                     {/* Settings / Actions */}

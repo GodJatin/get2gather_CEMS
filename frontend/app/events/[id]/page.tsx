@@ -499,29 +499,43 @@ export default function EventDetailsPage() {
                                                     alert(error.response?.data?.detail || 'Failed to apply');
                                                 }
                                             }}
-                                            disabled={volunteerStatus !== 'idle'}
+                                            disabled={volunteerStatus !== 'idle' || (() => {
+                                                 const eventDate = new Date(`${event.date} ${event.time}`);
+                                                 if (isNaN(eventDate.getTime())) return false;
+                                                 const now = new Date();
+                                                 const timeDiff = eventDate.getTime() - now.getTime();
+                                                 const minutesUntilStart = timeDiff / (1000 * 60);
+                                                 // Closed if less than 30 mins left
+                                                 return minutesUntilStart <= 30;
+                                            })()}
                                             className={`w-full mt-3 py-3 rounded-xl font-medium transition-colors border flex items-center justify-center gap-2 ${
                                                 volunteerStatus === 'idle'
                                                     ? 'bg-white/5 hover:bg-white/10 text-neutral-300 border-white/10'
                                                     : 'bg-neutral-800 text-neutral-400 border-neutral-700 cursor-wait'
+                                            } ${
+                                                /* Add disabled style roughly */
+                                                (() => {
+                                                     const eventDate = new Date(`${event.date} ${event.time}`);
+                                                     if (!isNaN(eventDate.getTime())) {
+                                                         const now = new Date();
+                                                         const timeDiff = eventDate.getTime() - now.getTime();
+                                                         if (timeDiff / (1000 * 60) <= 30) return 'opacity-50 cursor-not-allowed';
+                                                     }
+                                                     return '';
+                                                })()
                                             }`}
                                         >
-                                            {volunteerStatus === 'idle' && '✋ Apply as Volunteer'}
-                                            {volunteerStatus === 'submitting' && (
-                                                <>
-                                                    <span className="animate-spin">⏳</span> Sending Application...
-                                                </>
-                                            )}
-                                            {volunteerStatus === 'confirming' && (
-                                                <>
-                                                    <span className="animate-pulse">📨</span> Verifying...
-                                                </>
-                                            )}
-                                            {volunteerStatus === 'confirmed' && (
-                                                <>
-                                                    <span>✅</span> Application Sent!
-                                                </>
-                                            )}
+                                            {(() => {
+                                                 const eventDate = new Date(`${event.date} ${event.time}`);
+                                                 if (!isNaN(eventDate.getTime())) {
+                                                     const now = new Date();
+                                                     const timeDiff = eventDate.getTime() - now.getTime();
+                                                     if (timeDiff / (1000 * 60) <= 30) return 'Registration Closed';
+                                                 }
+                                                 return volunteerStatus === 'idle' ? '✋ Apply as Volunteer' : 
+                                                        volunteerStatus === 'submitting' ? '⏳ Sending Application...' :
+                                                        volunteerStatus === 'confirming' ? '📨 Verifying...' : '✅ Application Sent!';
+                                            })()}
                                         </button>
                                     </>
                                 );

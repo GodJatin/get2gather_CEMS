@@ -70,29 +70,40 @@ export default function PointsPage() {
         }, 250);
     };
 
-    const handleRedeem = async (id: number, itemName: string, cost: number) => {
+    const handleRedeem = async (id: number, itemName: string, cost: number, type: string = 'other', metadata: any = {}) => {
         if (confirm(`Are you sure you want to redeem ${itemName} for ${cost} points?`)) {
             try {
-                await api.post('/student/spend', { amount: cost, description: `Redeemed: ${itemName}` });
+                // calls /student/buy
+                await api.post('/student/buy', { 
+                    item_id: id,
+                    item_type: type,
+                    cost: cost, 
+                    name: itemName,
+                    metadata: metadata
+                });
                 triggerConfetti();
                 // Optimistic update
                 setPoints(prev => prev - cost);
                 // Refresh real data
                 fetchPoints(); 
                 fetchHistory(); 
-            } catch (error) {
-                alert('Failed to redeem. Insufficient points?');
+            } catch (error: any) {
+                alert(error.response?.data?.detail || 'Failed to redeem. Insufficient points?');
             }
         }
     };
 
     const rewards = [
-        { id: 1, name: 'Canteen Coupon (₹50)', cost: 200, icon: '🍔', color: 'from-orange-500 to-red-500' },
-        { id: 2, name: 'Library Fine Waiver', cost: 500, icon: '📚', color: 'from-blue-500 to-indigo-500' },
-        { id: 3, name: 'Priority Event Pass', cost: 800, icon: '🎫', color: 'from-purple-500 to-pink-500' },
-        { id: 4, name: 'Exclusive Merch', cost: 1500, icon: '👕', color: 'from-green-500 to-emerald-500' },
-        { id: 5, name: 'Workshop Discount', cost: 1000, icon: '💡', color: 'from-yellow-500 to-orange-500' },
-        { id: 6, name: 'Profile Badge', cost: 300, icon: '🏅', color: 'from-teal-500 to-cyan-500' },
+        { id: 1, name: 'Canteen Coupon (₹50)', cost: 200, icon: '🍔', color: 'from-orange-500 to-red-500', type: 'coupon' },
+        { id: 2, name: 'Library Fine Waiver', cost: 500, icon: '📚', color: 'from-blue-500 to-indigo-500', type: 'coupon' },
+        { id: 3, name: 'Priority Event Pass', cost: 800, icon: '🎫', color: 'from-purple-500 to-pink-500', type: 'pass' },
+        { id: 4, name: 'Exclusive Merch', cost: 1500, icon: '👕', color: 'from-green-500 to-emerald-500', type: 'merch' },
+        { id: 5, name: 'Workshop Discount', cost: 1000, icon: '💡', color: 'from-yellow-500 to-orange-500', type: 'coupon' },
+        { id: 6, name: 'Validation Badge', cost: 300, icon: '🏅', color: 'from-teal-500 to-cyan-500', type: 'badge' },
+        // New Effects
+        { id: 7, name: 'Neon Blue Glow', cost: 2000, icon: '✨', color: 'from-blue-400 to-cyan-400', type: 'effect', metadata: { css: 'shadow-[0_0_20px_#00F0FF]' } },
+        { id: 8, name: 'Golden Aura', cost: 3000, icon: '🌟', color: 'from-yellow-400 to-orange-400', type: 'effect', metadata: { css: 'shadow-[0_0_25px_#FFD700]' } },
+        { id: 9, name: 'Cyber Glitch', cost: 2500, icon: '👾', color: 'from-purple-500 to-green-500', type: 'effect', metadata: { css: 'animate-pulse shadow-[0_0_15px_#00FF94]' } },
     ].sort((a, b) => a.cost - b.cost);
 
     if (loading) return (
@@ -164,7 +175,7 @@ export default function PointsPage() {
                                 <RewardCard 
                                     {...reward} 
                                     canAfford={points >= reward.cost}
-                                    onRedeem={handleRedeem}
+                                    onRedeem={() => handleRedeem(reward.id, reward.name, reward.cost, reward.type, reward.metadata)}
                                 />
                             </StaggerItem>
                         ))}

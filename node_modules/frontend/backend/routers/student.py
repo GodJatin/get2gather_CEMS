@@ -23,8 +23,14 @@ async def get_student_profile(current_user: User = Depends(get_current_user), db
     result = db.execute(select(Student).where(Student.user_id == current_user.id))
     student = result.scalar_one_or_none()
     
+    print(f"DEBUG: Get Profile called for user {current_user.email}. Student found: {student is not None}")
+    
     if not student:
         raise HTTPException(status_code=404, detail="Student profile not found")
+
+    # Calculate points for profile
+    from points_utils import calculate_student_points
+    points_data = calculate_student_points(db, student.id, current_user.id)
         
     return {
         "id": student.id,
@@ -33,8 +39,20 @@ async def get_student_profile(current_user: User = Depends(get_current_user), db
         "enrollment_number": student.enrollment_number,
         "title": student.title,
         "badges": student.badges,
+        "inventory": student.inventory or [],
+        "active_effect": student.active_effect,
         "spent_points": student.spent_points,
-        "user_id": student.user_id
+        "user_id": student.user_id,
+        "email": current_user.email,
+        "events_attended": db.query(Booking).filter(Booking.student_id == student.id, Booking.attended == True).count(),
+        # "volunteer_count": db.query(Volunteer).filter(Volunteer.user_id == current_user.id, Volunteer.attended == True).count()
+        # For simplicity, let's assuming volunteer count is also tracked or added to events_attended? 
+        # The UI usually shows them separately. Let's add volunteer_count if needed, or just let frontend use what it has.
+        # Screenshot showed "ATTENDEE" and "VOLUNTEER" counts.
+        "volunteer_count": db.query(Volunteer).filter(Volunteer.user_id == current_user.id, Volunteer.attended == True).count(),
+        # Return calculated points
+        "total_points": points_data["total_points"],
+        "available_points": points_data["available_points"]
     }
 
 @router.post("/student/spend")
@@ -71,6 +89,96 @@ async def spend_points(data: SpendPointsRequest, current_user: User = Depends(ge
     db.commit()
     
     return {"message": "Points spent successfully", "remaining_points": available_points - data.amount}
+
+class BuyItemRequest(BaseModel):
+    item_id: int
+    item_type: str # 'badge' or 'effect' or 'other'
+    cost: int
+    name: str
+    metadata: dict = {}
+
+@router.post("/student/buy")
+async def buy_item(data: BuyItemRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.role != UserRole.STUDENT:
+        raise HTTPException(status_code=403, detail="Not a student")
+        
+    result = db.execute(select(Student).where(Student.user_id == current_user.id))
+    student = result.scalar_one_or_none()
+    if not student:
+        raise HTTPException(status_code=404, detail="Student profile not found")
+        
+    # Calculate Points
+    from points_utils import calculate_student_points
+    points_data = calculate_student_points(db, student.id, current_user.id)
+    available = points_data["available_points"]
+    
+    if available < data.cost:
+        raise HTTPException(status_code=400, detail="Insufficient points")
+    
+    # Check if already owned
+    inventory = list(student.inventory) if student.inventory else []
+    # simple check by name or id + type
+    for item in inventory:
+        if item.get('name') == data.name and item.get('type') == data.item_type:
+            raise HTTPException(status_code=400, detail="Item already owned")
+
+    # Deduct points
+    student.spent_points += data.cost
+    
+    # Add to Inventory
+    new_item = {
+        "id": data.item_id,
+        "type": data.item_type,
+        "name": data.name,
+        "bought_at": datetime.now().isoformat(),
+        **data.metadata
+    }
+    inventory.append(new_item)
+    student.inventory = inventory # Assign back to trigger update
+
+    # If badge, also add to badges list for compatibility
+    if data.item_type == 'badge':
+        badges = list(student.badges) if student.badges else []
+        badges.append({"name": data.name, "icon": data.metadata.get("icon", "🏅")})
+        student.badges = badges
+
+    # Log transaction
+    transaction = PointTransaction(
+        student_id=student.id,
+        amount=-data.cost,
+        description=f"Bought: {data.name}",
+        timestamp=datetime.now().isoformat()
+    )
+    db.add(transaction)
+    
+    db.commit()
+    return {"message": "Item purchased", "remaining_points": available - data.cost, "inventory": student.inventory}
+
+class EquipItemRequest(BaseModel):
+    item_name: str
+    item_type: str # 'effect'
+
+@router.post("/student/equip")
+async def equip_item(data: EquipItemRequest, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.role != UserRole.STUDENT:
+        raise HTTPException(status_code=403, detail="Not a student")
+
+    result = db.execute(select(Student).where(Student.user_id == current_user.id))
+    student = result.scalar_one_or_none()
+    
+    # Verify ownership
+    inventory = student.inventory or []
+    owned = any(i.get('name') == data.item_name and i.get('type') == data.item_type for i in inventory)
+    
+    # Allow unequipping specific effects or if owned
+    if not owned and data.item_name != "None":
+         raise HTTPException(status_code=400, detail="Item not owned")
+
+    if data.item_type == 'effect':
+        student.active_effect = None if data.item_name == "None" else data.item_name
+    
+    db.commit()
+    return {"message": "Item equipped", "active_effect": student.active_effect}
 
 @router.get("/student/history")
 async def get_student_history(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

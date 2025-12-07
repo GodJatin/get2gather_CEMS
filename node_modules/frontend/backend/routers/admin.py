@@ -70,7 +70,27 @@ def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User 
 @router.get("/events")
 def get_all_events(db: Session = Depends(get_db), current_user: User = Depends(get_current_admin)):
     events = db.query(Event).all()
-    return events
+    
+    events_with_data = []
+    for event in events:
+        # Calculate avg rating
+        avg = db.query(func.avg(Booking.rating)).filter(Booking.event_id == event.id, Booking.rating != None).scalar()
+        
+        # Convert to dict
+        e_dict = {
+            "id": event.id,
+            "title": event.title,
+            "organizer_id": event.organizer_id,
+            "date": event.date,
+            "time": event.time,
+            "status": event.status,
+            "seats_available": event.seats_available,
+            "capacity": event.capacity,
+            "avg_rating": round(avg, 1) if avg else 0
+        }
+        events_with_data.append(e_dict)
+        
+    return events_with_data
 
 @router.delete("/events/{event_id}")
 def delete_event(event_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin)):
