@@ -105,21 +105,23 @@ export default function AnalyticsPage() {
                             chartEvents.map((event) => (
                                 <div key={event.id} className="group">
                                     <div className="flex justify-between text-sm mb-2">
-                                        <span className="font-medium text-white group-hover:text-blue-400 transition-colors">{event.title}</span>
-                                        <span className="text-neutral-400">{event.attended_count} / {event.capacity} ({Math.round((event.attended_count/event.capacity)*100)}%)</span>
+                                        <span className="font-medium text-white group-hover:text-blue-400 transition-colors line-clamp-1">{event.title}</span>
+                                        <span className="text-neutral-400 whitespace-nowrap ml-2">{event.attended_count} / {event.capacity}</span>
                                     </div>
-                                    <div className="h-4 bg-white/5 rounded-full overflow-hidden flex">
+                                    <div className="h-4 bg-white/5 rounded-full overflow-hidden flex w-full">
                                         {/* Attendees Bar */}
                                         <div 
                                             className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-l-full relative group-hover:brightness-110 transition-all duration-1000"
-                                            style={{ width: `${(event.attended_count / event.capacity) * 100}%` }}
+                                            style={{ 
+                                                width: `${Math.max((event.attended_count / event.capacity) * 100, 2)}%`, // Min width 2% for visibility
+                                                minWidth: '2%' 
+                                            }}
                                         >
                                             <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
                                         </div>
-                                        {/* Volunteers Hint (just visually distinctive piece of bar or separate? Let's keep it simple: Attended vs Capacity) */}
                                     </div>
                                     <div className="flex justify-end mt-1 text-xs text-neutral-600">
-                                        {event.date} • {event.volunteer_count} Volunteers
+                                        {event.date} • {event.volunteer_count} Vol
                                     </div>
                                 </div>
                             ))

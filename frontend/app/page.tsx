@@ -10,7 +10,7 @@ export default function Home() {
   return (
     <div className="min-h-screen bg-neutral-950 text-white overflow-hidden">
       {/* Hero Section */}
-      <section className="relative h-screen flex items-center justify-center overflow-hidden">
+      <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 md:pt-0">
         {/* Background Gradients */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
           <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-secondary/20 rounded-full blur-[120px]" />

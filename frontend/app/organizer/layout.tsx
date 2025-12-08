@@ -1,6 +1,7 @@
 'use client';
 
 import Link from 'next/link';
+import React from 'react';
 import { usePathname } from 'next/navigation';
 
 export default function OrganizerLayout({
@@ -8,6 +9,7 @@ export default function OrganizerLayout({
 }: {
     children: React.ReactNode;
 }) {
+    const [isMobileMenuOpen, setIsMobileMenuOpen] = React.useState(false);
     const pathname = usePathname();
 
     const navItems = [
@@ -34,6 +36,7 @@ export default function OrganizerLayout({
                         </div>
                     </div>
 
+                    {/* Desktop Menu */}
                     <div className="hidden md:flex items-center gap-1 bg-white/5 p-1 rounded-2xl border border-white/10">
                         {navItems.map((item) => {
                             const isActive = pathname === item.href;
@@ -54,13 +57,53 @@ export default function OrganizerLayout({
                         })}
                     </div>
 
+                    {/* Desktop Logout */}
                     <Link
                         href="/login"
-                        className="px-4 py-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 font-medium text-sm transition-colors"
+                        className="hidden md:block px-4 py-2 rounded-xl bg-red-500/10 text-red-400 hover:bg-red-500/20 font-medium text-sm transition-colors"
                     >
                         Logout
                     </Link>
+
+                    {/* Mobile Menu Button */}
+                    <button 
+                        onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+                        className="md:hidden p-2 rounded-xl bg-white/5 border border-white/10 text-neutral-400"
+                    >
+                        {isMobileMenuOpen ? '✕' : '☰'}
+                    </button>
                 </div>
+
+                {/* Mobile Menu Dropdown */}
+                {isMobileMenuOpen && (
+                    <div className="md:hidden absolute top-20 left-0 w-full bg-neutral-900 border-b border-white/10 p-4 flex flex-col gap-2 shadow-2xl">
+                        {navItems.map((item) => {
+                            const isActive = pathname === item.href;
+                            return (
+                                <Link
+                                    key={item.href}
+                                    href={item.href}
+                                    onClick={() => setIsMobileMenuOpen(false)}
+                                    className={`p-4 rounded-xl text-base font-medium transition-all flex items-center gap-3 ${
+                                        isActive
+                                            ? 'bg-purple-600 text-white'
+                                            : 'bg-white/5 text-neutral-400'
+                                    }`}
+                                >
+                                    <span className="text-xl">{item.icon}</span>
+                                    <span>{item.name}</span>
+                                </Link>
+                            );
+                        })}
+                        <Link
+                            href="/login"
+                            onClick={() => setIsMobileMenuOpen(false)}
+                            className="p-4 rounded-xl bg-red-500/10 text-red-400 font-medium text-base flex items-center gap-3 mt-2"
+                        >
+                            <span>🚪</span> Logout
+                        </Link>
+                    </div>
+                )}
             </nav>
 
             {/* Main Content */}
