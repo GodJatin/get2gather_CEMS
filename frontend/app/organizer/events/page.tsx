@@ -5,12 +5,14 @@ import api from '@/lib/api';
 import Link from 'next/link';
 import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';
 import { motion } from 'framer-motion';
+import { getEventStatus, parseEventDate } from '@/lib/dateUtils';
 
 interface Event {
     id: number;
     title: string;
     date: string;
     time: string;
+    end_time?: string;
     venue: string;
     status: string;
     seats_available: number;
@@ -19,44 +21,10 @@ interface Event {
     image_url?: string;
 }
 
-// Helper for robust date parsing
-const parseEventDate = (dateStr: string, timeStr: string): Date | null => {
-    try {
-        if (!dateStr) return null;
-        
-        // Normalize date: Handle DD-MM-YYYY, DD/MM/YYYY, or YYYY-MM-DD
-        let normalizedDate = dateStr;
-        if (dateStr.match(/^\d{2}[-/]\d{2}[-/]\d{4}$/)) {
-            const [d, m, y] = dateStr.split(/[-/]/);
-            normalizedDate = `${y}-${m}-${d}`;
-        }
-        
-        // Normalize time
-        let normalizedTime = timeStr || '00:00';
-        if (timeStr && timeStr.match(/PM|AM/i)) {
-            const [time, modifier] = timeStr.split(' ');
-            let [hours, minutes] = time.split(':');
-            if (hours === '12') hours = '00';
-            if (modifier.toUpperCase() === 'PM') hours = (parseInt(hours, 10) + 12).toString();
-            normalizedTime = `${hours}:${minutes}`;
-        }
-
-        const dateTimeStr = `${normalizedDate}T${normalizedTime}`;
-        let eventDate = new Date(dateTimeStr);
-
-        // Fallback for Safari/Other browsers if ISO fails
-        if (isNaN(eventDate.getTime())) {
-             eventDate = new Date(`${normalizedDate} ${normalizedTime}`);
-        }
-
-        if (isNaN(eventDate.getTime())) return null;
-        return eventDate;
-    } catch (e) {
-        return null;
-    }
-};
+// Helper removed, using dateUtils
 
 const EventCardCarousel = ({ event }: { event: Event }) => {
+    // ... (Keep existing Carousel logic, it's fine)
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     const images = (() => {
@@ -100,10 +68,8 @@ const EventCardCarousel = ({ event }: { event: Event }) => {
                     <img src={img} alt={event.title} className="w-full h-full object-cover" />
                 </div>
             ))}
-            {/* Overlay Gradient */}
             <div className="absolute inset-0 bg-gradient-to-t from-neutral-900 to-transparent opacity-80" />
             
-            {/* Indicators */}
             {images.length > 1 && (
                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2 flex gap-1 z-10">
                     {images.map((_, idx) => (
@@ -121,7 +87,7 @@ const EventCardCarousel = ({ event }: { event: Event }) => {
 export default function MyEventsPage() {
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
-    const [activeTab, setActiveTab] = useState<'upcoming' | 'completed'>('upcoming');
+    const [activeTab, setActiveTab] = useState<'active' | 'upcoming' | 'completed'>('upcoming');
 
     useEffect(() => {
         const fetchEvents = async () => {
@@ -142,25 +108,21 @@ export default function MyEventsPage() {
     }, []);
 
     const filteredEvents = events.filter(event => {
-        const eventDate = parseEventDate(event.date, event.time);
-        if (!eventDate) return false;
-
-        const now = new Date();
-        
-        if (activeTab === 'upcoming') {
-            return eventDate >= now;
-        } else {
-            return eventDate < now;
-        }
+        // Use consistent status logic
+        return getEventStatus(event).toLowerCase() === activeTab;
     }).sort((a, b) => {
         const dateA = parseEventDate(a.date, a.time);
         const dateB = parseEventDate(b.date, b.time);
         
-        if (!dateA || !dateB) return 0;
-
-        return activeTab === 'upcoming' 
-            ? dateA.getTime() - dateB.getTime() 
-            : dateB.getTime() - dateA.getTime();
+        // Safety check
+        if (!dateA && !dateB) return 0;
+        if (!dateA) return 1;
+        if (!dateB) return -1; // Keep invalid at bottom?
+        
+        // Sort: Active/Upcoming asc (soonest first), Completed desc (latest first)
+        return activeTab === 'completed' 
+            ? dateB.getTime() - dateA.getTime() // Newest completed first
+            : dateA.getTime() - dateB.getTime(); // Soonest upcoming/active first
     });
 
     if (loading) return (
@@ -186,6 +148,16 @@ export default function MyEventsPage() {
 
             {/* Tabs */}
             <div className="flex gap-2 mb-8 p-1 bg-neutral-900/50 border border-white/10 rounded-2xl w-fit backdrop-blur-sm">
+                <button
+                    onClick={() => setActiveTab('active')}
+                    className={`px-6 py-3 rounded-xl font-bold transition-all ${
+                        activeTab === 'active' 
+                            ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20' 
+                            : 'text-neutral-400 hover:text-white hover:bg-white/5'
+                    }`}
+                >
+                    Active
+                </button>
                 <button
                     onClick={() => setActiveTab('upcoming')}
                     className={`px-6 py-3 rounded-xl font-bold transition-all ${
@@ -221,11 +193,13 @@ export default function MyEventsPage() {
                                 <div className="flex justify-between items-start mb-2">
                                      <h3 className="text-xl font-bold group-hover:text-purple-400 transition-colors line-clamp-1">{event.title}</h3>
                                      <span className={`px-3 py-1 rounded-full text-[10px] font-bold border shrink-0 ml-2 ${
-                                        (parseEventDate(event.date, event.time) || new Date()) < new Date() 
-                                        ? 'bg-neutral-500/10 text-neutral-400 border-neutral-500/20' 
-                                        : 'bg-green-500/10 text-green-400 border-green-500/20'
+                                        getEventStatus(event) === 'Active'
+                                        ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                                        : getEventStatus(event) === 'Upcoming'
+                                        ? 'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                        : 'bg-neutral-500/10 text-neutral-400 border-neutral-500/20'
                                     }`}>
-                                        {(parseEventDate(event.date, event.time) || new Date()) < new Date() ? 'Ended' : 'Upcoming'}
+                                        {getEventStatus(event)}
                                     </span>
                                 </div>
 

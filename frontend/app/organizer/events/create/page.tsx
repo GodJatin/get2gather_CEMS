@@ -14,6 +14,7 @@ export default function CreateEventPage() {
         description: '',
         date: '',
         time: '',
+        end_time: '',
         venue: '',
         capacity: '',
         price: '0',
@@ -317,7 +318,7 @@ export default function CreateEventPage() {
                             Schedule & Venue
                         </h2>
 
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-6">
                             <DateTimePicker 
                                 label="Date" 
                                 value={formData.date} 
@@ -325,9 +326,15 @@ export default function CreateEventPage() {
                                 type="date" 
                             />
                             <DateTimePicker 
-                                label="Time" 
+                                label="Start Time" 
                                 value={formData.time} 
                                 onChange={handleTimeChange} 
+                                type="time" 
+                            />
+                            <DateTimePicker 
+                                label="End Time" 
+                                value={formData.end_time || ''} 
+                                onChange={(value) => setFormData(prev => ({ ...prev, end_time: value }))} 
                                 type="time" 
                             />
                         </div>

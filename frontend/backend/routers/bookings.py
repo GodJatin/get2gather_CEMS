@@ -195,6 +195,7 @@ async def read_my_bookings(current_user: User = Depends(get_current_user), db: S
                 event_title=event.title,
                 event_date=event.date,
                 event_time=event.time,
+                event_end_time=event.end_time,
                 event_venue=event.venue,
                 # Ensure rating/review attributes exist (handle different object types if necessary)
                 rating=getattr(booking, 'rating', None),
@@ -254,6 +255,7 @@ async def read_my_bookings(current_user: User = Depends(get_current_user), db: S
             event_title=f"{event.title} (Volunteer)",
             event_date=event.date,
             event_time=event.time,
+            event_end_time=event.end_time,
             event_venue=event.venue,
             attended=volunteer.attended,
             checked_in_at=volunteer.checked_in_at,
