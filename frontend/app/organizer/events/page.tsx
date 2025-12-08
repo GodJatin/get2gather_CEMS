@@ -98,24 +98,6 @@ export default function MyEventsPage() {
                 console.error('Failed to fetch events:', error);
             } finally {
                 setLoading(false);
-            }
-        };
-
-        fetchEvents();
-        const interval = setInterval(fetchEvents, 5000); // Poll every 5 seconds
-
-        return () => clearInterval(interval);
-    }, []);
-
-    const filteredEvents = events.filter(event => {
-        // Use consistent status logic
-        return getEventStatus(event).toLowerCase() === activeTab;
-    }).sort((a, b) => {
-        const dateA = parseEventDate(a.date, a.time);
-        const dateB = parseEventDate(b.date, b.time);
-        
-        // Safety check
-        if (!dateA && !dateB) return 0;
         if (!dateA) return 1;
         if (!dateB) return -1; // Keep invalid at bottom?
         
