@@ -75,6 +75,8 @@ export default function CreateEventPage() {
         e.preventDefault();
         setLoading(true);
 
+        let eventId: number | null = null;
+
         try {
             // 1. Create Event
             console.log('Sending event data:', formData);
@@ -87,7 +89,7 @@ export default function CreateEventPage() {
             console.log('Event Response:', eventResponse);
             console.log('Event Data:', eventResponse.data);
 
-            const eventId = eventResponse.data?.id;
+            eventId = eventResponse.data?.id;
 
             if (!eventId) {
                 console.error('Event ID missing from response data:', eventResponse.data);
@@ -134,13 +136,22 @@ export default function CreateEventPage() {
             };
             frame();
 
-            // Show Success Dialog (using simple alert for now, effectively replacing with custom UI if needed later or just route)
-            // User requested a dialog, let's use a state to show a modal instead of redirecting immediately
+            // Show Success Dialog
             setShowSuccessModal(true);
             
-            // router.push('/organizer/events'); // Moved to modal close
         } catch (error) {
             console.error('Failed to create event:', error);
+            
+            // Cleanup on failure
+            if (eventId) {
+                try {
+                    console.log('Cleaning up: Deleting partial event', eventId);
+                    await api.delete(`/events/${eventId}`);
+                } catch (cleanupError) {
+                    console.error('Failed to cleanup partial event:', cleanupError);
+                }
+            }
+
             alert('Failed to create event. Please try again.');
             setLoading(false);
         }

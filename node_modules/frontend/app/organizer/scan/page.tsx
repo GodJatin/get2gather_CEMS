@@ -55,55 +55,70 @@ export default function OrganizerScanPage() {
         }
     };
 
+    const parseEventDate = (dateStr: string, timeStr: string): Date => {
+        // Clean date string
+        let year, month, day;
+        if (dateStr.match(/^\d{2}[-/]\d{2}[-/]\d{4}$/)) {
+            // DD-MM-YYYY
+            [day, month, year] = dateStr.split(/[-/]/).map(Number);
+        } else if (dateStr.match(/^\d{4}[-/]\d{2}[-/]\d{2}$/)) {
+             // YYYY-MM-DD
+             [year, month, day] = dateStr.split(/[-/]/).map(Number);
+        } else {
+            // Fallback
+            return new Date(`${dateStr}T${timeStr}`); 
+        }
+
+        // Clean time string
+        let hours = 0, minutes = 0;
+        if (timeStr.match(/PM|AM/i)) {
+            // 12h format
+            const [time, modifier] = timeStr.split(' ');
+            let [h, m] = time.split(':');
+            hours = parseInt(h, 10);
+            minutes = parseInt(m, 10);
+            
+            if (hours === 12) hours = 0;
+            if (modifier.toUpperCase() === 'PM') hours += 12;
+        } else {
+            // 24h format
+            const [h, m] = timeStr.split(':');
+            hours = parseInt(h, 10);
+            minutes = parseInt(m, 10);
+        }
+
+        // Create Date object in LOCAL time explicitly
+        return new Date(year, month - 1, day, hours, minutes);
+    };
+
     const checkScanEligibility = () => {
         if (!selectedEvent) return;
 
         try {
-            let timeStr = selectedEvent.time;
-            let dateStr = selectedEvent.date;
-
-            // Handle DD-MM-YYYY format if present
-            if (dateStr.match(/^\d{2}[-/]\d{2}[-/]\d{4}$/)) {
-                const [d, m, y] = dateStr.split(/[-/]/);
-                dateStr = `${y}-${m}-${d}`;
-            }
-
-            // Handle 12h format to 24h for consistent parsing
-            if (timeStr.match(/PM|AM/i)) {
-                const [time, modifier] = timeStr.split(' ');
-                let [hours, minutes] = time.split(':');
-                if (hours === '12') hours = '00';
-                if (modifier.toUpperCase() === 'PM') hours = (parseInt(hours, 10) + 12).toString();
-                timeStr = `${hours}:${minutes}`;
-            }
-
-            // Construct ISO-like string
-            const eventDateTime = new Date(`${dateStr}T${timeStr}`);
+            const eventDateTime = parseEventDate(selectedEvent.date, selectedEvent.time);
             
             if (isNaN(eventDateTime.getTime())) {
                 throw new Error("Invalid Date");
             }
 
             const now = new Date();
+            const msPerHr = 1000 * 60 * 60;
+            const diffMs = eventDateTime.getTime() - now.getTime();
+            const diffHours = diffMs / msPerHr;
             
-            // Strict check: If current time is past event start time, disable scanning
-            if (now > eventDateTime) {
-                setCanScan(false);
-                setTimeMessage('🔒 Event has started/ended. Check-in closed.');
+            if (diffHours > 2) {
+                 setCanScan(false);
+                 setTimeMessage(`⏰ Check-in opens in ${diffHours.toFixed(1)} hours`);
+            } else if (diffHours < -12) {
+                 // More than 12 hours past start time
+                 setCanScan(false);
+                 setTimeMessage('🔒 Event ended. Check-in closed.');
             } else {
-                // Optional: Check if it's too early (e.g., more than 2 hours before)
-                const diffMs = eventDateTime.getTime() - now.getTime();
-                const diffHours = diffMs / (1000 * 60 * 60);
-                
-                if (diffHours > 2) {
-                     setCanScan(false);
-                     setTimeMessage(`⏰ Check-in opens in ${diffHours.toFixed(1)} hours`);
-                } else {
-                    setCanScan(true);
-                    setTimeMessage('✅ Check-in is now open!');
-                }
+                setCanScan(true);
+                setTimeMessage('✅ Check-in is now open!');
             }
         } catch (error) {
+            console.error("Date parsing error:", error);
             setTimeMessage('⚠️ Invalid event time format');
             setCanScan(false);
         }
@@ -149,22 +164,14 @@ export default function OrganizerScanPage() {
                             <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2 sticky top-0 bg-[#171717]/95 py-2 z-10 backdrop-blur-sm">Active Events</h3>
                             {events.filter(e => {
                                 try {
-                                    let timeStr = e.time;
-                                    let dateStr = e.date;
-                                    if (dateStr.match(/^\d{2}[-/]\d{2}[-/]\d{4}$/)) {
-                                        const [d, m, y] = dateStr.split(/[-/]/);
-                                        dateStr = `${y}-${m}-${d}`;
-                                    }
-                                    if (timeStr.match(/PM|AM/i)) {
-                                        const [time, modifier] = timeStr.split(' ');
-                                        let [hours, minutes] = time.split(':');
-                                        if (hours === '12') hours = '00';
-                                        if (modifier.toUpperCase() === 'PM') hours = (parseInt(hours, 10) + 12).toString();
-                                        timeStr = `${hours}:${minutes}`;
-                                    }
-                                    const dt = new Date(`${dateStr}T${timeStr}`);
-                                    if (isNaN(dt.getTime())) return new Date(`${e.date} ${e.time}`) > new Date();
-                                    return dt > new Date();
+                                    const dt = parseEventDate(e.date, e.time);
+                                    if (isNaN(dt.getTime())) return false; // Hide invalid dates
+                                    // Active if it hasn't ended (ended = >12h ago)
+                                    // Or simply future + recent past? 
+                                    // Let's match the logic: Active if NOW < End Time (Start + 12h)
+                                    const now = new Date();
+                                    const endTime = new Date(dt.getTime() + (12 * 60 * 60 * 1000));
+                                    return now < endTime; 
                                 } catch { return true; }
                             }).map(event => (
                                 <button
@@ -196,22 +203,11 @@ export default function OrganizerScanPage() {
                             <h3 className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2 mt-6 sticky top-0 bg-[#171717]/95 py-2 z-10 backdrop-blur-sm">Completed Events</h3>
                             {events.filter(e => {
                                 try {
-                                    let timeStr = e.time;
-                                    let dateStr = e.date;
-                                    if (dateStr.match(/^\d{2}[-/]\d{2}[-/]\d{4}$/)) {
-                                        const [d, m, y] = dateStr.split(/[-/]/);
-                                        dateStr = `${y}-${m}-${d}`;
-                                    }
-                                    if (timeStr.match(/PM|AM/i)) {
-                                        const [time, modifier] = timeStr.split(' ');
-                                        let [hours, minutes] = time.split(':');
-                                        if (hours === '12') hours = '00';
-                                        if (modifier.toUpperCase() === 'PM') hours = (parseInt(hours, 10) + 12).toString();
-                                        timeStr = `${hours}:${minutes}`;
-                                    }
-                                    const dt = new Date(`${dateStr}T${timeStr}`);
-                                    if (isNaN(dt.getTime())) return new Date(`${e.date} ${e.time}`) <= new Date();
-                                    return dt <= new Date();
+                                    const dt = parseEventDate(e.date, e.time);
+                                    if (isNaN(dt.getTime())) return false;
+                                    const now = new Date();
+                                    const endTime = new Date(dt.getTime() + (12 * 60 * 60 * 1000));
+                                    return now >= endTime;
                                 } catch { return false; }
                             }).map(event => (
                                 <button

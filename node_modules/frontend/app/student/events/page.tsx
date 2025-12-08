@@ -6,6 +6,7 @@ import Link from 'next/link';
 import MotionWrapper from '@/components/MotionWrapper';
 import { parse } from 'date-fns';
 import { Dialog, Transition } from '@headlessui/react';
+import { getImageUrl } from '@/lib/image-utils';
 
 interface Event {
     id: number;
@@ -28,6 +29,134 @@ interface Event {
 interface UserProfile {
     department?: string;
 }
+
+// Moved EventCard outside to prevent re-creation on every render
+const EventCard = ({ event, bookings, bookingsData, openReviewModal }: { event: Event, bookings: number[], bookingsData: any[], openReviewModal: (b: any) => void }) => {
+    const image = getImageUrl(event.images || event.image_url);
+
+    const isBooked = bookings.includes(event.id);
+
+    // Safe date parsing
+    let eventDate = new Date();
+    try {
+        eventDate = parse(`${event.date} ${event.time}`, 'yyyy-MM-dd h:mm aa', new Date());
+        if (isNaN(eventDate.getTime())) {
+            eventDate = parse(`${event.date} ${event.time}`, 'yyyy-MM-dd HH:mm', new Date());
+        }
+    } catch (e) {
+        // Fallback or leave as invalid
+    }
+    
+    // Use client-side only check to avoid hydration mismatch
+    // But for now, we'll assume consistent time or allow hydration fix later
+    // Better: use mounted state or suppression
+    const [isMounted, setIsMounted] = useState(false);
+    useEffect(() => setIsMounted(true), []);
+
+    if (!isMounted) return <div className="animate-pulse bg-neutral-900/50 h-96 rounded-3xl" />;
+
+    const now = new Date();
+    const timeDiff = eventDate.getTime() - now.getTime();
+    const minutesUntilStart = timeDiff / (1000 * 60);
+    
+    const isCompleted = !isNaN(eventDate.getTime()) && eventDate < now;
+    const isBookingClosed = isCompleted || (minutesUntilStart <= 30 && minutesUntilStart > -1000);
+
+    return (
+        <div className="group block h-full">
+            <div className="rounded-3xl bg-neutral-900/50 border border-white/10 overflow-hidden hover:border-primary/30 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 h-full flex flex-col">
+                {/* Image Section - Wrapped in Link for navigation */}
+                <Link href={`/events/${event.id}`} className="block h-48 bg-neutral-800 relative overflow-hidden cursor-pointer">
+                    {image ? (
+                        <img src={image} alt={event.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
+                    ) : (
+                        <div className="absolute inset-0 flex items-center justify-center text-4xl opacity-30">🎉</div>
+                    )}
+                    <div className="absolute top-3 right-3 flex gap-2">
+                            <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-white">
+                            {event.category}
+                        </span>
+                        {event.is_paid && (
+                            <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-secondary/80 backdrop-blur-md text-white">
+                                ₹{event.price}
+                            </span>
+                        )}
+                    </div>
+                </Link>
+
+                <div className="p-5 flex-1 flex flex-col">
+                    <div className="flex items-center gap-2 text-xs text-accent mb-2 font-medium">
+                        <span>📅 {event.date}</span>
+                        <span>•</span>
+                        <span>⏰ {event.time}</span>
+                    </div>
+                    <Link href={`/events/${event.id}`} className="block">
+                         <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors line-clamp-1">{event.title}</h3>
+                    </Link>
+                    <p className="text-sm text-neutral-400 mb-4 line-clamp-1">{event.venue}</p>
+                    
+                    {event.hashtags && (
+                        <div className="flex flex-wrap gap-1 mb-4">
+                            {event.hashtags.split(',').map((tag, i) => (
+                                <span key={i} className="text-[10px] text-neutral-500 bg-white/5 px-2 py-1 rounded-md">#{tag.trim()}</span>
+                            ))}
+                        </div>
+                    )}
+
+                    <div className="mt-auto pt-4 border-t border-white/5 flex justify-between items-center">
+                        <span className="text-xs text-neutral-500">
+                            {isBookingClosed ? 'Booking Closed' : `${event.seats_available} seats left`}
+                        </span>
+                        
+                        {/* Action Buttons - NO LONGER nested in Link */}
+                        {isCompleted ? (
+                            (() => {
+                                const booking = bookingsData.find(b => b.event_id === event.id);
+                                
+                                if (booking && booking.attended) {
+                                    if (booking.event_title && booking.event_title.includes('(Volunteer)')) {
+                                        return <span className="text-xs font-bold bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded-lg border border-blue-500/20">Volunteer Attended</span>;
+                                    }
+
+                                    return (
+                                        <button 
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                openReviewModal(booking);
+                                            }}
+                                            className="px-4 py-1.5 rounded-lg bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 text-xs font-bold hover:bg-yellow-500/20 transition-colors flex items-center gap-1"
+                                        >
+                                            {booking.rating ? (
+                                                <>
+                                                    <span>{booking.rating} ★</span>
+                                                    <span className="opacity-75 font-normal ml-1">Edit</span>
+                                                </>
+                                            ) : (
+                                                <>
+                                                    <span>★ Leave Review</span>
+                                                </>
+                                            )}
+                                        </button>
+                                    );
+                                }
+                                return <span className="text-xs font-bold bg-neutral-700 text-neutral-400 px-3 py-1.5 rounded-lg">Completed</span>;
+                            })()
+                        ) : isBooked ? (
+                            <span className="text-xs font-bold bg-green-500/20 text-green-400 px-3 py-1.5 rounded-lg border border-green-500/20">Booked</span>
+                        ) : isBookingClosed ? (
+                            <span className="text-sm font-bold text-red-500">Closed</span>
+                        ) : (
+                            <Link href={`/events/${event.id}`} className="text-sm font-bold text-primary group-hover:translate-x-1 transition-transform">
+                                Book Now →
+                            </Link>
+                        )}
+                    </div>
+                </div>
+            </div>
+        </div>
+    );
+};
 
 export default function EventsPage() {
     const [events, setEvents] = useState<Event[]>([]);
@@ -149,125 +278,6 @@ export default function EventsPage() {
         }
 
         return filtered;
-    };
-
-    const EventCard = ({ event }: { event: Event }) => {
-        const image = (() => {
-            try {
-                if (event.images) {
-                    const parsed = JSON.parse(event.images);
-                    return Array.isArray(parsed) ? parsed[0] : event.images;
-                }
-                return event.image_url || null;
-            } catch (e) {
-                if (event.images) {
-                     const parts = event.images.split(',');
-                     return parts[0].trim();
-                }
-                return event.image_url || null;
-            }
-        })();
-
-        const isBooked = bookings.includes(event.id);
-
-        let eventDate = parse(`${event.date} ${event.time}`, 'yyyy-MM-dd h:mm aa', new Date());
-        if (isNaN(eventDate.getTime())) {
-            eventDate = parse(`${event.date} ${event.time}`, 'yyyy-MM-dd HH:mm', new Date());
-        }
-        
-        const now = new Date();
-        const timeDiff = eventDate.getTime() - now.getTime();
-        const minutesUntilStart = timeDiff / (1000 * 60);
-        
-        const isCompleted = !isNaN(eventDate.getTime()) && eventDate < now;
-        const isBookingClosed = isCompleted || (minutesUntilStart <= 30 && minutesUntilStart > -1000);
-
-        return (
-            <Link href={`/events/${event.id}`} className="group block">
-                <div className="rounded-3xl bg-neutral-900/50 border border-white/10 overflow-hidden hover:border-primary/30 transition-all hover:-translate-y-1 hover:shadow-xl hover:shadow-primary/5 h-full flex flex-col">
-                    <div className="h-48 bg-neutral-800 relative overflow-hidden">
-                        {image ? (
-                            <img src={image} alt={event.title} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" />
-                        ) : (
-                            <div className="absolute inset-0 flex items-center justify-center text-4xl opacity-30">🎉</div>
-                        )}
-                        <div className="absolute top-3 right-3 flex gap-2">
-                             <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-white">
-                                {event.category}
-                            </span>
-                            {event.is_paid && (
-                                <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-secondary/80 backdrop-blur-md text-white">
-                                    ₹{event.price}
-                                </span>
-                            )}
-                        </div>
-                    </div>
-                    <div className="p-5 flex-1 flex flex-col">
-                        <div className="flex items-center gap-2 text-xs text-accent mb-2 font-medium">
-                            <span>📅 {event.date}</span>
-                            <span>•</span>
-                            <span>⏰ {event.time}</span>
-                        </div>
-                        <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors line-clamp-1">{event.title}</h3>
-                        <p className="text-sm text-neutral-400 mb-4 line-clamp-1">{event.venue}</p>
-                        
-                        {event.hashtags && (
-                            <div className="flex flex-wrap gap-1 mb-4">
-                                {event.hashtags.split(',').map((tag, i) => (
-                                    <span key={i} className="text-[10px] text-neutral-500 bg-white/5 px-2 py-1 rounded-md">#{tag.trim()}</span>
-                                ))}
-                            </div>
-                        )}
-
-                        <div className="mt-auto pt-4 border-t border-white/5 flex justify-between items-center">
-                            <span className="text-xs text-neutral-500">
-                                {isBookingClosed ? 'Booking Closed' : `${event.seats_available} seats left`}
-                            </span>
-                            {isCompleted ? (
-                                (() => {
-                                    const booking = bookingsData.find(b => b.event_id === event.id);
-                                    
-                                    if (booking && booking.attended) {
-                                        if (booking.event_title && booking.event_title.includes('(Volunteer)')) {
-                                            return <span className="text-xs font-bold bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded-lg border border-blue-500/20">Volunteer Attended</span>;
-                                        }
-
-                                        return (
-                                            <button 
-                                                onClick={(e) => {
-                                                    e.preventDefault();
-                                                    e.stopPropagation();
-                                                    openReviewModal(booking);
-                                                }}
-                                                className="px-4 py-1.5 rounded-lg bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 text-xs font-bold hover:bg-yellow-500/20 transition-colors flex items-center gap-1"
-                                            >
-                                                {booking.rating ? (
-                                                    <>
-                                                        <span>{booking.rating} ★</span>
-                                                        <span className="opacity-75 font-normal ml-1">Edit</span>
-                                                    </>
-                                                ) : (
-                                                    <>
-                                                        <span>★ Leave Review</span>
-                                                    </>
-                                                )}
-                                            </button>
-                                        );
-                                    }
-                                    return <span className="text-xs font-bold bg-neutral-700 text-neutral-400 px-3 py-1.5 rounded-lg">Completed</span>;
-                                })()
-                            ) : isBooked ? (
-                                <span className="text-xs font-bold bg-green-500/20 text-green-400 px-3 py-1.5 rounded-lg border border-green-500/20">Booked</span>
-                            ) : isBookingClosed ? (
-                                <span className="text-sm font-bold text-red-500">Closed</span>
-                            ) : (
-                                <span className="text-sm font-bold text-primary group-hover:translate-x-1 transition-transform">Book Now →</span>
-                            )}
-                        </div>
-                    </div>
-                </div>
-            </Link>
-        );
     };
 
     return (
@@ -397,7 +407,7 @@ export default function EventsPage() {
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                         {trendingEvents.map(event => (
-                            <EventCard key={event.id} event={event} />
+                            <EventCard key={event.id} event={event} bookings={bookings} bookingsData={bookingsData} openReviewModal={openReviewModal} />
                         ))}
                     </div>
                 </section>
@@ -411,7 +421,7 @@ export default function EventsPage() {
                     </h2>
                     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {filterEvents('Department').map(event => (
-                            <EventCard key={event.id} event={event} />
+                            <EventCard key={event.id} event={event} bookings={bookings} bookingsData={bookingsData} openReviewModal={openReviewModal} />
                         ))}
                     </div>
                 </section>
@@ -424,7 +434,7 @@ export default function EventsPage() {
                 </h2>
                 <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
                     {filterEvents('Open').map(event => (
-                        <EventCard key={event.id} event={event} />
+                        <EventCard key={event.id} event={event} bookings={bookings} bookingsData={bookingsData} openReviewModal={openReviewModal} />
                     ))}
                 </div>
             </section>
@@ -435,7 +445,7 @@ export default function EventsPage() {
                 {filterEvents().length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">
                         {filterEvents().map(event => (
-                            <EventCard key={event.id} event={event} />
+                            <EventCard key={event.id} event={event} bookings={bookings} bookingsData={bookingsData} openReviewModal={openReviewModal} />
                         ))}
                     </div>
                 ) : (

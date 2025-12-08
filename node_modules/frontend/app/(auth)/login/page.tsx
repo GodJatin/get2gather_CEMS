@@ -77,9 +77,6 @@ export default function LoginPage() {
                     className="w-full max-w-md p-8 rounded-3xl bg-neutral-900/50 border border-white/10 backdrop-blur-xl relative z-10"
                 >
                     <div className="text-center mb-8">
-                        <div className="flex justify-center mb-6">
-                            <Image src="/logo.png" alt="Get2Gather" width={180} height={50} className="h-12 w-auto" />
-                        </div>
                         <h1 className="text-3xl font-bold text-white mb-2">Welcome Back</h1>
                         <p className="text-neutral-400 text-sm">Sign in to continue to Get2Gather</p>
                     </div>

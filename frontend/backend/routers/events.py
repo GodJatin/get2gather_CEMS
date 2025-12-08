@@ -214,6 +214,23 @@ async def update_event(event_id: int, event_update: schemas.EventCreate, current
     db.refresh(event)
     return event
 
+@router.delete("/events/{event_id}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_event(event_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.role != UserRole.ORGANIZER:
+        raise HTTPException(status_code=403, detail="Only organizers can delete events")
+    
+    # Check if event exists and belongs to organizer
+    result = db.execute(select(Event).join(Organizer).where(Event.id == event_id, Organizer.user_id == current_user.id))
+    event = result.scalar_one_or_none()
+    
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found or you don't have permission")
+
+    db.delete(event)
+    db.commit()
+    return None
+
+
 @router.get("/events/{event_id}/bookings", response_model=List[schemas.BookingResponse])
 async def get_event_bookings(event_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.role != UserRole.ORGANIZER:
