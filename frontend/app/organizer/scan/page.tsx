@@ -5,12 +5,6 @@ import api from '@/lib/api';
 import { motion, AnimatePresence } from 'framer-motion';
 import MotionWrapper from '@/components/MotionWrapper';
 import { Html5QrcodeScanner } from 'html5-qrcode';
-
-interface Event {
-    id: number;
-    title: string;
-    date: string;
-    time: string;
 import { getEventStatus, isScanEligible, parseEventDate } from '@/lib/dateUtils';
 
 interface Event {
