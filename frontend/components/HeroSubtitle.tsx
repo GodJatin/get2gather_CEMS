@@ -110,7 +110,7 @@ const TypewriterText = ({ text, delay = 0 }: { text: string; delay?: number }) =
   return (
     <span>
       {displayText}
-      <span className={`inline-block w-0.5 h-5 ml-1 bg-accent align-middle ${showCursor ? 'opacity-100' : 'opacity-0'}`}>&nbsp;</span>
+      <span className={`inline-block w-0.5 h-6 ml-1 bg-accent align-middle ${showCursor ? 'opacity-100' : 'opacity-0'}`}>&nbsp;</span>
     </span>
   );
 };

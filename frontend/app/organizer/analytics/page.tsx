@@ -108,13 +108,13 @@ export default function AnalyticsPage() {
                                         <span className="font-medium text-white group-hover:text-blue-400 transition-colors line-clamp-1">{event.title}</span>
                                         <span className="text-neutral-400 whitespace-nowrap ml-2">{event.attended_count} / {event.capacity}</span>
                                     </div>
-                                    <div className="h-4 bg-white/5 rounded-full overflow-hidden flex w-full">
+                                    <div className="min-w-[4px] h-4 bg-neutral-800 rounded-full overflow-hidden flex w-full border border-white/5">
                                         {/* Attendees Bar */}
                                         <div 
                                             className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-l-full relative group-hover:brightness-110 transition-all duration-1000"
                                             style={{ 
-                                                width: `${Math.max((event.attended_count / event.capacity) * 100, 2)}%`, // Min width 2% for visibility
-                                                minWidth: '2%' 
+                                                width: event.capacity > 0 ? `${Math.max((event.attended_count / event.capacity) * 100, 2)}%` : '0%',
+                                                minWidth: event.attended_count > 0 ? '4px' : '0'
                                             }}
                                         >
                                             <div className="absolute inset-0 bg-white/20 animate-pulse"></div>

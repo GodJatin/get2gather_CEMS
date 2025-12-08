@@ -189,7 +189,7 @@ export default function StudentRegisterPage() {
                     Get2Gather
                 </span>
             </Link>
-            <div className="w-full max-w-lg p-8 rounded-3xl bg-neutral-900/50 border border-white/10 backdrop-blur-xl relative overflow-hidden">
+            <div className="w-full max-w-lg p-6 md:p-8 rounded-3xl bg-neutral-900/50 border border-white/10 backdrop-blur-xl relative overflow-hidden">
                 {/* Progress Bar */}
                 <div className="absolute top-0 left-0 h-1 bg-neutral-800 w-full">
                     <div

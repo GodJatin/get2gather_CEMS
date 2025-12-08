@@ -109,54 +109,98 @@ export default function AdminUsersPage() {
             </div>
             
             <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <table className="w-full text-left">
-                    <thead className="bg-gray-50 border-b border-gray-100">
-                        <tr>
-                            <th className="p-4 font-semibold text-gray-600">ID</th>
-                            <th className="p-4 font-semibold text-gray-600">Email</th>
-                            <th className="p-4 font-semibold text-gray-600">Role</th>
-                            <th className="p-4 font-semibold text-gray-600">Details</th>
-                            <th className="p-4 font-semibold text-gray-600">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {filteredUsers.length === 0 ? (
+                {/* Desktop Table */}
+                <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-gray-50 border-b border-gray-100">
                             <tr>
-                                <td colSpan={5} className="p-8 text-center text-gray-400">
-                                    No {filter !== 'all' ? filter : ''} users found.
-                                </td>
+                                <th className="p-4 font-semibold text-gray-600">ID</th>
+                                <th className="p-4 font-semibold text-gray-600">Email</th>
+                                <th className="p-4 font-semibold text-gray-600">Role</th>
+                                <th className="p-4 font-semibold text-gray-600">Details</th>
+                                <th className="p-4 font-semibold text-gray-600">Actions</th>
                             </tr>
-                        ) : filteredUsers.map((user) => (
-                            <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                                <td className="p-4 text-gray-600">#{user.id}</td>
-                                <td className="p-4 font-medium text-gray-800">{user.email}</td>
-                                <td className="p-4">
-                                    <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                        user.role === 'admin' ? 'bg-red-100 text-red-600' :
-                                        user.role === 'organizer' ? 'bg-purple-100 text-purple-600' :
-                                        'bg-blue-100 text-blue-600'
-                                    }`}>
-                                        {user.role.toUpperCase()}
-                                    </span>
-                                </td>
-                                <td className="p-4 text-sm text-gray-500">
-                                    {user.organization_name && <div>Org: {user.organization_name}</div>}
-                                    {user.contact && <div>Ph: {user.contact}</div>}
-                                </td>
-                                <td className="p-4">
-                                    {user.role !== 'admin' && (
-                                        <button 
-                                            onClick={() => handleDelete(user.id)}
-                                            className="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1 rounded-lg transition-colors"
-                                        >
-                                            Delete
-                                        </button>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-gray-100">
+                            {filteredUsers.length === 0 ? (
+                                <tr>
+                                    <td colSpan={5} className="p-8 text-center text-gray-400">
+                                        No {filter !== 'all' ? filter : ''} users found.
+                                    </td>
+                                </tr>
+                            ) : filteredUsers.map((user) => (
+                                <tr key={user.id} className="hover:bg-gray-50 transition-colors">
+                                    <td className="p-4 text-gray-600">#{user.id}</td>
+                                    <td className="p-4 font-medium text-gray-800">{user.email}</td>
+                                    <td className="p-4">
+                                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                            user.role === 'admin' ? 'bg-red-100 text-red-600' :
+                                            user.role === 'organizer' ? 'bg-purple-100 text-purple-600' :
+                                            'bg-blue-100 text-blue-600'
+                                        }`}>
+                                            {user.role.toUpperCase()}
+                                        </span>
+                                    </td>
+                                    <td className="p-4 text-sm text-gray-500">
+                                        {user.organization_name && <div>Org: {user.organization_name}</div>}
+                                        {user.contact && <div>Ph: {user.contact}</div>}
+                                    </td>
+                                    <td className="p-4">
+                                        {user.role !== 'admin' && (
+                                            <button 
+                                                onClick={() => handleDelete(user.id)}
+                                                className="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1 rounded-lg transition-colors"
+                                            >
+                                                Delete
+                                            </button>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden divide-y divide-gray-100">
+                    {filteredUsers.length === 0 ? (
+                        <div className="p-8 text-center text-gray-400">
+                            No users found.
+                        </div>
+                    ) : filteredUsers.map((user) => (
+                        <div key={user.id} className="p-4 flex flex-col gap-3">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <div className="font-bold text-gray-800 break-all">{user.email}</div>
+                                    <div className="text-xs text-gray-400">#{user.id}</div>
+                                </div>
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
+                                    user.role === 'admin' ? 'bg-red-100 text-red-600' :
+                                    user.role === 'organizer' ? 'bg-purple-100 text-purple-600' :
+                                    'bg-blue-100 text-blue-600'
+                                }`}>
+                                    {user.role}
+                                </span>
+                            </div>
+                            
+                            {(user.organization_name || user.contact) && (
+                                <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-600 space-y-1">
+                                    {user.organization_name && <div>🏢 {user.organization_name}</div>}
+                                    {user.contact && <div>📞 {user.contact}</div>}
+                                </div>
+                            )}
+
+                            {user.role !== 'admin' && (
+                                <button 
+                                    onClick={() => handleDelete(user.id)}
+                                    className="w-full text-center text-red-500 bg-red-50 py-2 rounded-lg font-medium"
+                                >
+                                    Delete User
+                                </button>
+                            )}
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );

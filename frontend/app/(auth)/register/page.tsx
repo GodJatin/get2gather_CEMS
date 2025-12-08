@@ -16,7 +16,7 @@ export default function RegisterRolePage() {
                 <h1 className="text-4xl font-bold text-white mb-2">Join Get2Gather</h1>
                 <p className="text-neutral-400 mb-12">Choose your role to get started</p>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6 md:gap-8 w-full">
                     {/* Student Card */}
                     <Link
                         href="/register/student"

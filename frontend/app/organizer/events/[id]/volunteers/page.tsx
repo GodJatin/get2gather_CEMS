@@ -101,70 +101,120 @@ export default function VolunteerManagementPage() {
             </div>
 
             <div className="bg-neutral-900/50 rounded-3xl border border-white/10 overflow-hidden">
-                <table className="w-full text-left">
-                    <thead className="bg-white/5 text-neutral-400">
-                        <tr>
-                            <th className="p-4 font-medium">Name</th>
-                            <th className="p-4 font-medium">Email</th>
-                            <th className="p-4 font-medium">Date</th>
-                            <th className="p-4 font-medium">Status</th>
-                            <th className="p-4 font-medium">Attended</th>
-                            <th className="p-4 font-medium">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-white/10">
-                        {volunteers.map((vol) => (
-                            <tr key={vol.id} className="hover:bg-white/5 transition-colors">
-                                <td className="p-4 font-medium">{vol.student_name || `User ${vol.user_id}`}</td>
-                                <td className="p-4 text-neutral-400">{vol.student_email || '-'}</td>
-                                <td className="p-4 text-neutral-400">
-                                    {new Date(vol.created_at).toLocaleDateString()}
-                                </td>
-                                <td className="p-4">
-                                    <span className={`px-2 py-1 rounded-full text-xs font-bold ${
-                                        vol.status === 'Approved' ? 'bg-green-500/20 text-green-400' :
-                                        vol.status === 'Rejected' ? 'bg-red-500/20 text-red-400' :
-                                        'bg-yellow-500/20 text-yellow-400'
-                                    }`}>
-                                        {vol.status}
-                                    </span>
-                                </td>
-                                <td className="p-4">
-                                    {vol.attended ? (
-                                        <span className="text-green-500 px-2 py-1 bg-green-500/10 rounded-full text-xs font-bold">Yes</span>
-                                    ) : (
-                                        <span className="text-neutral-500 px-2 py-1 bg-neutral-800 rounded-full text-xs">No</span>
-                                    )}
-                                </td>
-                                <td className="p-4">
-                                    {vol.status === 'Pending' && (
-                                        <div className="flex gap-2">
-                                            <button
-                                                onClick={() => handleStatusUpdate(vol.id, 'Approved')}
-                                                className="px-3 py-1 rounded-lg bg-green-600 hover:bg-green-500 text-white text-sm font-bold transition-colors"
-                                            >
-                                                Approve
-                                            </button>
-                                            <button
-                                                onClick={() => handleStatusUpdate(vol.id, 'Rejected')}
-                                                className="px-3 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-bold transition-colors"
-                                            >
-                                                Reject
-                                            </button>
-                                        </div>
-                                    )}
-                                </td>
-                            </tr>
-                        ))}
-                        {volunteers.length === 0 && (
+                {/* Desktop Table */}
+                <div className="hidden md:block overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead className="bg-white/5 text-neutral-400">
                             <tr>
-                                <td colSpan={5} className="p-8 text-center text-neutral-500">
-                                    No volunteer applications yet
-                                </td>
+                                <th className="p-4 font-medium">Name</th>
+                                <th className="p-4 font-medium">Email</th>
+                                <th className="p-4 font-medium">Date</th>
+                                <th className="p-4 font-medium">Status</th>
+                                <th className="p-4 font-medium">Attended</th>
+                                <th className="p-4 font-medium">Actions</th>
                             </tr>
-                        )}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-white/10">
+                            {volunteers.map((vol) => (
+                                <tr key={vol.id} className="hover:bg-white/5 transition-colors">
+                                    <td className="p-4 font-medium">{vol.student_name || `User ${vol.user_id}`}</td>
+                                    <td className="p-4 text-neutral-400">{vol.student_email || '-'}</td>
+                                    <td className="p-4 text-neutral-400">
+                                        {new Date(vol.created_at).toLocaleDateString()}
+                                    </td>
+                                    <td className="p-4">
+                                        <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                                            vol.status === 'Approved' ? 'bg-green-500/20 text-green-400' :
+                                            vol.status === 'Rejected' ? 'bg-red-500/20 text-red-400' :
+                                            'bg-yellow-500/20 text-yellow-400'
+                                        }`}>
+                                            {vol.status}
+                                        </span>
+                                    </td>
+                                    <td className="p-4">
+                                        {vol.attended ? (
+                                            <span className="text-green-500 px-2 py-1 bg-green-500/10 rounded-full text-xs font-bold">Yes</span>
+                                        ) : (
+                                            <span className="text-neutral-500 px-2 py-1 bg-neutral-800 rounded-full text-xs">No</span>
+                                        )}
+                                    </td>
+                                    <td className="p-4">
+                                        {vol.status === 'Pending' && (
+                                            <div className="flex gap-2">
+                                                <button
+                                                    onClick={() => handleStatusUpdate(vol.id, 'Approved')}
+                                                    className="px-3 py-1 rounded-lg bg-green-600 hover:bg-green-500 text-white text-sm font-bold transition-colors"
+                                                >
+                                                    Approve
+                                                </button>
+                                                <button
+                                                    onClick={() => handleStatusUpdate(vol.id, 'Rejected')}
+                                                    className="px-3 py-1 rounded-lg bg-red-600 hover:bg-red-500 text-white text-sm font-bold transition-colors"
+                                                >
+                                                    Reject
+                                                </button>
+                                            </div>
+                                        )}
+                                    </td>
+                                </tr>
+                            ))}
+                            {volunteers.length === 0 && (
+                                <tr>
+                                    <td colSpan={6} className="p-8 text-center text-neutral-500">
+                                        No volunteer applications yet
+                                    </td>
+                                </tr>
+                            )}
+                        </tbody>
+                    </table>
+                </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden divide-y divide-white/10">
+                    {volunteers.length === 0 ? (
+                        <div className="p-8 text-center text-neutral-500">
+                            No volunteer applications yet
+                        </div>
+                    ) : volunteers.map((vol) => (
+                        <div key={vol.id} className="p-4 flex flex-col gap-3">
+                            <div className="flex justify-between items-start">
+                                <div>
+                                    <div className="font-bold text-white mb-1">{vol.student_name || `User ${vol.user_id}`}</div>
+                                    <div className="text-xs text-neutral-400 break-all">{vol.student_email}</div>
+                                </div>
+                                <span className={`px-2 py-1 rounded-full text-xs font-bold ${
+                                    vol.status === 'Approved' ? 'bg-green-500/20 text-green-400' :
+                                    vol.status === 'Rejected' ? 'bg-red-500/20 text-red-400' :
+                                    'bg-yellow-500/20 text-yellow-400'
+                                }`}>
+                                    {vol.status}
+                                </span>
+                            </div>
+
+                            <div className="flex items-center justify-between text-sm text-neutral-400 bg-white/5 p-3 rounded-lg">
+                                <span>Applied: {new Date(vol.created_at).toLocaleDateString()}</span>
+                                <span>Attended: {vol.attended ? <b className="text-green-400">Yes</b> : 'No'}</span>
+                            </div>
+
+                            {vol.status === 'Pending' && (
+                                <div className="flex gap-2 mt-1">
+                                    <button
+                                        onClick={() => handleStatusUpdate(vol.id, 'Approved')}
+                                        className="flex-1 py-2 rounded-lg bg-green-600/20 text-green-400 border border-green-600/50 hover:bg-green-600/30 text-sm font-bold transition-colors"
+                                    >
+                                        Approve
+                                    </button>
+                                    <button
+                                        onClick={() => handleStatusUpdate(vol.id, 'Rejected')}
+                                        className="flex-1 py-2 rounded-lg bg-red-600/20 text-red-400 border border-red-600/50 hover:bg-red-600/30 text-sm font-bold transition-colors"
+                                    >
+                                        Reject
+                                    </button>
+                                </div>
+                            )}
+                        </div>
+                    ))}
+                </div>
             </div>
         </div>
     );
