@@ -360,7 +360,32 @@ async def read_my_events(current_user: User = Depends(get_current_user), db: Ses
 
     result = db.execute(select(Event).where(Event.organizer_id == organizer.id))
     events = result.scalars().all()
-    return events
+    
+    events_with_stats = []
+    from sqlalchemy import func
+    from models import Booking, Volunteer as VolModel
+    
+    for event in events:
+        # Count Attendees
+        attended = db.query(func.count(Booking.id)).filter(
+            Booking.event_id == event.id, 
+            Booking.attended == True
+        ).scalar() or 0
+        
+        # Count Volunteers
+        volunteers = db.query(func.count(VolModel.id)).filter(
+            VolModel.event_id == event.id,
+            VolModel.status == "Approved",
+            VolModel.attended == True
+        ).scalar() or 0
+        
+        # Convert to Pydantic and enrich
+        e_resp = schemas.EventResponse.from_orm(event)
+        e_resp.attended_count = attended
+        e_resp.volunteer_count = volunteers
+        events_with_stats.append(e_resp)
+        
+    return events_with_stats
 
 @router.get("/events/{event_id}", response_model=schemas.EventResponse)
 async def read_event(event_id: int, db: Session = Depends(get_db)):

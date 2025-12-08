@@ -136,6 +136,8 @@ class EventResponse(EventBase):
     is_paid: bool = False
     price: int = 0
     hashtags: Optional[str] = None
+    attended_count: Optional[int] = 0
+    volunteer_count: Optional[int] = 0
 
     class Config:
         orm_mode = True

@@ -13,6 +13,7 @@ interface Booking {
     event_date: string;
     event_time: string;
     event_venue: string;
+    qr_code?: string;
 }
 
 export default function StudentBookingsPage() {
@@ -52,7 +53,7 @@ export default function StudentBookingsPage() {
                             
                             <div className="p-4 bg-white rounded-xl border-2 border-dashed border-neutral-300 mb-6">
                                 <img 
-                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=BOOKING-${selectedTicket.id}`} 
+                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(selectedTicket.qr_code || '')}`} 
                                     alt="Ticket QR" 
                                     className="w-48 h-48"
                                 />
