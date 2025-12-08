@@ -4,8 +4,8 @@ import { useEffect, useState, Fragment } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
 import MotionWrapper from '@/components/MotionWrapper';
-import { parse } from 'date-fns';
 import { Dialog, Transition } from '@headlessui/react';
+import { getEventStatus, parseEventDate } from '@/lib/dateUtils';
 import { getImageUrl } from '@/lib/image-utils';
 
 interface Event {
@@ -13,6 +13,7 @@ interface Event {
     title: string;
     date: string;
     time: string;
+    end_time?: string;
     venue: string;
     category: string;
     seats_available: number;
@@ -35,32 +36,15 @@ const EventCard = ({ event, bookings, bookingsData, openReviewModal }: { event: 
     const image = getImageUrl(event.images || event.image_url);
 
     const isBooked = bookings.includes(event.id);
-
-    // Safe date parsing
-    let eventDate = new Date();
-    try {
-        eventDate = parse(`${event.date} ${event.time}`, 'yyyy-MM-dd h:mm aa', new Date());
-        if (isNaN(eventDate.getTime())) {
-            eventDate = parse(`${event.date} ${event.time}`, 'yyyy-MM-dd HH:mm', new Date());
-        }
-    } catch (e) {
-        // Fallback or leave as invalid
-    }
+    const eventStatus = getEventStatus(event);
     
-    // Use client-side only check to avoid hydration mismatch
-    // But for now, we'll assume consistent time or allow hydration fix later
-    // Better: use mounted state or suppression
-    const [isMounted, setIsMounted] = useState(false);
-    useEffect(() => setIsMounted(true), []);
-
-    if (!isMounted) return <div className="animate-pulse bg-neutral-900/50 h-96 rounded-3xl" />;
-
-    const now = new Date();
-    const timeDiff = eventDate.getTime() - now.getTime();
-    const minutesUntilStart = timeDiff / (1000 * 60);
-    
-    const isCompleted = !isNaN(eventDate.getTime()) && eventDate < now;
-    const isBookingClosed = isCompleted || (minutesUntilStart <= 30 && minutesUntilStart > -1000);
+    // Status Logic
+    const isCompleted = eventStatus === 'Completed';
+    // Booking Closed if Completed OR if < 30 mins to start?
+    // Let's stick to simple: Closed if Completed.
+    // User requested consistency. If "Upcoming", booking implies open.
+    // If Active, maybe allow last minute booking?
+    const isBookingClosed = isCompleted || event.seats_available <= 0;
 
     return (
         <div className="group block h-full">
@@ -269,11 +253,7 @@ export default function EventsPage() {
         // Filter out past events for specific sections
         if (section || filter !== 'All') {
              filtered = filtered.filter(e => {
-                let eventDate = parse(`${e.date} ${e.time}`, 'yyyy-MM-dd h:mm aa', new Date());
-                if (isNaN(eventDate.getTime())) {
-                     eventDate = parse(`${e.date} ${e.time}`, 'yyyy-MM-dd HH:mm', new Date());
-                }
-                return !isNaN(eventDate.getTime()) && eventDate >= new Date();
+                 return getEventStatus(e) !== 'Completed';
              });
         }
 

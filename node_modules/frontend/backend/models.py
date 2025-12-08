@@ -88,6 +88,7 @@ class Event(Base):
     seats_available = Column(Integer)
     date = Column(String) 
     time = Column(String)
+    end_time = Column(String, nullable=True) # e.g. "12:00 PM"
     venue = Column(String)
     image_url = Column(String, nullable=True) 
     images = Column(String, nullable=True) 

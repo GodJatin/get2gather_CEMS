@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
 import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';
+import { getEventStatus, parseEventDate } from '@/lib/dateUtils';
 
 interface Booking {
     id: number;
@@ -12,6 +13,7 @@ interface Booking {
     event_title: string;
     event_date: string;
     event_time: string;
+    event_end_time?: string;
     event_venue: string;
     qr_code?: string;
 }
@@ -35,6 +37,27 @@ export default function StudentBookingsPage() {
     }, []);
 
     const [selectedTicket, setSelectedTicket] = useState<Booking | null>(null);
+
+    // Helpers to categorize based on TIME, not just status
+    const upcomingBookings = bookings.filter(b => {
+        const status = getEventStatus({ date: b.event_date, time: b.event_time, end_time: b.event_end_time });
+        return status !== 'Completed';
+    }).sort((a, b) => {
+        // Sort by date ASC
+        const dateA = parseEventDate(a.event_date, a.event_time);
+        const dateB = parseEventDate(b.event_date, b.event_time);
+        return dateA.getTime() - dateB.getTime();
+    });
+
+    const pastBookings = bookings.filter(b => {
+        const status = getEventStatus({ date: b.event_date, time: b.event_time, end_time: b.event_end_time });
+        return status === 'Completed';
+    }).sort((a, b) => {
+        // Sort by date DESC
+        const dateA = parseEventDate(a.event_date, a.event_time);
+        const dateB = parseEventDate(b.event_date, b.event_time);
+        return dateB.getTime() - dateA.getTime();
+    });
 
     return (
         <MotionWrapper className="max-w-7xl mx-auto">
@@ -107,11 +130,7 @@ export default function StudentBookingsPage() {
                 <StaggerContainer className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     {/* Active Bookings */}
                     <h2 className="col-span-full text-xl font-bold text-white/80 mt-4 mb-2">Upcoming Events</h2>
-                    {bookings.filter(b => b.status !== 'Completed').sort((a, b) => {
-                        const dateA = new Date(`${a.event_date} ${a.event_time}`);
-                        const dateB = new Date(`${b.event_date} ${b.event_time}`);
-                        return dateA.getTime() - dateB.getTime();
-                    }).map((booking) => (
+                    {upcomingBookings.map((booking) => (
                         <StaggerItem key={`${booking.id}-${booking.event_title}`} className="p-6 rounded-3xl bg-neutral-900/50 border border-white/10 hover:border-primary/50 transition-colors shadow-lg relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-4">
                                 <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
@@ -152,10 +171,10 @@ export default function StudentBookingsPage() {
                     ))}
 
                     {/* Completed Bookings */}
-                    {bookings.filter(b => b.status === 'Completed').length > 0 && (
+                    {pastBookings.length > 0 && (
                         <>
                             <h2 className="col-span-full text-xl font-bold text-white/50 mt-12 mb-2 border-t border-white/10 pt-8">Past Events</h2>
-                            {bookings.filter(b => b.status === 'Completed').map((booking) => (
+                            {pastBookings.map((booking) => (
                                 <StaggerItem key={`${booking.id}-${booking.event_title}`} className="p-6 rounded-3xl bg-neutral-900/30 border border-white/5 relative overflow-hidden group opacity-75 hover:opacity-100 transition-opacity">
                                     <div className="absolute top-0 right-0 p-4">
                                         <span className="px-3 py-1 rounded-full text-xs font-bold border bg-neutral-500/20 text-neutral-400 border-neutral-500/20">

@@ -103,6 +103,7 @@ class EventBase(BaseModel):
     capacity: int
     date: str
     time: str
+    end_time: Optional[str] = None
 
     class Config:
         orm_mode = True
@@ -170,6 +171,7 @@ class BookingResponse(BaseModel):
     event_title: Optional[str] = None
     event_date: Optional[str] = None
     event_time: Optional[str] = None
+    event_end_time: Optional[str] = None
     event_venue: Optional[str] = None
     student_name: Optional[str] = None
     student_email: Optional[str] = None
