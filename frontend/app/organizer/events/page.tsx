@@ -224,12 +224,22 @@ export default function MyEventsPage() {
 
                                 <div className="space-y-3 mt-auto">
                                     <div className="flex gap-3">
-                                        <Link 
-                                            href={`/organizer/events/edit/${event.id}`}
-                                            className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 font-medium transition-colors text-center border border-white/5"
-                                        >
-                                            Edit
-                                        </Link>
+                                        {getEventStatus(event) === 'Completed' ? (
+                                            <button 
+                                                disabled
+                                                className="flex-1 py-2.5 rounded-xl bg-white/5 text-neutral-600 font-medium border border-white/5 cursor-not-allowed"
+                                                title="Cannot edit completed events"
+                                            >
+                                                Edit
+                                            </button>
+                                        ) : (
+                                            <Link 
+                                                href={`/organizer/events/edit/${event.id}`}
+                                                className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 font-medium transition-colors text-center border border-white/5"
+                                            >
+                                                Edit
+                                            </Link>
+                                        )}
                                         <Link 
                                             href={`/events/${event.id}`}
                                             className="flex-1 py-2.5 rounded-xl bg-white/5 hover:bg-white/10 font-medium transition-colors text-center border border-white/5"

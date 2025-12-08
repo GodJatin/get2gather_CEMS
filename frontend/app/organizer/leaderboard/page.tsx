@@ -122,13 +122,10 @@ export default function LeaderboardPage() {
 
     return (
         <MotionWrapper className="max-w-4xl mx-auto">
-            <header className="mb-12 text-center relative">
+            <header className="mb-12 text-center relative flex flex-col items-center justify-center min-h-[160px]">
                 <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-64 h-64 bg-yellow-500/20 rounded-full blur-3xl -z-10" />
-                <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-yellow-300 via-orange-400 to-yellow-300 bg-clip-text text-transparent bg-size-200 animate-gradient">
-                    🏆 Student Leaderboard
-                </h1>
-                <p className="text-neutral-400 text-lg mb-8">Top active students based on participation and engagement.</p>
                 
+                {/* Export Button - Moved to Top Right */}
                 <button
                     onClick={() => {
                         const headers = ["Rank", "Student Name", "Email", "Department", "Score", "Title"];
@@ -153,10 +150,15 @@ export default function LeaderboardPage() {
                         a.click();
                         document.body.removeChild(a);
                     }}
-                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all font-medium text-white hover:scale-105"
+                    className="absolute top-0 right-0 inline-flex items-center gap-2 px-4 py-2 rounded-lg bg-white/5 hover:bg-white/10 border border-white/10 transition-all text-sm font-medium text-white/70 hover:text-white"
                 >
                     <span>⬇️</span> Export CSV
                 </button>
+
+                <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-yellow-300 via-orange-400 to-yellow-300 bg-clip-text text-transparent bg-size-200 animate-gradient">
+                    🏆 Student Leaderboard
+                </h1>
+                <p className="text-neutral-400 text-lg">Top active students based on participation and engagement.</p>
             </header>
 
             <div className="bg-neutral-900/50 rounded-3xl border border-white/10 overflow-hidden backdrop-blur-sm shadow-2xl shadow-black/50">
