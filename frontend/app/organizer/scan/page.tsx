@@ -126,11 +126,15 @@ export default function OrganizerScanPage() {
     // Categorize Events
     const categorizedEvents = {
         active: events.filter(e => {
-            // Active = Status is Active OR checking in is allowed (for convenience)
-            // Sticking to strict status for tabs makes more sense
-            return getEventStatus(e) === 'Active';
+            // Include Active events AND Upcoming events that are open for check-in (2h before)
+            const status = getEventStatus(e);
+            return status === 'Active' || (status === 'Upcoming' && isScanEligible(e).eligible);
         }),
-        upcoming: events.filter(e => getEventStatus(e) === 'Upcoming'),
+        // Upcoming only shows events that aren't yet ready for check-in
+        upcoming: events.filter(e => {
+            const status = getEventStatus(e);
+            return status === 'Upcoming' && !isScanEligible(e).eligible;
+        }),
         completed: events.filter(e => getEventStatus(e) === 'Completed')
     };
 
