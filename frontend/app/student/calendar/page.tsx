@@ -39,7 +39,10 @@ export default function CalendarPage() {
     const [loading, setLoading] = useState(true);
     const [myBookings, setMyBookings] = useState<number[]>([]);
 
+    const [isMounted, setIsMounted] = useState(false);
+
     useEffect(() => {
+        setIsMounted(true);
         const fetchEvents = async () => {
             try {
                 const response = await api.get('/events/');
@@ -75,12 +78,20 @@ export default function CalendarPage() {
     const calendarDays = eachDayOfInterval({ start: startDate, end: endDate });
 
     const getEventsForDate = (date: Date) => {
-        return events.filter(event => isSameDay(parseISO(event.date), date));
+        return events.filter(event => {
+            try {
+                return isSameDay(parseISO(event.date), date);
+            } catch (e) {
+                return false;
+            }
+        });
     };
 
     const selectedDateEvents = getEventsForDate(selectedDate);
 
     const weekDays = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+
+    if (!isMounted) return null; // Prevent hydration mismatch for date-heavy component
 
     return (
         <MotionWrapper className="max-w-7xl mx-auto h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-8">
@@ -185,10 +196,14 @@ export default function CalendarPage() {
                             <div className="space-y-4">
                                 {selectedDateEvents.map((event, idx) => {
                                     // Parse date and time (Support both 12hr and 24hr)
-                                    let eventDate = parse(`${event.date} ${event.time}`, 'yyyy-MM-dd h:mm aa', new Date());
-                                    if (isNaN(eventDate.getTime())) {
-                                        eventDate = parse(`${event.date} ${event.time}`, 'yyyy-MM-dd HH:mm', new Date());
-                                    }
+                                    let eventDate = new Date();
+                                    try {
+                                        eventDate = parse(`${event.date} ${event.time}`, 'yyyy-MM-dd h:mm aa', new Date());
+                                        if (isNaN(eventDate.getTime())) {
+                                            eventDate = parse(`${event.date} ${event.time}`, 'yyyy-MM-dd HH:mm', new Date());
+                                        }
+                                    } catch(e) {}
+                                    
                                     const now = new Date();
                                     const isPast = eventDate < now;
                                     const isBookingClosed = eventDate.getTime() - now.getTime() < 30 * 60 * 1000; // Less than 30 mins
