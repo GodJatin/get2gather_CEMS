@@ -23,6 +23,11 @@ export default function EditEventPage() {
         price: 0
     });
 
+    const [currentImages, setCurrentImages] = useState<string[]>([]);
+    const [newImages, setNewImages] = useState<File[]>([]);
+    const [newImagePreviews, setNewImagePreviews] = useState<string[]>([]);
+    const [isUploading, setIsUploading] = useState(false);
+
     useEffect(() => {
         const fetchEvent = async () => {
             if (!params?.id) return;
@@ -40,6 +45,21 @@ export default function EditEventPage() {
                     is_paid: res.data.is_paid,
                     price: res.data.price
                 });
+
+                // Parse existing images
+                let images: string[] = [];
+                if (res.data.images) {
+                    try {
+                        const parsed = JSON.parse(res.data.images);
+                        images = Array.isArray(parsed) ? parsed : [res.data.images];
+                    } catch {
+                        images = res.data.images.split(',').map((s: string) => s.trim()).filter(Boolean);
+                    }
+                } else if (res.data.image_url) {
+                    images = [res.data.image_url];
+                }
+                setCurrentImages(images);
+
             } catch (error) {
                 console.error('Failed to fetch event', error);
                 alert('Failed to load event details');
@@ -51,14 +71,110 @@ export default function EditEventPage() {
         fetchEvent();
     }, [params?.id, router]);
 
+    const handleNewImages = (e: React.ChangeEvent<HTMLInputElement>) => {
+        if (e.target.files) {
+            const files = Array.from(e.target.files);
+            const totalImages = currentImages.length + newImages.length + files.length;
+            
+            if (totalImages > 3) {
+                alert('Maximum 3 images allowed per event');
+                return;
+            }
+
+            setNewImages(prev => [...prev, ...files]);
+            
+            // Create previews
+            files.forEach(file => {
+                const reader = new FileReader();
+                reader.onloadend = () => {
+                    setNewImagePreviews(prev => [...prev, reader.result as string]);
+                };
+                reader.readAsDataURL(file);
+            });
+        }
+    };
+
+    const removeCurrentImage = (index: number) => {
+        setCurrentImages(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const removeNewImage = (index: number) => {
+        setNewImages(prev => prev.filter((_, i) => i !== index));
+        setNewImagePreviews(prev => prev.filter((_, i) => i !== index));
+    };
+
+    const compressImage = async (file: File): Promise<string> => {
+        return new Promise((resolve, reject) => {
+            const img = new Image();
+            img.src = URL.createObjectURL(file);
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                let width = img.width;
+                let height = img.height;
+                
+                const MAX_SIZE = 800;
+                if (width > height) {
+                    if (width > MAX_SIZE) {
+                        height *= MAX_SIZE / width;
+                        width = MAX_SIZE;
+                    }
+                } else {
+                    if (height > MAX_SIZE) {
+                        width *= MAX_SIZE / height;
+                        height = MAX_SIZE;
+                    }
+                }
+
+                canvas.width = width;
+                canvas.height = height;
+                
+                const ctx = canvas.getContext('2d');
+                if (!ctx) {
+                    reject(new Error('Canvas context failed'));
+                    return;
+                }
+                
+                ctx.drawImage(img, 0, 0, width, height);
+                const base64String = canvas.toDataURL('image/jpeg', 0.7);
+                resolve(base64String);
+            };
+            img.onerror = (error) => reject(error);
+        });
+    };
+
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsUploading(true);
+        
         try {
-            await api.put(`/events/${params.id}`, formData);
+            // 1. Upload new images
+            const newImageUrls: string[] = [];
+            for (const file of newImages) {
+                const base64 = await compressImage(file);
+                const res = await api.post(`/events/${params.id}/upload-image-base64?save_to_db=false`, {
+                    image_base64: base64
+                });
+                newImageUrls.push(res.data.url);
+            }
+
+            // 2. Combine all images
+            const finalImages = [...currentImages, ...newImageUrls];
+            const imagesString = finalImages.join(',');
+
+            // 3. Update Event
+            await api.put(`/events/${params.id}`, {
+                ...formData,
+                images: imagesString,
+                image_url: finalImages[0] || '' // Set primary image
+            });
+
             alert('Event updated successfully!');
             router.push('/organizer/events');
         } catch (error: any) {
+            console.error(error);
             alert(error.response?.data?.detail || 'Failed to update event');
+        } finally {
+            setIsUploading(false);
         }
     };
 
@@ -99,7 +215,6 @@ export default function EditEventPage() {
                             value={formData.title}
                             onChange={(e) => setFormData({ ...formData, title: e.target.value })}
                             className="w-full p-4 rounded-xl bg-neutral-800 border border-white/10 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition-all"
-                            placeholder="e.g. Annual Tech Symposium"
                             required
                         />
                     </div>
@@ -110,13 +225,65 @@ export default function EditEventPage() {
                             value={formData.description}
                             onChange={(e) => setFormData({ ...formData, description: e.target.value })}
                             className="w-full p-4 rounded-xl bg-neutral-800 border border-white/10 focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none h-32 transition-all resize-none"
-                            placeholder="Describe your event..."
                             required
                         />
                     </div>
                 </div>
 
-                {/* Section 2: Schedule & Location */}
+                {/* Section 2: Images */}
+                <div className="bg-neutral-900/50 border border-white/10 rounded-3xl p-8 backdrop-blur-sm space-y-6">
+                    <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
+                        <span>📷</span> Event Images
+                    </h2>
+                    
+                    <div className="grid grid-cols-3 gap-4">
+                        {/* Existing Images */}
+                        {currentImages.map((img, idx) => (
+                            <div key={`curr-${idx}`} className="relative aspect-square rounded-xl overflow-hidden group border border-white/10">
+                                <img src={img} alt="Current" className="w-full h-full object-cover" />
+                                <button
+                                    type="button"
+                                    onClick={() => removeCurrentImage(idx)}
+                                    className="absolute top-2 right-2 p-1.5 bg-red-500/80 rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    🗑️
+                                </button>
+                            </div>
+                        ))}
+
+                        {/* New Images */}
+                        {newImagePreviews.map((img, idx) => (
+                            <div key={`new-${idx}`} className="relative aspect-square rounded-xl overflow-hidden group border border-green-500/30">
+                                <img src={img} alt="New" className="w-full h-full object-cover opacity-80" />
+                                <div className="absolute inset-0 flex items-center justify-center bg-black/20 font-bold text-xs text-green-400">NEW</div>
+                                <button
+                                    type="button"
+                                    onClick={() => removeNewImage(idx)}
+                                    className="absolute top-2 right-2 p-1.5 bg-red-500/80 rounded-lg text-white opacity-0 group-hover:opacity-100 transition-opacity"
+                                >
+                                    🗑️
+                                </button>
+                            </div>
+                        ))}
+
+                        {/* Add Button */}
+                        {(currentImages.length + newImages.length) < 3 && (
+                            <label className="aspect-square rounded-xl border border-dashed border-white/20 hover:border-purple-500/50 hover:bg-purple-500/5 flex flex-col items-center justify-center gap-2 cursor-pointer transition-all text-neutral-400 hover:text-purple-400">
+                                <span className="text-2xl">➕</span>
+                                <span className="text-xs font-bold">Add Image</span>
+                                <input 
+                                    type="file" 
+                                    accept="image/*" 
+                                    className="hidden" 
+                                    onChange={handleNewImages}
+                                />
+                            </label>
+                        )}
+                    </div>
+                    <p className="text-xs text-neutral-500">Max 3 images. Existing images will be preserved unless deleted.</p>
+                </div>
+
+                {/* Section 3: Schedule & Location */}
                 <div className="bg-neutral-900/50 border border-white/10 rounded-3xl p-8 backdrop-blur-sm space-y-6">
                     <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
                         <span>📅</span> Schedule & Location
@@ -161,13 +328,12 @@ export default function EditEventPage() {
                             value={formData.venue}
                             onChange={(e) => setFormData({ ...formData, venue: e.target.value })}
                             className="w-full p-4 rounded-xl bg-neutral-800 border border-white/10 focus:border-purple-500 outline-none"
-                            placeholder="e.g. Main Auditorium / Online"
                             required
                         />
                     </div>
                 </div>
 
-                {/* Section 3: Capacity & Category */}
+                {/* Section 4: Capacity & Category */}
                 <div className="bg-neutral-900/50 border border-white/10 rounded-3xl p-8 backdrop-blur-sm space-y-6">
                     <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
                         <span>⚙️</span> Settings
@@ -239,9 +405,10 @@ export default function EditEventPage() {
                     </Link>
                     <button
                         type="submit"
-                        className="flex-[2] py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold shadow-lg shadow-purple-900/20 hover:shadow-purple-900/40 hover:scale-[1.02] transition-all"
+                        disabled={isUploading}
+                        className="flex-[2] py-4 rounded-xl bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-500 hover:to-pink-500 text-white font-bold shadow-lg shadow-purple-900/20 hover:shadow-purple-900/40 hover:scale-[1.02] transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                        Update Event Changes
+                        {isUploading ? 'Uploading Images...' : 'Update Event Changes'}
                     </button>
                 </div>
             </form>

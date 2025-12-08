@@ -112,6 +112,7 @@ class ImageUploadRequest(schemas.BaseModel):
 async def upload_event_image_base64(
     event_id: int, 
     data: ImageUploadRequest, 
+    save_to_db: bool = True,
     current_user: User = Depends(get_current_user), 
     db: Session = Depends(get_db)
 ):
@@ -155,15 +156,16 @@ async def upload_event_image_base64(
         print(f"Supabase Upload Error: {e}")
         raise HTTPException(status_code=500, detail=f"Image upload failed: {str(e)}")
         
-    # Update Event Record
-    if event.images:
-        event.images = f"{event.images},{image_url}"
-    else:
-        event.images = image_url
-        event.image_url = image_url
-        
-    db.commit()
-    db.refresh(event)
+    # Update Event Record ONLY if requested
+    if save_to_db:
+        if event.images:
+            event.images = f"{event.images},{image_url}"
+        else:
+            event.images = image_url
+            event.image_url = image_url
+            
+        db.commit()
+        db.refresh(event)
     
     return {"message": "Image uploaded successfully", "url": image_url}
 
