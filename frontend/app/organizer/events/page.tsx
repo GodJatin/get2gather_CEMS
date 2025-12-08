@@ -139,8 +139,8 @@ export default function MyEventsPage() {
         <MotionWrapper className="max-w-7xl mx-auto">
             <div className="flex flex-col md:flex-row items-center justify-between mb-12 gap-6">
                 <div>
-                    <h1 className="text-4xl font-bold mb-2">My Events</h1>
-                    <p className="text-neutral-400">Manage and track your organized events</p>
+                    <h1 className="text-3xl md:text-4xl font-bold mb-2">My Events</h1>
+                    <p className="text-sm md:text-base text-neutral-400">Manage and track your organized events</p>
                 </div>
                 <Link
                     href="/organizer/events/create"

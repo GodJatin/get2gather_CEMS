@@ -81,6 +81,17 @@ export default function AdminEventsPage() {
         e.status.toLowerCase().includes(searchTerm.toLowerCase())
     );
 
+    const getStatus = (event: Event) => {
+        let status = event.status;
+        try {
+            const eventDate = new Date(`${event.date} ${event.time}`);
+            if (!isNaN(eventDate.getTime()) && new Date() > eventDate) {
+                status = 'Completed';
+            }
+        } catch (e) {}
+        return status;
+    };
+
     if (loading) return (
         <div className="min-h-[60vh] flex items-center justify-center">
             <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
@@ -114,7 +125,8 @@ export default function AdminEventsPage() {
             </div>
             
             <div className="bg-neutral-900/50 rounded-3xl border border-white/10 overflow-hidden backdrop-blur-sm shadow-xl">
-                <div className="overflow-x-auto">
+                {/* Desktop Table View */}
+                <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left">
                         <thead>
                             <tr className="border-b border-white/10 bg-white/5 text-neutral-400 font-medium text-sm uppercase tracking-wider">
@@ -145,18 +157,7 @@ export default function AdminEventsPage() {
                                     </td>
                                     <td className="p-6">
                                         {(() => {
-                                            let status = event.status;
-                                            // Optional: Client-side status adjustment if needed, but safe to rely on backend or simple date check
-                                            try {
-                                                const eventDate = new Date(`${event.date} ${event.time}`);
-                                                if (!isNaN(eventDate.getTime()) && new Date() > eventDate) {
-                                                    status = 'Completed';
-                                                }
-                                            } catch (e) {}
-                                            
-                                            // Logic for displaying strict date-based status or backend status?
-                                            // Let's stick to simple
-                                            
+                                            const status = getStatus(event);
                                             return (
                                                 <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
                                                     status === 'Completed' ? 'bg-neutral-800 text-neutral-400 border-neutral-700' :
@@ -200,12 +201,68 @@ export default function AdminEventsPage() {
                             ))}
                         </tbody>
                     </table>
-                    {filteredEvents.length === 0 && (
-                        <div className="text-center py-12 text-neutral-500">
-                            No events found matching "{searchTerm}"
-                        </div>
-                    )}
                 </div>
+
+                {/* Mobile Card View */}
+                <div className="md:hidden divide-y divide-white/5">
+                    {filteredEvents.map((event) => {
+                         const status = getStatus(event);
+                         return (
+                            <div key={event.id} className="p-4 flex flex-col gap-4">
+                                <div className="flex justify-between items-start">
+                                    <div className="flex items-center gap-3">
+                                        <div className="w-10 h-10 rounded-lg bg-neutral-800 flex items-center justify-center text-xl border border-white/5">
+                                             {event.image_url ? (
+                                                <img src={event.image_url} alt="" className="w-full h-full object-cover rounded-lg" />
+                                            ) : '📅'}
+                                        </div>
+                                        <div>
+                                            <h4 className="font-bold text-white text-sm line-clamp-1">{event.title}</h4>
+                                            <p className="text-xs text-neutral-400">#{event.id}</p>
+                                        </div>
+                                    </div>
+                                    <button 
+                                        onClick={() => handleDelete(event.id)}
+                                        className="p-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20"
+                                    >
+                                        🗑️
+                                    </button>
+                                </div>
+                                
+                                <div className="grid grid-cols-2 gap-2 text-sm">
+                                    <div className="bg-white/5 rounded-lg p-2 border border-white/5">
+                                        <p className="text-xs text-neutral-500 uppercase">Date</p>
+                                        <p className="text-neutral-200">{event.date}</p>
+                                    </div>
+                                    <div className="bg-white/5 rounded-lg p-2 border border-white/5">
+                                        <p className="text-xs text-neutral-500 uppercase">Status</p>
+                                        <span className={`text-xs font-bold ${
+                                            status === 'Completed' ? 'text-neutral-400' :
+                                            status === 'Upcoming' ? 'text-green-400' : 
+                                            'text-blue-400'
+                                        }`}>
+                                            {status}
+                                        </span>
+                                    </div>
+                                    <div className="bg-white/5 rounded-lg p-2 border border-white/5">
+                                        <p className="text-xs text-neutral-500 uppercase">Capacity</p>
+                                        <p className="text-neutral-200">{event.seats_available} / {event.capacity}</p>
+                                    </div>
+                                    <div className="bg-white/5 rounded-lg p-2 border border-white/5">
+                                        <p className="text-xs text-neutral-500 uppercase">Rating</p>
+                                        <p className="text-yellow-500 font-bold">{event.avg_rating ? `★ ${event.avg_rating.toFixed(1)}` : 'N/A'}</p>
+                                    </div>
+                                </div>
+                            </div>
+                        );
+                    })}
+                </div>
+
+                {filteredEvents.length === 0 && (
+                    <div className="text-center py-12 text-neutral-500">
+                        No events found matching "{searchTerm}"
+                    </div>
+                )}
             </div>
         </MotionWrapper>
     );

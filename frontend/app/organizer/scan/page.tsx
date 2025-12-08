@@ -150,12 +150,12 @@ export default function OrganizerScanPage() {
     return (
         <MotionWrapper className="max-w-7xl mx-auto min-h-screen pb-20">
             {/* Header */}
-            <header className="mb-12">
-                <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
+            <header className="mb-8 md:mb-12">
+                <h1 className="text-3xl md:text-4xl font-bold mb-2 flex items-center gap-3">
                     <span className="bg-gradient-to-r from-blue-500 to-purple-500 bg-clip-text text-transparent">Ticket Scanner</span>
-                    <span className="text-3xl">📱</span>
+                    <span className="text-2xl md:text-3xl">📱</span>
                 </h1>
-                <p className="text-neutral-400">Manage entry and attendance for your events.</p>
+                <p className="text-sm md:text-base text-neutral-400">Manage entry and attendance for your events.</p>
             </header>
 
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
