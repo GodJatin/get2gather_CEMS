@@ -410,11 +410,42 @@ async def update_event(event_id: int, event_update: schemas.EventCreate, current
         raise HTTPException(status_code=404, detail="Event not found or you don't have permission")
 
     # Update fields
+    changes = []
+    
+    if event_update.date and event_update.date != event.date:
+        changes.append(f"Date changed to: {event_update.date}")
+    if event_update.time and event_update.time != event.time:
+        changes.append(f"Time changed to: {event_update.time}")
+    if event_update.venue and event_update.venue != event.venue:
+        changes.append(f"Venue changed to: {event_update.venue}")
+    
     for key, value in event_update.dict().items():
         setattr(event, key, value)
     
     db.commit()
     db.refresh(event)
+
+    # Send Notifications if critical fields changed
+    if changes:
+        try:
+            from models import Booking, Student
+            from email_service import send_event_update_notification
+            
+            # Fetch all attendees
+            bookings = db.execute(
+                select(Student, User)
+                .join(Booking, Booking.student_id == Student.id)
+                .join(User, Student.user_id == User.id)
+                .where(Booking.event_id == event_id)
+            ).all()
+            
+            print(f"🔔 Sending update notifications to {len(bookings)} attendees...")
+            for student, user in bookings:
+                send_event_update_notification(user.email, student.name, event.title, changes)
+                
+        except Exception as e:
+            print(f"❌ Failed to send update notifications: {e}")
+            
     return event
 
 @router.delete("/events/{event_id}", status_code=status.HTTP_204_NO_CONTENT)

@@ -2,7 +2,8 @@
 
 import React, { useEffect, useState } from 'react';
 import api from '@/lib/api';
-import { format } from 'date-fns';
+import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';
+import Link from 'next/link';
 
 interface Event {
     id: number;
@@ -14,11 +15,13 @@ interface Event {
     seats_available: number;
     capacity: number;
     avg_rating?: number;
+    image_url?: string;
 }
 
 export default function AdminEventsPage() {
     const [events, setEvents] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
 
     useEffect(() => {
         fetchEvents();
@@ -27,7 +30,9 @@ export default function AdminEventsPage() {
     const fetchEvents = async () => {
         try {
             const res = await api.get('/admin/events');
-            setEvents(res.data);
+            // Sort by ID Ascending
+            const sorted = res.data.sort((a: Event, b: Event) => a.id - b.id);
+            setEvents(sorted);
         } catch (error) {
             console.error("Failed to fetch events", error);
         } finally {
@@ -71,87 +76,137 @@ export default function AdminEventsPage() {
         document.body.removeChild(a);
     };
 
-    if (loading) return <div className="p-8 text-center text-gray-500">Loading events...</div>;
+    const filteredEvents = events.filter(e => 
+        e.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        e.status.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    if (loading) return (
+        <div className="min-h-[60vh] flex items-center justify-center">
+            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+    );
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold text-gray-800">Event Management</h1>
-                <button 
-                    onClick={downloadCSV}
-                    className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
-                >
-                    <span>⬇️</span> Export CSV
-                </button>
+        <MotionWrapper>
+            <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
+                        Event Management
+                    </h1>
+                    <p className="text-neutral-400">Manage all platform events</p>
+                </div>
+                <div className="flex gap-3">
+                    <input 
+                        type="text" 
+                        placeholder="Search events..." 
+                        value={searchTerm}
+                        onChange={(e) => setSearchTerm(e.target.value)}
+                        className="bg-neutral-900 border border-white/10 rounded-xl px-4 py-2 focus:border-blue-500 outline-none w-full md:w-64"
+                    />
+                    <button 
+                        onClick={downloadCSV}
+                        className="flex items-center gap-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-600/30 px-4 py-2 rounded-xl font-medium transition-colors whitespace-nowrap"
+                    >
+                        <span>⬇️</span> CSV
+                    </button>
+                </div>
             </div>
             
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
-                <table className="w-full text-left">
-                    <thead className="bg-gray-50 border-b border-gray-100">
-                        <tr>
-                            <th className="p-4 font-semibold text-gray-600">ID</th>
-                            <th className="p-4 font-semibold text-gray-600">Title</th>
-                            <th className="p-4 font-semibold text-gray-600">Date & Time</th>
-                            <th className="p-4 font-semibold text-gray-600">Status</th>
-                            <th className="p-4 font-semibold text-gray-600">Capacity</th>
-                            <th className="p-4 font-semibold text-gray-600">Rating</th>
-                            <th className="p-4 font-semibold text-gray-600">Actions</th>
-                        </tr>
-                    </thead>
-                    <tbody className="divide-y divide-gray-100">
-                        {events.map((event) => (
-                            <tr key={event.id} className="hover:bg-gray-50 transition-colors">
-                                <td className="p-4 text-gray-600">#{event.id}</td>
-                                <td className="p-4 font-medium text-gray-800">{event.title}</td>
-                                <td className="p-4 text-gray-600">
-                                    {event.date} at {event.time}
-                                </td>
-                                <td className="p-4">
-                                    {(() => {
-                                        let status = event.status;
-                                        try {
-                                            const eventDate = new Date(`${event.date} ${event.time}`);
-                                            if (!isNaN(eventDate.getTime()) && new Date() > eventDate) {
-                                                status = 'Completed';
-                                            }
-                                        } catch (e) {}
-                                        
-                                        return (
-                                            <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                                status === 'Completed' ? 'bg-gray-100 text-gray-600' :
-                                                status === 'Upcoming' ? 'bg-green-100 text-green-600' : 
-                                                'bg-blue-100 text-blue-600'
-                                            }`}>
-                                                {status}
-                                            </span>
-                                        );
-                                    })()}
-                                </td>
-                                <td className="p-4 text-gray-600">
-                                    {event.seats_available} / {event.capacity}
-                                </td>
-                                <td className="p-4">
-                                    {event.avg_rating ? (
-                                        <div className="flex items-center gap-1 text-yellow-500 font-bold">
-                                            <span>★</span> {event.avg_rating.toFixed(1)}
-                                        </div>
-                                    ) : (
-                                        <span className="text-gray-400 text-sm">No ratings</span>
-                                    )}
-                                </td>
-                                <td className="p-4">
-                                    <button 
-                                        onClick={() => handleDelete(event.id)}
-                                        className="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1 rounded-lg transition-colors"
-                                    >
-                                        Delete
-                                    </button>
-                                </td>
+            <div className="bg-neutral-900/50 rounded-3xl border border-white/10 overflow-hidden backdrop-blur-sm shadow-xl">
+                <div className="overflow-x-auto">
+                    <table className="w-full text-left">
+                        <thead>
+                            <tr className="border-b border-white/10 bg-white/5 text-neutral-400 font-medium text-sm uppercase tracking-wider">
+                                <th className="p-6">ID</th>
+                                <th className="p-6">Event Details</th>
+                                <th className="p-6">Status</th>
+                                <th className="p-6">Capacity</th>
+                                <th className="p-6">Rating</th>
+                                <th className="p-6 text-right">Actions</th>
                             </tr>
-                        ))}
-                    </tbody>
-                </table>
+                        </thead>
+                        <tbody className="divide-y divide-white/5">
+                            {filteredEvents.map((event) => (
+                                <tr key={event.id} className="hover:bg-white/5 transition-colors group">
+                                    <td className="p-6 text-neutral-500 font-mono">#{event.id}</td>
+                                    <td className="p-6">
+                                        <div className="flex items-center gap-4">
+                                            <div className="w-12 h-12 rounded-xl bg-neutral-800 flex items-center justify-center text-2xl border border-white/5">
+                                                {event.image_url ? (
+                                                    <img src={event.image_url} alt="" className="w-full h-full object-cover rounded-xl" />
+                                                ) : '📅'}
+                                            </div>
+                                            <div>
+                                                <h4 className="font-bold text-white group-hover:text-blue-400 transition-colors">{event.title}</h4>
+                                                <p className="text-sm text-neutral-400">{event.date} • {event.time}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="p-6">
+                                        {(() => {
+                                            let status = event.status;
+                                            // Optional: Client-side status adjustment if needed, but safe to rely on backend or simple date check
+                                            try {
+                                                const eventDate = new Date(`${event.date} ${event.time}`);
+                                                if (!isNaN(eventDate.getTime()) && new Date() > eventDate) {
+                                                    status = 'Completed';
+                                                }
+                                            } catch (e) {}
+                                            
+                                            // Logic for displaying strict date-based status or backend status?
+                                            // Let's stick to simple
+                                            
+                                            return (
+                                                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                                                    status === 'Completed' ? 'bg-neutral-800 text-neutral-400 border-neutral-700' :
+                                                    status === 'Upcoming' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 
+                                                    'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                                }`}>
+                                                    {status}
+                                                </span>
+                                            );
+                                        })()}
+                                    </td>
+                                    <td className="p-6">
+                                        <div className="flex flex-col gap-1">
+                                            <span className="text-white font-mono">{event.seats_available} / {event.capacity}</span>
+                                            <div className="w-20 h-1 bg-neutral-800 rounded-full overflow-hidden">
+                                                <div 
+                                                    className="h-full bg-blue-500 rounded-full" 
+                                                    style={{ width: `${((event.capacity - event.seats_available) / event.capacity) * 100}%` }}
+                                                />
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td className="p-6">
+                                        {event.avg_rating ? (
+                                            <div className="flex items-center gap-1 text-yellow-500 font-bold bg-yellow-500/10 px-2 py-1 rounded-lg w-fit border border-yellow-500/20">
+                                                <span>★</span> {event.avg_rating.toFixed(1)}
+                                            </div>
+                                        ) : (
+                                            <span className="text-neutral-600 text-sm">No ratings</span>
+                                        )}
+                                    </td>
+                                    <td className="p-6 text-right">
+                                        <button 
+                                            onClick={() => handleDelete(event.id)}
+                                            className="text-red-400 hover:text-red-300 hover:bg-red-500/10 px-4 py-2 rounded-xl transition-all border border-transparent hover:border-red-500/20"
+                                        >
+                                            Delete
+                                        </button>
+                                    </td>
+                                </tr>
+                            ))}
+                        </tbody>
+                    </table>
+                    {filteredEvents.length === 0 && (
+                        <div className="text-center py-12 text-neutral-500">
+                            No events found matching "{searchTerm}"
+                        </div>
+                    )}
+                </div>
             </div>
-        </div>
+        </MotionWrapper>
     );
 }

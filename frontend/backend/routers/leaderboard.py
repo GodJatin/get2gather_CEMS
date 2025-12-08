@@ -14,6 +14,7 @@ class LeaderboardEntry(BaseModel):
     rank: int
     student_id: int
     student_name: str
+    email: str
     department: str
     score: int
     title: Optional[str] = None
@@ -25,7 +26,7 @@ async def get_leaderboard(
     current_user: User = Depends(get_current_user), 
     db: Session = Depends(get_db)
 ):
-    # Fetch all students (Columns only)
+    # Fetch all students JOIN User to get email
     query = select(
         Student.id,
         Student.user_id,
@@ -33,30 +34,34 @@ async def get_leaderboard(
         Student.department,
         Student.title,
         Student.badges,
-        Student.spent_points
-    )
+        Student.spent_points,
+        User.email
+    ).join(User, Student.user_id == User.id)
+
     if department:
         query = query.where(Student.department == department)
         
     result = db.execute(query)
-    students = result.all() # Returns list of Rows
+    rows = result.all() # Returns list of Rows
     
     leaderboard = []
     
-    for student in students:
+    for row in rows:
         # Calculate Score (Centralized)
         from points_utils import calculate_student_points, calculate_gamification
-        points_data = calculate_student_points(db, student.id, student.user_id)
+        points_data = calculate_student_points(db, row.id, row.user_id)
         
         score = points_data["available_points"]
         
         # Calculate Gamification (Centralized)
-        gamification_data = calculate_gamification(student, points_data)
+        student_obj = row # row works as object because of select columns
+        gamification_data = calculate_gamification(student_obj, points_data)
         
         leaderboard.append({
-            "student_id": student.id,
-            "student_name": student.name,
-            "department": student.department,
+            "student_id": row.id,
+            "student_name": row.name,
+            "email": row.email,
+            "department": row.department,
             "score": score,
             "title": gamification_data["title"],
             "badges": gamification_data["badges"]
