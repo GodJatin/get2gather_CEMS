@@ -3,9 +3,8 @@
 import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import Link from 'next/link';
-import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';
-import { motion } from 'framer-motion';
-import { getEventStatus, parseEventDate } from '@/lib/dateUtils';
+import MotionWrapper from '@/components/MotionWrapper';
+import { getEventStatus, isScanEligible, parseEventDate } from '@/lib/dateUtils';
 
 interface Event {
     id: number;
@@ -21,10 +20,7 @@ interface Event {
     image_url?: string;
 }
 
-// Helper removed, using dateUtils
-
 const EventCardCarousel = ({ event }: { event: Event }) => {
-    // ... (Keep existing Carousel logic, it's fine)
     const [currentImageIndex, setCurrentImageIndex] = useState(0);
 
     const images = (() => {
@@ -98,8 +94,34 @@ export default function MyEventsPage() {
                 console.error('Failed to fetch events:', error);
             } finally {
                 setLoading(false);
+            }
+        };
+
+        fetchEvents();
+        const interval = setInterval(fetchEvents, 5000); // Poll every 5 seconds
+
+        return () => clearInterval(interval);
+    }, []);
+
+    const filteredEvents = events.filter(event => {
+        const status = getEventStatus(event);
+        const scanStatus = isScanEligible(event);
+        
+        if (activeTab === 'active') {
+            return status === 'Active' || (status === 'Upcoming' && scanStatus.eligible);
+        }
+        if (activeTab === 'upcoming') {
+            return status === 'Upcoming' && !scanStatus.eligible;
+        }
+        return status.toLowerCase() === activeTab;
+    }).sort((a, b) => {
+        const dateA = parseEventDate(a.date, a.time);
+        const dateB = parseEventDate(b.date, b.time);
+        
+        // Safety check
+        if (!dateA && !dateB) return 0;
         if (!dateA) return 1;
-        if (!dateB) return -1; // Keep invalid at bottom?
+        if (!dateB) return -1; 
         
         // Sort: Active/Upcoming asc (soonest first), Completed desc (latest first)
         return activeTab === 'completed' 
@@ -256,8 +278,6 @@ export default function MyEventsPage() {
                     </div>
                 )}
             </div>
-
-
         </MotionWrapper>
     );
 }
