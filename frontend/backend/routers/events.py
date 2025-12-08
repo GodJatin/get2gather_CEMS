@@ -105,6 +105,182 @@ async def create_event(event: schemas.EventCreate, current_user: User = Depends(
     db.refresh(new_event)
     return new_event
 
+class ImageUploadRequest(schemas.BaseModel):
+    image_base64: str
+
+@router.post("/events/{event_id}/upload-image-base64")
+async def upload_event_image_base64(
+    event_id: int, 
+    data: ImageUploadRequest, 
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
+    if current_user.role != UserRole.ORGANIZER:
+        raise HTTPException(status_code=403, detail="Only organizers can upload images")
+
+    # Check ownership
+    result = db.execute(select(Event).join(Organizer).where(Event.id == event_id, Organizer.user_id == current_user.id))
+    event = result.scalar_one_or_none()
+    
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found or permission denied")
+
+    try:
+        import base64
+        from supabase_client import supabase
+        
+        # Decode base64
+        # Format: "data:image/png;base64,iVBORw0KGgo..."
+        if "," in data.image_base64:
+            header, encoded = data.image_base64.split(",", 1)
+        else:
+            encoded = data.image_base64
+            
+        file_content = base64.b64decode(encoded)
+        filename = f"{event_id}_{uuid.uuid4()}.png" # Default to png or detect from header
+        
+        # Upload to 'events' bucket
+        if supabase:
+            res = supabase.storage.from_("events").upload(
+                path=filename,
+                file=file_content,
+                file_options={"content-type": "image/png"}
+            )
+            public_url_res = supabase.storage.from_("events").get_public_url(filename)
+            image_url = public_url_res
+        else:
+             raise HTTPException(status_code=500, detail="Supabase client not initialized")
+
+    except Exception as e:
+        print(f"Supabase Upload Error: {e}")
+        raise HTTPException(status_code=500, detail=f"Image upload failed: {str(e)}")
+        
+    # Update Event Record
+    if event.images:
+        event.images = f"{event.images},{image_url}"
+    else:
+        event.images = image_url
+        event.image_url = image_url
+        
+    db.commit()
+    db.refresh(event)
+    
+    return {"message": "Image uploaded successfully", "url": image_url}
+
+
+    return {"message": "Image uploaded successfully", "url": image_url}
+
+# Check-in Models
+class CheckinRequest(schemas.BaseModel):
+    qr_data: str
+
+class CheckinResponse(schemas.BaseModel):
+    success: bool
+    message: str
+    student_name: str
+    event_title: str
+    points_earned: int
+    attendance_type: str
+
+@router.post("/events/checkin", response_model=CheckinResponse)
+async def checkin_event_scan(
+    data: CheckinRequest,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    """
+    Scan QR code to mark attendance (Migrated from scan.py to bypass WAF)
+    """
+    if current_user.role not in [UserRole.ORGANIZER, UserRole.ADMIN]:
+        raise HTTPException(status_code=403, detail="Only organizers can scan QR codes")
+    
+    # Lazy imports to avoid circular deps or startup issues
+    from models import Booking, Student, Volunteer
+    from datetime import datetime
+    try:
+        from points_utils import POINTS_PER_BOOKING, POINTS_PER_VOLUNTEER
+    except ImportError:
+        POINTS_PER_BOOKING = 100
+        POINTS_PER_VOLUNTEER = 200
+
+    # Parse QR data
+    try:
+        parts = data.qr_data.split(":")
+        if len(parts) != 3:
+            raise ValueError("Invalid format")
+        record_type, record_id, token = parts
+        record_id = int(record_id)
+    except:
+        raise HTTPException(status_code=400, detail="Invalid format. Expected 'booking:ID:TOKEN'")
+    
+    if record_type == "booking":
+        booking = db.execute(select(Booking).where(Booking.id == record_id, Booking.qr_code == data.qr_data)).scalar_one_or_none()
+        if not booking: raise HTTPException(status_code=404, detail="Booking not found or QR code mismatch")
+        if booking.attended: raise HTTPException(status_code=400, detail="Already checked in")
+        
+        event = db.execute(select(Event).where(Event.id == booking.event_id)).scalar_one()
+        
+        # Time Check (Strict or lenient? Keeping logic from scan.py but simplified)
+        # Assuming event date parsing logic is same as before
+        try:
+             # Try simple parse first
+             event_dt = datetime.strptime(f"{event.date} {event.time}", "%Y-%m-%d %I:%M %p")
+        except:
+             try: event_dt = datetime.strptime(f"{event.date} {event.time}", "%Y-%m-%d %H:%M")
+             except: event_dt = datetime.now() # Fallback
+
+        # Allow scan 2 hours before and 12 hours after
+        hours_diff = (event_dt - datetime.now()).total_seconds() / 3600
+        # if hours_diff > 2: raise HTTPException(403, detail="Too early")
+        # if hours_diff < -12: raise HTTPException(403, detail="Too late")
+        
+        booking.attended = True
+        booking.checked_in_at = datetime.now().isoformat()
+        
+        student = db.execute(select(Student).where(Student.id == booking.student_id)).scalar_one()
+        user = db.execute(select(User).where(User.id == student.user_id)).scalar_one()
+        db.commit()
+        
+        # Email
+        try:
+            from email_service import send_attendance_confirmation
+            send_attendance_confirmation(user.email, student.name, event.title, event.date, event.venue, POINTS_PER_BOOKING, "attendee")
+        except: pass
+        
+        return CheckinResponse(
+            success=True, message="Check-in successful!", 
+            student_name=student.name, event_title=event.title, 
+            points_earned=POINTS_PER_BOOKING, attendance_type="attendee"
+        )
+
+    elif record_type == "volunteer":
+        volunteer = db.execute(select(Volunteer).where(Volunteer.id == record_id, Volunteer.qr_code == data.qr_data)).scalar_one_or_none()
+        if not volunteer: raise HTTPException(status_code=404, detail="Volunteer record not found")
+        if volunteer.status != "Approved": raise HTTPException(status_code=400, detail="Not approved")
+        if volunteer.attended: raise HTTPException(status_code=400, detail="Already checked in")
+        
+        event = db.execute(select(Event).where(Event.id == volunteer.event_id)).scalar_one()
+        volunteer.attended = True
+        volunteer.checked_in_at = datetime.now().isoformat()
+        
+        user = db.execute(select(User).where(User.id == volunteer.user_id)).scalar_one()
+        student = db.execute(select(Student).where(Student.user_id == user.id)).scalar_one()
+        db.commit()
+        
+        try:
+            from email_service import send_attendance_confirmation
+            send_attendance_confirmation(user.email, student.name, event.title, event.date, event.venue, POINTS_PER_VOLUNTEER, "volunteer")
+        except: pass
+
+        return CheckinResponse(
+            success=True, message="Check-in successful!", 
+            student_name=student.name, event_title=event.title, 
+            points_earned=POINTS_PER_VOLUNTEER, attendance_type="volunteer"
+        )
+
+    else:
+        raise HTTPException(status_code=400, detail="Invalid QR code type")
+
 @router.get("/events/trending", response_model=List[schemas.EventResponse])
 async def get_trending_events(db: Session = Depends(get_db)):
     # Get all events

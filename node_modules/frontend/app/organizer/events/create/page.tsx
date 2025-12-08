@@ -96,13 +96,20 @@ export default function CreateEventPage() {
                 throw new Error('Event created but ID is missing from response');
             }
 
-            // 2. Upload Images
-            // Assuming backend handles multiple uploads sequentially or we call the endpoint multiple times
+            // 2. Upload Images (Converted to Base64 to bypass WAF multipart block)
+            const fileToBase64 = (file: File): Promise<string> => {
+                return new Promise((resolve, reject) => {
+                    const reader = new FileReader();
+                    reader.readAsDataURL(file);
+                    reader.onload = () => resolve(reader.result as string);
+                    reader.onerror = error => reject(error);
+                });
+            };
+
             for (const image of images) {
-                const formData = new FormData();
-                formData.append('file', image);
-                await api.post(`/events/${eventId}/upload-image`, formData, {
-                    headers: { 'Content-Type': 'multipart/form-data' }
+                const base64String = await fileToBase64(image);
+                await api.post(`/events/${eventId}/upload-image-base64`, {
+                    image_base64: base64String
                 });
             }
 

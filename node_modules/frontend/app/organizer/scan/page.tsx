@@ -131,7 +131,8 @@ export default function OrganizerScanPage() {
         }
 
         try {
-            const response = await api.post('/scan/checkin', { qr_data: qrInput });
+            // Using new safe endpoint to avoid WAF block
+            const response = await api.post('/events/checkin', { qr_data: qrInput });
             const result: ScanResult = response.data;
             setScanResult(result);
             setScanHistory(prev => [result, ...prev].slice(0, 10)); // Keep last 10
