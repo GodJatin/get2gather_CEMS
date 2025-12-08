@@ -30,7 +30,7 @@ export const getImageUrl = (path?: string | null) => {
 
     // If it's a relative path starting with /static, prepend API URL
     if (path.startsWith('/static')) {
-        const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://127.0.0.1:8000';
+        const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
         // Remove trailing slash from API URL if present
         const cleanApiUrl = apiUrl.replace(/\/$/, '');
         return `${cleanApiUrl}${path}`;
