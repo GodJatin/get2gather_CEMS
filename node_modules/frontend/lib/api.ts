@@ -1,7 +1,9 @@
 import axios from 'axios';
 
 const api = axios.create({
-    baseURL: process.env.NEXT_PUBLIC_API_URL || '/api',
+    // On client side, always use relative path to avoid CORS issues if env var is mismatched.
+    // On server side (SSR), use the full URL from env.
+    baseURL: typeof window !== 'undefined' ? '/api' : (process.env.NEXT_PUBLIC_API_URL || '/api'),
     headers: {
         'Content-Type': 'application/json',
     },
