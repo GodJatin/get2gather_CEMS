@@ -428,20 +428,49 @@ async def update_event(event_id: int, event_update: schemas.EventCreate, current
     # Send Notifications if critical fields changed
     if changes:
         try:
-            from models import Booking, Student
+            from models import Booking, Student, Volunteer
             from email_service import send_event_update_notification
             
-            # Fetch all attendees
-            bookings = db.execute(
+            # Fetch all attendees (Students)
+            attendees = db.execute(
                 select(Student, User)
                 .join(Booking, Booking.student_id == Student.id)
                 .join(User, Student.user_id == User.id)
                 .where(Booking.event_id == event_id)
             ).all()
+
+            # Fetch all volunteers
+            volunteers = db.execute(
+                select(Volunteer, User)
+                .join(User, Volunteer.user_id == User.id)
+                .where(Volunteer.event_id == event_id, Volunteer.status == "Approved")
+            ).all()
             
-            print(f"🔔 Sending update notifications to {len(bookings)} attendees...")
-            for student, user in bookings:
-                send_event_update_notification(user.email, student.name, event.title, changes)
+            recipients = []
+            seen_emails = set()
+
+            # Process Attendees
+            for student, user in attendees:
+                if user.email not in seen_emails:
+                    recipients.append({"email": user.email, "name": student.name})
+                    seen_emails.add(user.email)
+            
+            # Process Volunteers
+            for volunteer, user in volunteers:
+                if user.email not in seen_emails:
+                    # Volunteers might not have a student profile linked directly easily depending on model, 
+                    # but usually they do. Let's use User's name if we can, or just generic.
+                    # Actually User model has organization_name or contact, but Student linked.
+                    # Let's try to get name from Student profile if exists, else "Volunteer"
+                    student_profile = db.execute(select(Student).where(Student.user_id == user.id)).scalar_one_or_none()
+                    name = student_profile.name if student_profile else "Volunteer"
+                    
+                    recipients.append({"email": user.email, "name": name})
+                    seen_emails.add(user.email)
+            
+            print(f"🔔 Sending update notifications to {len(recipients)} recipients...")
+            for recipient in recipients:
+                send_event_update_notification(recipient["email"], recipient["name"], event.title, changes)
                 
         except Exception as e:
             print(f"❌ Failed to send update notifications: {e}")

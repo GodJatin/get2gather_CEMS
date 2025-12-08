@@ -123,19 +123,28 @@ export default function OrganizerScanPage() {
         }
     };
 
+    // Helper for sorting
+    const sortEvents = (eventsList: Event[], ascending: boolean = true) => {
+        return [...eventsList].sort((a, b) => {
+            const dateA = new Date(`${a.date} ${a.time}`).getTime();
+            const dateB = new Date(`${b.date} ${b.time}`).getTime();
+            return ascending ? dateA - dateB : dateB - dateA;
+        });
+    };
+
     // Categorize Events
     const categorizedEvents = {
-        active: events.filter(e => {
-            // Include Active events AND Upcoming events that are open for check-in (2h before)
+        active: sortEvents(events.filter(e => {
             const status = getEventStatus(e);
             return status === 'Active' || (status === 'Upcoming' && isScanEligible(e).eligible);
-        }),
-        // Upcoming only shows events that aren't yet ready for check-in
-        upcoming: events.filter(e => {
+        }), true), // Ascending (Soonest first)
+        
+        upcoming: sortEvents(events.filter(e => {
             const status = getEventStatus(e);
             return status === 'Upcoming' && !isScanEligible(e).eligible;
-        }),
-        completed: events.filter(e => getEventStatus(e) === 'Completed')
+        }), true), // Ascending (Soonest first)
+        
+        completed: sortEvents(events.filter(e => getEventStatus(e) === 'Completed'), false) // Descending (Newest first)
     };
 
     return (

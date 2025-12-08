@@ -127,7 +127,36 @@ export default function LeaderboardPage() {
                 <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-yellow-300 via-orange-400 to-yellow-300 bg-clip-text text-transparent bg-size-200 animate-gradient">
                     🏆 Student Leaderboard
                 </h1>
-                <p className="text-neutral-400 text-lg">Top active students based on participation and engagement.</p>
+                <p className="text-neutral-400 text-lg mb-8">Top active students based on participation and engagement.</p>
+                
+                <button
+                    onClick={() => {
+                        const headers = ["Rank", "Student Name", "Email", "Department", "Score", "Title"];
+                        const csvContent = [
+                            headers.join(","),
+                            ...leaderboard.map(e => [
+                                e.rank,
+                                `"${e.student_name}"`,
+                                e.email,
+                                e.department,
+                                e.score,
+                                e.title || "Novice"
+                            ].join(","))
+                        ].join("\n");
+                        
+                        const blob = new Blob([csvContent], { type: 'text/csv' });
+                        const url = window.URL.createObjectURL(blob);
+                        const a = document.createElement('a');
+                        a.href = url;
+                        a.download = `leaderboard_${new Date().toISOString().split('T')[0]}.csv`;
+                        document.body.appendChild(a);
+                        a.click();
+                        document.body.removeChild(a);
+                    }}
+                    className="inline-flex items-center gap-2 px-6 py-3 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-all font-medium text-white hover:scale-105"
+                >
+                    <span>⬇️</span> Export CSV
+                </button>
             </header>
 
             <div className="bg-neutral-900/50 rounded-3xl border border-white/10 overflow-hidden backdrop-blur-sm shadow-2xl shadow-black/50">
