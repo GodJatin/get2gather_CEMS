@@ -35,27 +35,40 @@ async def upload_event_image(
     if not file.content_type.startswith('image/'):
         raise HTTPException(status_code=400, detail="File must be an image")
 
-    # 2. Save File locally (or upload to cloud storage)
-    # Ensure directory exists
-    UPLOAD_DIR = "static/events"
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    
-    # Generate unique filename
-    file_ext = file.filename.split(".")[-1]
-    filename = f"{event_id}_{uuid.uuid4()}.{file_ext}"
-    file_path = f"{UPLOAD_DIR}/{filename}"
-    
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    # 2. Upload to Supabase Storage
+    try:
+        from supabase_client import supabase
+        
+        # Generate unique filename
+        file_ext = file.filename.split(".")[-1]
+        filename = f"{event_id}_{uuid.uuid4()}.{file_ext}"
+        
+        # Read file content
+        file_content = await file.read()
+        
+        # Upload to 'events' bucket
+        # Note: We use 'events' as the bucket name as per plan
+        res = supabase.storage.from_("events").upload(
+            path=filename,
+            file=file_content,
+            file_options={"content-type": file.content_type}
+        )
+        
+        # Get Public URL
+        # The new supabase-py might return a different structure, but usually get_public_url works
+        public_url_res = supabase.storage.from_("events").get_public_url(filename)
+        
+        # Check if get_public_url returns a string or object (depends on version)
+        # Assuming string based on common usage, but if object handle it
+        image_url = public_url_res
+        
+    except Exception as e:
+        print(f"Supabase Upload Error: {e}")
+        # Fallback or Error? 
+        # For now, let's raise error so user knows upload failed
+        raise HTTPException(status_code=500, detail=f"Image upload failed: {str(e)}")
         
     # 3. Update Event Record
-    # Append to existing images list (comma separated string for now, or JSON)
-    # The schema uses 'images' as optional string. Let's assume comma-separated URLs.
-    
-    # URL construction (assuming static serving is set up)
-    # Ideally should be a full URL or relative path handled by frontend
-    image_url = f"/static/events/{filename}"
-    
     if event.images:
         event.images = f"{event.images},{image_url}"
     else:
