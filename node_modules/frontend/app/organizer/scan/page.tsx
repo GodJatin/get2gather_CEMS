@@ -161,7 +161,7 @@ export default function OrganizerScanPage() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
                 {/* Left Sidebar: Event List */}
                 <div className="lg:col-span-4 space-y-4">
-                    <div className="bg-neutral-900/50 border border-white/10 rounded-3xl p-6 backdrop-blur-sm h-[80vh] flex flex-col">
+                    <div className="bg-neutral-900/50 border border-white/10 rounded-3xl p-6 backdrop-blur-sm h-[50vh] md:h-[80vh] flex flex-col">
                         <div className="flex gap-2 mb-6 p-1 bg-neutral-800 rounded-xl">
                             {(['active', 'upcoming', 'completed'] as const).map(tab => (
                                 <button

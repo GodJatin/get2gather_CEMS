@@ -125,7 +125,7 @@ export default function HeroSubtitle() {
   return (
     <div className="text-xl md:text-2xl text-neutral-400 mb-10 leading-relaxed min-h-[6rem] flex flex-col items-center justify-start">
       {/* Line 1: Typewriter Effect */}
-      <div className="mb-2 h-8 flex items-center justify-center">
+      <div className="mb-8 min-h-[2rem] flex items-center justify-center text-center px-4">
         <TypewriterText text="The ultimate platform for college events." delay={0.5} />
       </div>
 

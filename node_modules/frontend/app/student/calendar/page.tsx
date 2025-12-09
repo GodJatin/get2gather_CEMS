@@ -94,7 +94,7 @@ export default function CalendarPage() {
     if (!isMounted) return null; // Prevent hydration mismatch for date-heavy component
 
     return (
-        <MotionWrapper className="max-w-7xl mx-auto h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-8">
+        <MotionWrapper className="max-w-7xl mx-auto min-h-[calc(100vh-8rem)] md:h-[calc(100vh-8rem)] flex flex-col md:flex-row gap-8 pb-20 md:pb-0">
             
             {/* Calendar Section */}
             <div className="flex-1 flex flex-col bg-neutral-900/50 backdrop-blur-xl border border-white/10 rounded-[2rem] overflow-hidden shadow-2xl shadow-[#FF9E00]/5 relative group">

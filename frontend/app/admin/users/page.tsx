@@ -85,26 +85,49 @@ export default function AdminUsersPage() {
 
     return (
         <MotionWrapper>
-            <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
-                <div>
-                    <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
-                        User Management
-                    </h1>
-                    <p className="text-neutral-400">Manage all platform users</p>
+            <div className="flex flex-col gap-6 mb-8">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
+                            User Management
+                        </h1>
+                        <p className="text-neutral-400">Manage all platform users</p>
+                    </div>
+                    
+                    {/* Desktop Actions */}
+                    <div className="hidden md:flex gap-3">
+                        <button 
+                            onClick={downloadCSV}
+                            className="flex items-center gap-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-600/30 px-4 py-2 rounded-xl font-medium transition-colors whitespace-nowrap"
+                        >
+                            <span>⬇️</span> CSV
+                        </button>
+                        <div className="flex bg-neutral-900 border border-white/10 p-1 rounded-xl">
+                            {tabs.map(tab => (
+                                <button
+                                    key={tab.id}
+                                    onClick={() => setFilter(tab.id as any)}
+                                    className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                        filter === tab.id 
+                                            ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' 
+                                            : 'text-neutral-400 hover:text-white'
+                                    }`}
+                                >
+                                    {tab.label}
+                                </button>
+                            ))}
+                        </div>
+                    </div>
                 </div>
-                <div className="flex gap-3">
-                    <button 
-                        onClick={downloadCSV}
-                        className="flex items-center gap-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-600/30 px-4 py-2 rounded-xl font-medium transition-colors whitespace-nowrap"
-                    >
-                        <span>⬇️</span> CSV
-                    </button>
-                    <div className="flex bg-neutral-900 border border-white/10 p-1 rounded-xl">
+
+                {/* Mobile Tabs */}
+                <div className="md:hidden overflow-x-auto pb-2 custom-scrollbar">
+                    <div className="flex bg-neutral-900 border border-white/10 p-1 rounded-xl w-max">
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}
                                 onClick={() => setFilter(tab.id as any)}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
                                     filter === tab.id 
                                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' 
                                         : 'text-neutral-400 hover:text-white'
@@ -115,6 +138,15 @@ export default function AdminUsersPage() {
                         ))}
                     </div>
                 </div>
+
+                {/* Mobile Floating Download Button */}
+                <button 
+                    onClick={downloadCSV}
+                    className="md:hidden fixed bottom-6 right-6 z-50 w-14 h-14 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center text-2xl border border-white/20 active:scale-95 transition-transform"
+                    aria-label="Download CSV"
+                >
+                    ⬇️
+                </button>
             </div>
             
             <div className="bg-neutral-900/50 rounded-3xl border border-white/10 overflow-hidden backdrop-blur-sm shadow-xl">
