@@ -107,7 +107,7 @@ export default function OrganizerLayout({
             </nav>
 
             {/* Main Content */}
-            <main className="pt-28 px-6 pb-12 max-w-7xl mx-auto">
+            <main className="pt-24 md:pt-28 px-4 md:px-6 pb-12 w-full max-w-[100vw] overflow-x-hidden mx-auto">
                 {children}
             </main>
         </div>

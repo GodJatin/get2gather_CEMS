@@ -12,7 +12,7 @@ export default function StudentLayout({
         <div className="min-h-screen flex flex-col bg-neutral-950 text-white">
             <Navbar />
             
-            <main className="flex-1 pt-24 pb-12 px-6">
+            <main className="flex-1 pt-20 md:pt-24 pb-12 px-4 md:px-6 w-full max-w-[100vw] overflow-x-hidden">
                 {children}
             </main>
 

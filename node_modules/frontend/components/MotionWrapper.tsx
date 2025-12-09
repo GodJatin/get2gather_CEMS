@@ -15,7 +15,7 @@ export default function MotionWrapper({ children, className = "", delay = 0 }: M
             animate={{ opacity: 1, y: 0 }}
             exit={{ opacity: 0, y: -20 }}
             transition={{ duration: 0.5, delay: delay, ease: "easeOut" }}
-            className={className}
+            className={`w-full ${className}`}
         >
             {children}
         </motion.div>

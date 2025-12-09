@@ -121,13 +121,13 @@ export default function AdminUsersPage() {
                 </div>
 
                 {/* Mobile Tabs */}
-                <div className="md:hidden overflow-x-auto pb-2 custom-scrollbar">
-                    <div className="flex bg-neutral-900 border border-white/10 p-1 rounded-xl w-max">
+                <div className="md:hidden w-full overflow-x-auto pb-2 custom-scrollbar -mx-4 px-4">
+                    <div className="flex bg-neutral-900 border border-white/10 p-1 rounded-xl w-max mx-auto">
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}
                                 onClick={() => setFilter(tab.id as any)}
-                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all whitespace-nowrap ${
+                                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all whitespace-nowrap ${
                                     filter === tab.id 
                                         ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' 
                                         : 'text-neutral-400 hover:text-white'
@@ -142,7 +142,7 @@ export default function AdminUsersPage() {
                 {/* Mobile Floating Download Button */}
                 <button 
                     onClick={downloadCSV}
-                    className="md:hidden fixed bottom-6 right-6 z-50 w-14 h-14 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center text-2xl border border-white/20 active:scale-95 transition-transform"
+                    className="md:hidden fixed bottom-6 right-6 z-50 w-12 h-12 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center text-xl border border-white/20 active:scale-95 transition-transform"
                     aria-label="Download CSV"
                 >
                     ⬇️
