@@ -23,6 +23,8 @@ class ProfileResponse(BaseModel):
     following_count: int
     recent_activity: List[dict]
     active_effect: Optional[str] = None
+    email: Optional[str] = None
+    total_points: Optional[int] = 0
 
 @router.post("/social/follow/{user_id}")
 async def follow_user(user_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -63,66 +65,89 @@ async def follow_user(user_id: int, current_user: User = Depends(get_current_use
 
 @router.get("/social/profile/{student_id}", response_model=ProfileResponse)
 async def get_profile(student_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    # Get Student
-    result = db.execute(select(Student).where(Student.id == student_id))
-    student = result.scalar_one_or_none()
-    if not student:
-        raise HTTPException(status_code=404, detail="Student not found")
-    
-    # Get User object for social stats
-    result = db.execute(select(User).where(User.id == student.user_id))
-    target_user = result.scalar_one_or_none()
+    try:
+        # Get Student
+        result = db.execute(select(Student).where(Student.id == student_id))
+        student = result.scalar_one_or_none()
+        if not student:
+            raise HTTPException(status_code=404, detail="Student not found")
+        
+        # Get User object for social stats
+        result = db.execute(select(User).where(User.id == student.user_id))
+        target_user = result.scalar_one_or_none()
+        
+        # Define defaults for missing user
+        user_email = "N/A"
+        followers_count = 0
+        following_count = 0
+        is_following = False
 
-    # Get Follow Stats
-    followers_res = db.execute(select(func.count()).select_from(user_follows).where(user_follows.c.followed_id == target_user.id))
-    followers_count = followers_res.scalar()
+        if target_user:
+            user_email = target_user.email
+            # Get Follow Stats
+            followers_res = db.execute(select(func.count()).select_from(user_follows).where(user_follows.c.followed_id == target_user.id))
+            followers_count = followers_res.scalar()
 
-    following_res = db.execute(select(func.count()).select_from(user_follows).where(user_follows.c.follower_id == target_user.id))
-    following_count = following_res.scalar()
+            following_res = db.execute(select(func.count()).select_from(user_follows).where(user_follows.c.follower_id == target_user.id))
+            following_count = following_res.scalar()
 
-    # Check if current user is following
-    is_following_res = db.execute(select(user_follows).where(
-        (user_follows.c.follower_id == current_user.id) & 
-        (user_follows.c.followed_id == target_user.id)
-    ))
-    is_following = is_following_res.first() is not None
+            # Check if current user is following
+            is_following_res = db.execute(select(user_follows).where(
+                (user_follows.c.follower_id == current_user.id) & 
+                (user_follows.c.followed_id == target_user.id)
+            ))
+            is_following = is_following_res.first() is not None
 
-    # Get Activity Stats
-    bookings_res = db.execute(select(func.count()).select_from(Booking).where(Booking.student_id == student.id))
-    total_bookings = bookings_res.scalar()
+        # Get Activity Stats
+        bookings_res = db.execute(select(func.count()).select_from(Booking).where(Booking.student_id == student.id))
+        total_bookings = bookings_res.scalar()
 
-    # Get Recent Activity (Last 5 bookings)
-    recent_bookings_res = db.execute(
-        select(Booking, Event)
-        .join(Event, Booking.event_id == Event.id)
-        .where(Booking.student_id == student.id)
-        .order_by(desc(Booking.booking_date))
-        .limit(5)
-    )
-    
-    recent_activity = []
-    for booking, event in recent_bookings_res:
-        recent_activity.append({
-            "type": "booking",
-            "event_title": event.title,
-            "date": str(booking.booking_date)
-        })
+        # Get Recent Activity (Last 5 bookings)
+        recent_bookings_res = db.execute(
+            select(Booking, Event)
+            .join(Event, Booking.event_id == Event.id)
+            .where(Booking.student_id == student.id)
+            .order_by(desc(Booking.booking_date))
+            .limit(5)
+        )
+        
+        recent_activity = []
+        for booking, event in recent_bookings_res:
+            recent_activity.append({
+                "type": "booking",
+                "event_title": event.title,
+                "date": str(booking.booking_date)
+            })
 
-    return {
-        "id": student.id,
-        "name": student.name,
-        "department": student.department,
-        "title": student.title,
-        "badges": student.badges or [],
-        "active_effect": student.active_effect,
-        "stats": {
-            "events_attended": total_bookings,
-            "volunteer_count": 0 # Placeholder, would need volunteer table query
-        },
-        "is_following": is_following,
-        "followers_count": followers_count,
-        "following_count": following_count,
-    }
+        # Get Points & Gamification
+        from points_utils import calculate_student_points, calculate_gamification
+        points_data = calculate_student_points(db, student.id, student.user_id)
+        gamification_data = calculate_gamification(student, points_data)
+
+        return {
+            "id": student.id,
+            "name": student.name,
+            "department": student.department,
+            "title": gamification_data["title"],
+            "badges": gamification_data["badges"], # Use calculated badges
+            "active_effect": student.active_effect,
+            "stats": {
+                "events_attended": total_bookings,
+                "volunteer_count": points_data["volunteer_count"] # Use calculated count
+            },
+            "is_following": is_following,
+            "followers_count": followers_count,
+            "following_count": following_count,
+            "recent_activity": recent_activity,
+            "email": user_email,
+            "total_points": points_data["available_points"]
+        }
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Profile Error: {str(e)}")
 
 @router.get("/social/search")
 async def search_users(q: str, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):

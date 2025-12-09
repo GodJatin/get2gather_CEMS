@@ -112,21 +112,34 @@ export default function AnalyticsPage() {
                                             <span className="font-medium text-white group-hover:text-blue-400 transition-colors line-clamp-1">{event.title}</span>
                                             <span className="text-neutral-400 whitespace-nowrap ml-2">{event.attended_count} / {event.capacity} ({percentage}%)</span>
                                         </div>
-                                        {/* Bar Container */}
-                                        <div className="h-4 bg-neutral-800 rounded-full overflow-hidden w-full border border-white/5 relative">
-                                            {/* Attendees Bar */}
+                                        {/* Bar Container - Attendees */}
+                                        <div className="h-4 bg-neutral-800 rounded-full overflow-hidden w-full border border-white/5 relative mb-2">
                                             <div 
                                                 className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full relative group-hover:brightness-110 transition-all duration-1000"
-                                                style={{ 
-                                                    width: `${Math.max(percentage, event.attended_count > 0 ? 2 : 0)}%`
-                                                }}
+                                                style={{ width: `${Math.max(percentage, event.attended_count > 0 ? 2 : 0)}%` }}
                                             >
                                                 <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
                                             </div>
                                         </div>
-                                        <div className="flex justify-between mt-1 text-xs text-neutral-500">
+
+                                        {/* Bar Container - Volunteers */}
+                                        <div className="flex justify-between text-xs mb-1 mt-3">
+                                            <span className="text-pink-400">Volunteers</span>
+                                            <span className="text-neutral-500">{event.volunteer_count} Applied</span>
+                                        </div>
+                                        <div className="h-2 bg-neutral-800 rounded-full overflow-hidden w-full border border-white/5 relative">
+                                            <div 
+                                                className="h-full bg-gradient-to-r from-pink-500 to-rose-500 rounded-full relative transition-all duration-1000"
+                                                style={{ 
+                                                    // Assuming arbitrary volunteer capacity or just relative width for visual feedback
+                                                    // Let's cap at 100% if > 10 volunteers for visual sake, or just show presence
+                                                    width: `${Math.min((event.volunteer_count / (capacity * 0.2 || 5)) * 100, 100)}%` 
+                                                }}
+                                            ></div>
+                                        </div>
+
+                                        <div className="flex justify-between mt-2 text-xs text-neutral-500">
                                             <span>{new Date(event.date).toLocaleDateString()}</span>
-                                            <span>{event.volunteer_count} Volunteers</span>
                                         </div>
                                     </div>
                                 );

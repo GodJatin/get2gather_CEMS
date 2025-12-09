@@ -29,28 +29,24 @@ async def get_student_profile(current_user: User = Depends(get_current_user), db
         raise HTTPException(status_code=404, detail="Student profile not found")
 
     # Calculate points for profile
-    from points_utils import calculate_student_points
+    from points_utils import calculate_student_points, calculate_gamification
     points_data = calculate_student_points(db, student.id, current_user.id)
+    gamification_data = calculate_gamification(student, points_data)
         
     return {
         "id": student.id,
         "name": student.name,
         "department": student.department,
         "enrollment_number": student.enrollment_number,
-        "title": student.title,
-        "badges": student.badges,
+        "title": gamification_data["title"],
+        "badges": gamification_data["badges"],
         "inventory": student.inventory or [],
         "active_effect": student.active_effect,
         "spent_points": student.spent_points,
         "user_id": student.user_id,
         "email": current_user.email,
-        "events_attended": db.query(Booking).filter(Booking.student_id == student.id, Booking.attended == True).count(),
-        # "volunteer_count": db.query(Volunteer).filter(Volunteer.user_id == current_user.id, Volunteer.attended == True).count()
-        # For simplicity, let's assuming volunteer count is also tracked or added to events_attended? 
-        # The UI usually shows them separately. Let's add volunteer_count if needed, or just let frontend use what it has.
-        # Screenshot showed "ATTENDEE" and "VOLUNTEER" counts.
-        "volunteer_count": db.query(Volunteer).filter(Volunteer.user_id == current_user.id, Volunteer.attended == True).count(),
-        # Return calculated points
+        "events_attended": points_data["bookings_count"],
+        "volunteer_count": points_data["volunteer_count"],
         "total_points": points_data["total_points"],
         "available_points": points_data["available_points"]
     }
