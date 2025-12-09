@@ -423,12 +423,12 @@ export default function StudentRegisterPage() {
                         )}
                     </AnimatePresence>
 
-                    <div className="flex gap-4 mt-8">
+                    <div className="flex gap-4 mt-8 flex-col sm:flex-row">
                         {step > 1 && (
                             <button
                                 type="button"
                                 onClick={() => setStep(step - 1)}
-                                className="flex-1 py-3.5 rounded-xl border border-white/10 text-white font-bold hover:bg-white/5 transition-all"
+                                className="w-full sm:flex-1 py-3.5 rounded-xl border border-white/10 text-white font-bold hover:bg-white/5 transition-all"
                             >
                                 Back
                             </button>
@@ -439,7 +439,7 @@ export default function StudentRegisterPage() {
                                 type="button"
                                 onClick={handleNext}
                                 disabled={loading}
-                                className="flex-1 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                                className="w-full sm:flex-1 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
                             >
                                 {loading ? 'Checking...' : 'Next'}
                             </button>
@@ -447,7 +447,7 @@ export default function StudentRegisterPage() {
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="flex-1 py-3.5 rounded-xl bg-green-600 hover:bg-green-500 disabled:bg-green-800 disabled:cursor-not-allowed text-white font-bold shadow-lg shadow-green-900/20 transition-all"
+                                className="w-full sm:flex-1 py-3.5 rounded-xl bg-green-600 hover:bg-green-500 disabled:bg-green-800 disabled:cursor-not-allowed text-white font-bold shadow-lg shadow-green-900/20 transition-all"
                             >
                                 {loading ? 'Registering...' : 'Complete Registration'}
                             </button>

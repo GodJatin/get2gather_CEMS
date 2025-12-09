@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState } from 'react';
 import api from '@/lib/api';
+import MotionWrapper from '@/components/MotionWrapper';
 
 interface User {
     id: number;
@@ -15,6 +16,7 @@ interface User {
 export default function AdminUsersPage() {
     const [users, setUsers] = useState<User[]>([]);
     const [loading, setLoading] = useState(true);
+    const [filter, setFilter] = useState<'all' | 'student' | 'organizer' | 'admin'>('all');
 
     useEffect(() => {
         fetchUsers();
@@ -41,6 +43,8 @@ export default function AdminUsersPage() {
         }
     };
 
+    const filteredUsers = users.filter(user => filter === 'all' || user.role === filter);
+
     const downloadCSV = () => {
         if (users.length === 0) return;
 
@@ -66,10 +70,6 @@ export default function AdminUsersPage() {
         document.body.removeChild(a);
     };
 
-    const [filter, setFilter] = useState<'all' | 'student' | 'organizer' | 'admin'>('all');
-
-    const filteredUsers = users.filter(user => filter === 'all' || user.role === filter);
-
     const tabs = [
         { id: 'all', label: 'All Users' },
         { id: 'student', label: 'Students' },
@@ -77,28 +77,37 @@ export default function AdminUsersPage() {
         { id: 'admin', label: 'Admins' },
     ];
 
-    if (loading) return <div className="p-8 text-center text-gray-500">Loading users...</div>;
+    if (loading) return (
+        <div className="min-h-[60vh] flex items-center justify-center">
+            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
+        </div>
+    );
 
     return (
-        <div className="space-y-6">
-            <div className="flex justify-between items-center">
-                <h1 className="text-3xl font-bold text-gray-800">User Management</h1>
-                <div className="flex gap-4 items-center">
+        <MotionWrapper>
+            <div className="flex flex-col md:flex-row justify-between items-center mb-8 gap-4">
+                <div>
+                    <h1 className="text-3xl font-bold bg-gradient-to-r from-blue-400 to-indigo-500 bg-clip-text text-transparent">
+                        User Management
+                    </h1>
+                    <p className="text-neutral-400">Manage all platform users</p>
+                </div>
+                <div className="flex gap-3">
                     <button 
                         onClick={downloadCSV}
-                        className="flex items-center gap-2 bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded-lg font-medium transition-colors"
+                        className="flex items-center gap-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-600/30 px-4 py-2 rounded-xl font-medium transition-colors whitespace-nowrap"
                     >
-                        <span>⬇️</span> Export CSV
+                        <span>⬇️</span> CSV
                     </button>
-                    <div className="flex gap-2 bg-gray-100 p-1 rounded-lg">
+                    <div className="flex bg-neutral-900 border border-white/10 p-1 rounded-xl">
                         {tabs.map(tab => (
                             <button
                                 key={tab.id}
                                 onClick={() => setFilter(tab.id as any)}
-                                className={`px-4 py-2 rounded-md text-sm font-medium transition-all ${
+                                className={`px-4 py-2 rounded-lg text-sm font-medium transition-all ${
                                     filter === tab.id 
-                                        ? 'bg-white text-gray-800 shadow-sm' 
-                                        : 'text-gray-500 hover:text-gray-700'
+                                        ? 'bg-blue-600 text-white shadow-lg shadow-blue-900/20' 
+                                        : 'text-neutral-400 hover:text-white'
                                 }`}
                             >
                                 {tab.label}
@@ -108,48 +117,48 @@ export default function AdminUsersPage() {
                 </div>
             </div>
             
-            <div className="bg-white rounded-xl shadow-sm border border-gray-100 overflow-hidden">
+            <div className="bg-neutral-900/50 rounded-3xl border border-white/10 overflow-hidden backdrop-blur-sm shadow-xl">
                 {/* Desktop Table */}
                 <div className="hidden md:block overflow-x-auto">
                     <table className="w-full text-left">
-                        <thead className="bg-gray-50 border-b border-gray-100">
-                            <tr>
-                                <th className="p-4 font-semibold text-gray-600">ID</th>
-                                <th className="p-4 font-semibold text-gray-600">Email</th>
-                                <th className="p-4 font-semibold text-gray-600">Role</th>
-                                <th className="p-4 font-semibold text-gray-600">Details</th>
-                                <th className="p-4 font-semibold text-gray-600">Actions</th>
+                        <thead>
+                            <tr className="border-b border-white/10 bg-white/5 text-neutral-400 font-medium text-sm uppercase tracking-wider">
+                                <th className="p-6">ID</th>
+                                <th className="p-6">Email</th>
+                                <th className="p-6">Role</th>
+                                <th className="p-6">Details</th>
+                                <th className="p-6 text-right">Actions</th>
                             </tr>
                         </thead>
-                        <tbody className="divide-y divide-gray-100">
+                        <tbody className="divide-y divide-white/5">
                             {filteredUsers.length === 0 ? (
                                 <tr>
-                                    <td colSpan={5} className="p-8 text-center text-gray-400">
+                                    <td colSpan={5} className="p-12 text-center text-neutral-500">
                                         No {filter !== 'all' ? filter : ''} users found.
                                     </td>
                                 </tr>
                             ) : filteredUsers.map((user) => (
-                                <tr key={user.id} className="hover:bg-gray-50 transition-colors">
-                                    <td className="p-4 text-gray-600">#{user.id}</td>
-                                    <td className="p-4 font-medium text-gray-800">{user.email}</td>
-                                    <td className="p-4">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                            user.role === 'admin' ? 'bg-red-100 text-red-600' :
-                                            user.role === 'organizer' ? 'bg-purple-100 text-purple-600' :
-                                            'bg-blue-100 text-blue-600'
+                                <tr key={user.id} className="hover:bg-white/5 transition-colors">
+                                    <td className="p-6 text-neutral-500 font-mono">#{user.id}</td>
+                                    <td className="p-6 font-medium text-white">{user.email}</td>
+                                    <td className="p-6">
+                                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                                            user.role === 'admin' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                            user.role === 'organizer' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                                            'bg-blue-500/10 text-blue-400 border-blue-500/20'
                                         }`}>
                                             {user.role.toUpperCase()}
                                         </span>
                                     </td>
-                                    <td className="p-4 text-sm text-gray-500">
-                                        {user.organization_name && <div>Org: {user.organization_name}</div>}
-                                        {user.contact && <div>Ph: {user.contact}</div>}
+                                    <td className="p-6 text-sm text-neutral-400">
+                                        {user.organization_name && <div className="mb-1">🏢 {user.organization_name}</div>}
+                                        {user.contact && <div>📞 {user.contact}</div>}
                                     </td>
-                                    <td className="p-4">
+                                    <td className="p-6 text-right">
                                         {user.role !== 'admin' && (
                                             <button 
                                                 onClick={() => handleDelete(user.id)}
-                                                className="text-red-500 hover:text-red-700 hover:bg-red-50 px-3 py-1 rounded-lg transition-colors"
+                                                className="text-red-400 hover:text-red-300 hover:bg-red-500/10 px-4 py-2 rounded-xl transition-all border border-transparent hover:border-red-500/20"
                                             >
                                                 Delete
                                             </button>
@@ -162,29 +171,29 @@ export default function AdminUsersPage() {
                 </div>
 
                 {/* Mobile Card View */}
-                <div className="md:hidden divide-y divide-gray-100">
+                <div className="md:hidden divide-y divide-white/5">
                     {filteredUsers.length === 0 ? (
-                        <div className="p-8 text-center text-gray-400">
+                        <div className="p-12 text-center text-neutral-500">
                             No users found.
                         </div>
                     ) : filteredUsers.map((user) => (
-                        <div key={user.id} className="p-4 flex flex-col gap-3">
+                        <div key={user.id} className="p-4 flex flex-col gap-4">
                             <div className="flex justify-between items-start">
                                 <div>
-                                    <div className="font-bold text-gray-800 break-all">{user.email}</div>
-                                    <div className="text-xs text-gray-400">#{user.id}</div>
+                                    <div className="font-bold text-white break-all">{user.email}</div>
+                                    <div className="text-xs text-neutral-500 font-mono mt-1">#{user.id}</div>
                                 </div>
-                                <span className={`px-3 py-1 rounded-full text-xs font-bold ${
-                                    user.role === 'admin' ? 'bg-red-100 text-red-600' :
-                                    user.role === 'organizer' ? 'bg-purple-100 text-purple-600' :
-                                    'bg-blue-100 text-blue-600'
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
+                                    user.role === 'admin' ? 'bg-red-500/10 text-red-400 border-red-500/20' :
+                                    user.role === 'organizer' ? 'bg-purple-500/10 text-purple-400 border-purple-500/20' :
+                                    'bg-blue-500/10 text-blue-400 border-blue-500/20'
                                 }`}>
                                     {user.role}
                                 </span>
                             </div>
                             
                             {(user.organization_name || user.contact) && (
-                                <div className="bg-gray-50 p-3 rounded-lg text-sm text-gray-600 space-y-1">
+                                <div className="bg-white/5 p-3 rounded-lg text-sm text-neutral-300 border border-white/5 space-y-1">
                                     {user.organization_name && <div>🏢 {user.organization_name}</div>}
                                     {user.contact && <div>📞 {user.contact}</div>}
                                 </div>
@@ -193,7 +202,7 @@ export default function AdminUsersPage() {
                             {user.role !== 'admin' && (
                                 <button 
                                     onClick={() => handleDelete(user.id)}
-                                    className="w-full text-center text-red-500 bg-red-50 py-2 rounded-lg font-medium"
+                                    className="w-full text-center text-red-400 bg-red-500/10 hover:bg-red-500/20 border border-red-500/20 py-2 rounded-lg font-medium transition-colors"
                                 >
                                     Delete User
                                 </button>
@@ -202,6 +211,6 @@ export default function AdminUsersPage() {
                     ))}
                 </div>
             </div>
-        </div>
+        </MotionWrapper>
     );
 }

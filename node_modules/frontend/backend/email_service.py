@@ -352,3 +352,84 @@ def send_attendance_confirmation(email: str, student_name: str, event_title: str
     except Exception as e:
         print(f"❌ Failed to send attendance confirmation: {str(e)}")
         return False
+def send_event_update_notification(email: str, student_name: str, event_title: str, changes: list) -> bool:
+    """
+    Send notification email when event details are updated
+    """
+    smtp_email = os.getenv("SMTP_EMAIL")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+
+    if not smtp_email or not smtp_password:
+        print(f"⚠️ SMTP not configured, simulating email to {email}")
+        print(f"📧 Event Update: {student_name} - {event_title}")
+        return True
+
+    try:
+        subject = f"📢 Important Update: {event_title}"
+        
+        changes_html = "".join([f"<li>{change}</li>" for change in changes])
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                body {{ font-family: 'Segoe UI', sans-serif; background: #f5f5f5; margin: 0; padding: 0; }}
+                .container {{ max-width: 600px; margin: 40px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+                .header {{ background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 30px; text-align: center; color: white; }}
+                .changes-box {{ background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 20px; margin: 20px 0; }}
+                .changes-list {{ margin: 0; padding-left: 20px; color: #92400e; }}
+                .changes-list li {{ margin-bottom: 5px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <h1 style="margin: 0;">📢 Event Update</h1>
+                </div>
+                <div style="padding: 30px;">
+                    <h2 style="color: #333;">Hello {student_name},</h2>
+                    <p style="font-size: 16px; color: #666;">There have been some changes to an upcoming event you registered for:</p>
+                    
+                    <h3 style="margin: 20px 0 10px 0; color: #333;">{event_title}</h3>
+                    
+                    <div class="changes-box">
+                        <strong style="display: block; margin-bottom: 10px; color: #b45309;">Updated Details:</strong>
+                        <ul class="changes-list">
+                            {changes_html}
+                        </ul>
+                    </div>
+                    
+                    <p style="color: #666; line-height: 1.6;">
+                        Please check the event page for the latest information.
+                    </p>
+                    
+                    <p style="color: #666; margin-top: 20px;">
+                        See you there!
+                    </p>
+                </div>
+                <div style="background: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 14px;">
+                    <p>Get2Gather - College Event Management System</p>
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        msg = MIMEMultipart()
+        msg['From'] = f"Get2Gather <{smtp_email}>"
+        msg['To'] = email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(html_content, 'html'))
+
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(smtp_email, smtp_password)
+            server.send_message(msg)
+            
+        print(f"✅ Event update email sent to {email}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Failed to send event update email: {str(e)}")
+        return False

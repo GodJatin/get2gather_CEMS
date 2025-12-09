@@ -102,29 +102,35 @@ export default function AnalyticsPage() {
                         {chartEvents.length === 0 ? (
                             <p className="text-center text-neutral-500 py-10">No events data available yet.</p>
                         ) : (
-                            chartEvents.map((event) => (
-                                <div key={event.id} className="group">
-                                    <div className="flex justify-between text-sm mb-2">
-                                        <span className="font-medium text-white group-hover:text-blue-400 transition-colors line-clamp-1">{event.title}</span>
-                                        <span className="text-neutral-400 whitespace-nowrap ml-2">{event.attended_count} / {event.capacity}</span>
-                                    </div>
-                                    <div className="min-w-[4px] h-4 bg-neutral-800 rounded-full overflow-hidden flex w-full border border-white/5">
-                                        {/* Attendees Bar */}
-                                        <div 
-                                            className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-l-full relative group-hover:brightness-110 transition-all duration-1000"
-                                            style={{ 
-                                                width: event.capacity > 0 ? `${Math.max((event.attended_count / event.capacity) * 100, 2)}%` : '0%',
-                                                minWidth: event.attended_count > 0 ? '4px' : '0'
-                                            }}
-                                        >
-                                            <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                            chartEvents.map((event) => {
+                                const capacity = event.capacity || 1; // Avoid division by zero
+                                const percentage = Math.min(Math.round((event.attended_count / capacity) * 100), 100);
+                                
+                                return (
+                                    <div key={event.id} className="group">
+                                        <div className="flex justify-between text-sm mb-2">
+                                            <span className="font-medium text-white group-hover:text-blue-400 transition-colors line-clamp-1">{event.title}</span>
+                                            <span className="text-neutral-400 whitespace-nowrap ml-2">{event.attended_count} / {event.capacity} ({percentage}%)</span>
+                                        </div>
+                                        {/* Bar Container */}
+                                        <div className="h-4 bg-neutral-800 rounded-full overflow-hidden w-full border border-white/5 relative">
+                                            {/* Attendees Bar */}
+                                            <div 
+                                                className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full relative group-hover:brightness-110 transition-all duration-1000"
+                                                style={{ 
+                                                    width: `${Math.max(percentage, event.attended_count > 0 ? 2 : 0)}%`
+                                                }}
+                                            >
+                                                <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
+                                            </div>
+                                        </div>
+                                        <div className="flex justify-between mt-1 text-xs text-neutral-500">
+                                            <span>{new Date(event.date).toLocaleDateString()}</span>
+                                            <span>{event.volunteer_count} Volunteers</span>
                                         </div>
                                     </div>
-                                    <div className="flex justify-end mt-1 text-xs text-neutral-600">
-                                        {event.date} • {event.volunteer_count} Vol
-                                    </div>
-                                </div>
-                            ))
+                                );
+                            })
                         )}
                     </div>
                 </div>

@@ -98,20 +98,61 @@ export default function CreateEventPage() {
             }
 
             // 2. Upload Images (Converted to Base64 to bypass WAF multipart block)
-            const fileToBase64 = (file: File): Promise<string> => {
+            // COMPRESSION Logic to prevent 413 Payload Too Large
+            const compressImage = async (file: File): Promise<string> => {
                 return new Promise((resolve, reject) => {
-                    const reader = new FileReader();
-                    reader.readAsDataURL(file);
-                    reader.onload = () => resolve(reader.result as string);
-                    reader.onerror = error => reject(error);
+                    const img = new Image();
+                    img.src = URL.createObjectURL(file);
+                    img.onload = () => {
+                        const canvas = document.createElement('canvas');
+                        let width = img.width;
+                        let height = img.height;
+                        
+                        // Max dimension 800px to ensure size < 1MB
+                        const MAX_SIZE = 800;
+                        if (width > height) {
+                            if (width > MAX_SIZE) {
+                                height *= MAX_SIZE / width;
+                                width = MAX_SIZE;
+                            }
+                        } else {
+                            if (height > MAX_SIZE) {
+                                width *= MAX_SIZE / height;
+                                height = MAX_SIZE;
+                            }
+                        }
+
+                        canvas.width = width;
+                        canvas.height = height;
+                        
+                        const ctx = canvas.getContext('2d');
+                        if (!ctx) {
+                            reject(new Error('Canvas context failed'));
+                            return;
+                        }
+                        
+                        ctx.drawImage(img, 0, 0, width, height);
+                        // Compress to JPEG at 0.7 quality
+                        const base64String = canvas.toDataURL('image/jpeg', 0.7);
+                        resolve(base64String);
+                    };
+                    img.onerror = (error) => reject(error);
                 });
             };
 
             for (const image of images) {
-                const base64String = await fileToBase64(image);
-                await api.post(`/events/${eventId}/upload-image-base64`, {
-                    image_base64: base64String
-                });
+                try {
+                    console.log('Compressing image:', image.name);
+                    const base64String = await compressImage(image);
+                    console.log('Uploading compressed image, size:', base64String.length);
+                    
+                    await api.post(`/events/${eventId}/upload-image-base64`, {
+                        image_base64: base64String
+                    });
+                } catch (imgError) {
+                    console.error('Image upload failed:', imgError);
+                    // Continue uploading other images even if one fails
+                }
             }
 
             // Success Implementation
