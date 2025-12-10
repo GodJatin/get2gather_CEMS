@@ -15,8 +15,6 @@ from .security_utils import get_password_hash, verify_password, create_access_to
 from datetime import timedelta
 from fastapi.security import OAuth2PasswordRequestForm, OAuth2PasswordBearer
 from jose import JWTError, jwt
-from limiter import limiter
-from fastapi import Request
 
 router = APIRouter(tags=["Authentication"])
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="auth/login")
@@ -215,8 +213,7 @@ async def check_email(email_data: EmailCheck, db: Session = Depends(get_db)):
     return {"exists": user is not None}
 
 @router.post("/auth/student/initiate")
-@limiter.limit("5/minute")
-async def initiate_student_signup(request: Request, data: StudentSignupInitiate, db: Session = Depends(get_db)):
+async def initiate_student_signup(data: StudentSignupInitiate, db: Session = Depends(get_db)):
     from models import StudentRegistrationAttempt
     from email_service import generate_otp, send_otp_email
     
@@ -359,8 +356,7 @@ async def signup_student(student_data: StudentCreate, db: Session = Depends(get_
     return {"access_token": access_token, "token_type": "bearer"}
 
 @router.post("/auth/organizer/initiate")
-@limiter.limit("5/minute")
-async def initiate_organizer_signup(request: Request, data: OrganizerSignupInitiate, db: Session = Depends(get_db)):
+async def initiate_organizer_signup(data: OrganizerSignupInitiate, db: Session = Depends(get_db)):
     # 1. Check if user already exists
     result = db.execute(select(User).where(User.email == data.email))
     if result.scalar_one_or_none():
@@ -477,8 +473,7 @@ async def complete_organizer_signup(data: OrganizerSignupComplete, db: Session =
     return {"access_token": access_token, "token_type": "bearer", "role": "organizer"}
 
 @router.post("/auth/login", response_model=Token)
-@limiter.limit("5/minute")
-async def login(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     try:
         # Find User
         result = db.execute(select(User).where(User.email == form_data.username))
