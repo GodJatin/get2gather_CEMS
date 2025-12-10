@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, status, File, UploadFile
 from sqlalchemy.orm import Session
 from sqlalchemy.future import select
 from database import get_db
@@ -8,10 +8,13 @@ import schemas
 from typing import List
 from routers.auth import get_current_user
 from datetime import datetime
+import shutil
+import os
+import uuid
 
-router = APIRouter(tags=["Media"])
+router = APIRouter(prefix="/media", tags=["Media"])
 
-@router.post("/media/", response_model=schemas.MediaResponse)
+@router.post("/", response_model=schemas.MediaResponse)
 async def upload_media(media: schemas.MediaCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     # Check if event exists
     result = db.execute(select(Event).where(Event.id == media.event_id))
@@ -65,7 +68,7 @@ async def approve_media(media_id: int, current_user: User = Depends(get_current_
     db.refresh(media_item)
     return media_item
 
-@router.get("/media/pending", response_model=List[schemas.MediaResponse])
+@router.get("/pending", response_model=List[schemas.MediaResponse])
 async def get_pending_media(current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     if current_user.role != UserRole.ORGANIZER:
         raise HTTPException(status_code=403, detail="Only organizers can view pending media")
@@ -84,3 +87,23 @@ async def get_pending_media(current_user: User = Depends(get_current_user), db: 
     ))
     return result.scalars().all()
 
+
+
+
+
+@router.post("/upload", response_model=dict)
+async def upload_file(file: UploadFile = File(...)):
+    UPLOAD_DIR = "static/uploads"
+    os.makedirs(UPLOAD_DIR, exist_ok=True)
+    
+    # Generate unique filename
+    file_extension = os.path.splitext(file.filename)[1]
+    unique_filename = f"{uuid.uuid4()}{file_extension}"
+    file_path = os.path.join(UPLOAD_DIR, unique_filename)
+    
+    with open(file_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+        
+    # Return URL (relative to root, handled by static mount)
+    url = f"/static/uploads/{unique_filename}"
+    return {"url": url}

@@ -13,6 +13,7 @@ router = APIRouter(tags=["Social"])
 
 class ProfileResponse(BaseModel):
     id: int
+    user_id: int # Added
     name: str
     department: str
     title: Optional[str]
@@ -126,6 +127,7 @@ async def get_profile(student_id: int, current_user: User = Depends(get_current_
 
         return {
             "id": student.id,
+            "user_id": student.user_id, # Added user_id needed for follow
             "name": student.name,
             "department": student.department,
             "title": gamification_data["title"],

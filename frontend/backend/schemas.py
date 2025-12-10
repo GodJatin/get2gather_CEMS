@@ -206,10 +206,13 @@ class MediaResponse(BaseModel):
         orm_mode = True
         from_attributes = True
 
+class TagItem(BaseModel):
+    id: int
+    name: str
+
 class FeedPostCreate(BaseModel):
     content: Optional[str] = None
     media_urls: Optional[List[str]] = []
-    media_type: Optional[str] = "image"
     event_id: Optional[int] = None
     location: Optional[str] = None
     feeling: Optional[str] = None
@@ -218,6 +221,7 @@ class FeedPostCreate(BaseModel):
 
 class FeedCommentCreate(BaseModel):
     content: str
+    parent_id: Optional[int] = None
 
 class FeedCommentResponse(BaseModel):
     id: int
@@ -225,32 +229,32 @@ class FeedCommentResponse(BaseModel):
     content: str
     created_at: str
     user_name: Optional[str] = None
+    parent_id: Optional[int] = None
 
     class Config:
         orm_mode = True
         from_attributes = True
 
+
+
 class FeedPostResponse(BaseModel):
     id: int
+    content: str
     user_id: int
-    content: Optional[str]
-    media_urls: Optional[List[str]]
-    media_type: Optional[str]
-    event_id: Optional[int]
-    location: Optional[str]
-    feeling: Optional[str]
-    tagged_users: Optional[List[int]]
-    tagged_events: Optional[List[int]]
-    created_at: str
     user_name: Optional[str] = None
-    user_role: Optional[str] = None
-    event_title: Optional[str] = None
+    created_at: str
+    media_urls: List[str] = []
     likes_count: int
     comments_count: int
-    is_liked: bool = False
-    current_user_reaction: Optional[str] = None
-    is_following: bool = False
+    is_liked: bool
     comments: List[FeedCommentResponse] = []
+    
+    media_type: Optional[str] = 'image'
+    event_id: Optional[int] = None
+    location: Optional[str] = None
+    feeling: Optional[str] = None
+    tagged_users: Optional[List[TagItem]] = []
+    tagged_events: Optional[List[TagItem]] = []
 
     class Config:
         orm_mode = True

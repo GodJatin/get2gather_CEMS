@@ -7,6 +7,7 @@ import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/Motio
 
 interface ProfileData {
     id: number;
+    user_id: number; // Added
     name: string;
     department: string;
     email: string; // Added
@@ -48,7 +49,7 @@ export default function PublicProfilePage() {
         if (!profile) return;
         setFollowLoading(true);
         try {
-            await api.post(`/social/follow/${profile.id}`);
+            await api.post(`/social/follow/${profile.user_id}`);
             setProfile(prev => prev ? ({
                 ...prev,
                 is_following: !prev.is_following,
