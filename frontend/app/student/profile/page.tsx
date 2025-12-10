@@ -20,6 +20,7 @@ interface UserProfile {
     stats?: {
         events_attended: number;
     };
+    events_attended?: number;
     available_points?: number;
     total_points?: number;
     active_effect?: string | null;

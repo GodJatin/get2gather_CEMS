@@ -161,7 +161,7 @@ export default function StudentDashboard() {
                 {bookings.filter(b => b.status !== 'Completed').sort((a, b) => {
                     // Robust parsing using standard constructor is risky with DD-MM-YYYY.
                     // Assuming backend sends YYYY-MM-DD or standard ISO. If not, safe sort.
-                    return new Date(a.booking_date).getTime() - new Date(b.booking_date).getTime();
+                    return new Date(a.event_date).getTime() - new Date(b.event_date).getTime();
                     // If we had the date-fns import here we could use it, but adding import is safer in a separate block if needed.
                     // Actually, let's just use the string comparison for YYYY-MM-DD which works.
                     // But booking.event_date format is unclear. Let's use booking_id as fallback for now.
