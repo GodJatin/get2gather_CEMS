@@ -223,11 +223,14 @@ class FeedComment(Base):
     id = Column(Integer, primary_key=True, index=True)
     post_id = Column(Integer, ForeignKey("feed_posts.id"))
     user_id = Column(Integer, ForeignKey("users.id"))
+    parent_id = Column(Integer, ForeignKey("feed_comments.id"), nullable=True) # For replies
     content = Column(String)
     created_at = Column(String)
 
     post = relationship("FeedPost", back_populates="comments")
     user = relationship("User", back_populates="comments")
+    replies = relationship("FeedComment", back_populates="parent", remote_side=[id])
+    parent = relationship("FeedComment", back_populates="replies", remote_side=[parent_id])
 
 class Volunteer(Base):
     __tablename__ = "volunteers"

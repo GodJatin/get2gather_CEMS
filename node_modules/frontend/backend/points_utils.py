@@ -79,7 +79,20 @@ def calculate_gamification(student, points_data):
     # Avoid duplicates
     # badges is list of dicts: [{"name": "Bronze", "icon": ...}, ...]
     try:
-        existing_badges = {b.get('name') for b in badges if isinstance(b, dict)}
+        existing_badges = set()
+        clean_badges = []
+        for b in badges:
+            if isinstance(b, dict):
+                name = b.get('name')
+                if name:
+                    existing_badges.add(name)
+                    clean_badges.append(b)
+            elif isinstance(b, str):
+                # Handle legacy string badges
+                existing_badges.add(b)
+                clean_badges.append({"name": b, "icon": "🏅"}) # Default icon
+        
+        badges = clean_badges
     except Exception:
         existing_badges = set()
         badges = [] # Reset if corrupt

@@ -360,7 +360,7 @@ async def read_my_events(current_user: User = Depends(get_current_user), db: Ses
     if not organizer:
         raise HTTPException(status_code=404, detail="Organizer profile not found")
 
-    result = db.execute(select(Event).where(Event.organizer_id == organizer.id))
+    result = db.execute(select(Event).where(Event.organizer_id == organizer.id).order_by(Event.date.desc()))
     events = result.scalars().all()
     
     events_with_stats = []
@@ -377,7 +377,6 @@ async def read_my_events(current_user: User = Depends(get_current_user), db: Ses
         # Count Volunteers
         volunteers = db.query(func.count(VolModel.id)).filter(
             VolModel.event_id == event.id,
-            VolModel.status == "Approved",
             VolModel.attended == True
         ).scalar() or 0
         
