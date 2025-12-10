@@ -1,7 +1,9 @@
 'use client';
 
+
 import { useState } from 'react';
 import Link from 'next/link';
+import BackButton from '@/components/BackButton';
 import Image from 'next/image';
 import api from '@/lib/api';
 import { motion } from 'framer-motion';
@@ -60,15 +62,10 @@ export default function LoginPage() {
                     <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-secondary/20 rounded-full blur-[100px]" />
                 </div>
 
-                {/* Home Link */}
-                <Link href="/" className="absolute top-8 left-8 z-50 flex items-center gap-2 group hover:opacity-80 transition-opacity">
-                    <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-xl shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
-                        🎓
-                    </div>
-                    <span className="text-xl font-bold bg-gradient-to-r from-white to-neutral-400 bg-clip-text text-transparent">
-                        Get2Gather
-                    </span>
-                </Link>
+                {/* Back Button */}
+                <div className="absolute top-8 left-8 z-50">
+                    <BackButton />
+                </div>
 
                 <motion.div 
                     initial={{ opacity: 0, y: 20 }}

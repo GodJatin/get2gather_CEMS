@@ -386,8 +386,8 @@ export default function FeedPage() {
                         {post.media_urls && post.media_urls.length > 0 && (
                             <div className="flex overflow-x-auto gap-2 mb-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent pb-2">
                                 {post.media_urls.map((url, i) => (
-                                    <div key={i} className="flex-shrink-0 w-full sm:w-[90%] md:w-[80%] aspect-video relative snap-center rounded-xl overflow-hidden cursor-pointer" onClick={() => setSelectedImage(`http://localhost:3000${url}`)}>
-                                         <img src={`http://localhost:3000${url}`} alt="Post Media" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                                    <div key={i} className="flex-shrink-0 w-full sm:w-[90%] md:w-[80%] aspect-video relative snap-center rounded-xl overflow-hidden cursor-pointer" onClick={() => setSelectedImage(url)}>
+                                         <img src={url} alt="Post Media" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
                                     </div>
                                 ))}
                             </div>
@@ -513,7 +513,7 @@ export default function FeedPage() {
                                 <div className="flex gap-2 mb-4 overflow-x-auto pb-2">
                                     {mediaUrls.map((url, i) => (
                                         <div key={i} className="relative w-20 h-20 flex-shrink-0">
-                                            <img src={`http://localhost:3000${url}`} alt="upload" className="w-full h-full object-cover rounded-lg border border-white/20" />
+                                            <img src={url} alt="upload" className="w-full h-full object-cover rounded-lg border border-white/20" />
                                             <button 
                                                 onClick={() => setMediaUrls(prev => prev.filter((_, idx) => idx !== i))}
                                                 className="absolute -top-2 -right-2 bg-red-500 text-white rounded-full p-1"
