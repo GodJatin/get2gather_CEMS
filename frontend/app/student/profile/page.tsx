@@ -322,6 +322,28 @@ export default function ProfilePage() {
                                 <span className="font-medium group-hover:text-white transition-colors">Change Password</span>
                                 <span className="text-neutral-500 group-hover:text-[#00F0FF] transition-colors transform group-hover:translate-x-1">→</span>
                             </button>
+                            
+                            {/* PWA Install Button */}
+                            <button 
+                                onClick={() => {
+                                    const promptEvent = (window as any).deferredPrompt;
+                                    if (promptEvent) {
+                                        promptEvent.prompt();
+                                        promptEvent.userChoice.then((choiceResult: any) => {
+                                            if (choiceResult.outcome === 'accepted') {
+                                                console.log('User accepted the A2HS prompt');
+                                            }
+                                            (window as any).deferredPrompt = null;
+                                        });
+                                    } else {
+                                        alert("To install the app, look for 'Add to Home Screen' in your browser menu.");
+                                    }
+                                }} 
+                                className="w-full text-left px-6 py-4 rounded-2xl bg-gradient-to-r from-[#00F0FF]/10 to-[#00FF94]/10 hover:from-[#00F0FF]/20 hover:to-[#00FF94]/20 transition-all flex justify-between items-center group border border-[#00F0FF]/20"
+                            >
+                                <span className="font-medium text-[#00F0FF] group-hover:text-white transition-colors">Install App</span>
+                                <span className="text-[#00F0FF] bg-[#00F0FF]/10 px-2 py-1 rounded text-xs">FREE</span>
+                            </button>
                     </div>
                 </div>
             </div>
