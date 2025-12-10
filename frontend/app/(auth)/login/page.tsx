@@ -117,7 +117,6 @@ export default function LoginPage() {
                             <input
                                 name="email"
                                 type="email"
-                                defaultValue={role === 'admin' ? 'admin@get2gather.com' : ''}
                                 placeholder={role === 'student' ? '1234567890123@paruluniversity.ac.in' : role === 'organizer' ? 'organizer@college.edu' : 'admin@get2gather.com'}
                                 className="w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white placeholder:text-neutral-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all"
                             />
@@ -128,7 +127,6 @@ export default function LoginPage() {
                             <input
                                 name="password"
                                 type={showPassword ? "text" : "password"}
-                                defaultValue={role === 'admin' ? 'admin123' : ''}
                                 placeholder="••••••••"
                                 className="w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white placeholder:text-neutral-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all pr-12"
                             />

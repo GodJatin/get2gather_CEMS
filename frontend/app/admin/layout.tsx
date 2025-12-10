@@ -23,7 +23,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
     ];
 
     return (
-        <div className="min-h-screen bg-gray-100 flex">
+        <div className="min-h-screen bg-neutral-950 text-white flex">
             {/* Mobile Header */}
             <div className="md:hidden fixed top-0 w-full h-16 bg-slate-900 z-50 flex items-center justify-between px-4 border-b border-slate-800">
                 <h1 className="text-lg font-bold bg-gradient-to-r from-blue-400 to-cyan-300 bg-clip-text text-transparent">Admin Panel</h1>

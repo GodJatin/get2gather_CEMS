@@ -227,11 +227,11 @@ export default function StudentRegisterPage() {
 
                                 <div>
                                     <label className="block text-sm font-medium text-neutral-300 mb-2">Contact Number</label>
-                                    <div className="flex gap-2">
+                                    <div className="flex flex-col sm:flex-row gap-2">
                                         <select
                                             value={formData.countryCode}
                                             onChange={(e) => setFormData({ ...formData, countryCode: e.target.value })}
-                                            className="px-3 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white focus:border-blue-500/50 focus:outline-none appearance-none min-w-[100px]"
+                                            className="px-3 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white focus:border-blue-500/50 focus:outline-none appearance-none w-full sm:w-auto sm:min-w-[100px]"
                                         >
                                             {countryCodes.map((country) => (
                                                 <option key={country.code} value={country.code}>
@@ -250,7 +250,7 @@ export default function StudentRegisterPage() {
                                                     setFormData({ ...formData, contact: val });
                                                 }
                                             }}
-                                            className="flex-1 px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white focus:border-blue-500/50 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
+                                            className="flex-1 w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white focus:border-blue-500/50 focus:outline-none disabled:opacity-50 disabled:cursor-not-allowed"
                                             placeholder="9876543210"
                                             disabled={!formData.countryCode}
                                         />

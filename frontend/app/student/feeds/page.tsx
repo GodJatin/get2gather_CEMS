@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
+import { getMediaUrl } from '@/lib/utils';
 import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';
 import { motion, AnimatePresence } from 'framer-motion';
 import Loader from '@/components/Loader';
@@ -386,8 +387,8 @@ export default function FeedPage() {
                         {post.media_urls && post.media_urls.length > 0 && (
                             <div className="flex overflow-x-auto gap-2 mb-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent pb-2">
                                 {post.media_urls.map((url, i) => (
-                                    <div key={i} className="flex-shrink-0 w-full sm:w-[90%] md:w-[80%] aspect-video relative snap-center rounded-xl overflow-hidden cursor-pointer" onClick={() => setSelectedImage(url)}>
-                                         <img src={url} alt="Post Media" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
+                                    <div key={i} className="flex-shrink-0 w-full sm:w-[90%] md:w-[80%] aspect-video relative snap-center rounded-xl overflow-hidden cursor-pointer" onClick={() => setSelectedImage(getMediaUrl(url))}>
+                                         <img src={getMediaUrl(url)} alt="Post Media" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
                                     </div>
                                 ))}
                             </div>

@@ -1,5 +1,7 @@
 import type { Metadata, Viewport } from "next";
+import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
+import React, { useEffect } from 'react';
 import { Toaster } from "@/components/ui/sonner";
 
 export const metadata: Metadata = {
@@ -21,6 +23,11 @@ export default function RootLayout({
 }: Readonly<{
     children: React.ReactNode;
 }>) {
+    React.useEffect(() => {
+        if ('serviceWorker' in navigator) {
+            navigator.serviceWorker.register('/sw.js').catch((err) => console.log('SW registration failed', err));
+        }
+    }, []);
     return (
         <html lang="en">
             <body className="antialiased">
