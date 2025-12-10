@@ -2,7 +2,16 @@
 
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
-import { getMediaUrl } from '@/lib/utils';
+// Local helper to avoid build import issues
+const getMediaUrl = (path: string | null | undefined) => {
+    if (!path) return '';
+    if (path.startsWith('http') || path.startsWith('data:')) return path;
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
+    const baseUrl = apiUrl.endsWith('/api') ? apiUrl.slice(0, -4) : apiUrl;
+    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
+    return `${baseUrl}/${cleanPath}`;
+};
+
 import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';
 import { motion, AnimatePresence } from 'framer-motion';
 import Loader from '@/components/Loader';
