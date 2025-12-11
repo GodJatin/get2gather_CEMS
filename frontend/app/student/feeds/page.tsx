@@ -186,13 +186,25 @@ export default function FeedPage() {
 
         setUploading(true);
         try {
-            // Updated endpoint to match backend prefix
-            // Updated endpoint to match backend prefix
-            const res = await api.post('/media/upload', formData);
-            setMediaUrls(prev => [...prev, res.data.url]);
-        } catch (err) {
+            const token = localStorage.getItem('token');
+            const res = await fetch('/api/media/upload', {
+                method: 'POST',
+                headers: {
+                    'Authorization': token ? `Bearer ${token}` : '',
+                },
+                body: formData,
+            });
+
+            if (!res.ok) {
+                const errorData = await res.json().catch(() => ({}));
+                throw new Error(errorData.detail || 'Upload failed');
+            }
+
+            const data = await res.json();
+            setMediaUrls(prev => [...prev, data.url]);
+        } catch (err: any) {
             console.error("Upload failed", err);
-            alert("Failed to upload image");
+            alert(err.message || "Failed to upload image");
         } finally {
             setUploading(false);
         }
