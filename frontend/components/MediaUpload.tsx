@@ -20,12 +20,17 @@ export default function MediaUpload({ eventId, onUploadSuccess }: MediaUploadPro
         setUploading(true);
 
         try {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('event_id', eventId.toString());
+            if (caption) formData.append('caption', caption);
+
             // Use direct axios to avoid default JSON headers from the global api instance
             // We must manually add the Authorization header
             const token = localStorage.getItem('token');
+            // Do NOT set Content-Type header for FormData, let browser set it with boundary
             await axios.post('/api/media/upload', formData, {
                 headers: {
-                    'Content-Type': 'multipart/form-data',
                     'Authorization': token ? `Bearer ${token}` : '',
                 },
             });
