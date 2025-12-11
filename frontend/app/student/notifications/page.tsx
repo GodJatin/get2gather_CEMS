@@ -39,6 +39,7 @@ const MOCK_NOTIFICATIONS = [
         type: "success",
         date: "2024-10-22T16:45:00",
         read: true
+    }
 ];
 
 export default function NotificationsPage() {
