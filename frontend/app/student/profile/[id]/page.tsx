@@ -94,7 +94,7 @@ export default function PublicProfilePage() {
                         {/* Score Badge */}
                         <div className="absolute -bottom-2 -right-2 bg-neutral-900 px-3 py-1 rounded-full border border-white/10 flex items-center gap-1 shadow-lg">
                             <span className="text-sm">💎</span>
-                            <span className="text-sm font-bold text-[#00F0FF]">{profile.total_points}</span>
+                            <span className="text-sm font-bold text-[#00F0FF]">{profile.total_points.toLocaleString()}</span>
                         </div>
                     </div>
 
@@ -113,20 +113,20 @@ export default function PublicProfilePage() {
                         
                         <div className="flex items-center justify-center md:justify-start gap-8 text-sm">
                             <div className="text-center group cursor-default">
-                                <div className="font-bold text-white text-lg group-hover:text-[#00F0FF] transition-colors">{profile.followers_count}</div>
+                                <div className="font-bold text-white text-lg group-hover:text-[#00F0FF] transition-colors">{profile.followers_count.toLocaleString()}</div>
                                 <div className="text-neutral-500 uppercase tracking-wider text-[10px]">Followers</div>
                             </div>
                             <div className="text-center group cursor-default">
-                                <div className="font-bold text-white text-lg group-hover:text-[#00F0FF] transition-colors">{profile.following_count}</div>
+                                <div className="font-bold text-white text-lg group-hover:text-[#00F0FF] transition-colors">{profile.following_count.toLocaleString()}</div>
                                 <div className="text-neutral-500 uppercase tracking-wider text-[10px]">Following</div>
                             </div>
                             <div className="w-px h-8 bg-white/10" />
                             <div className="text-center group cursor-default">
-                                <div className="font-bold text-white text-lg group-hover:text-[#00FF94] transition-colors">{profile.stats.events_attended}</div>
+                                <div className="font-bold text-white text-lg group-hover:text-[#00FF94] transition-colors">{profile.stats.events_attended.toLocaleString()}</div>
                                 <div className="text-neutral-500 uppercase tracking-wider text-[10px]">Attended</div>
                             </div>
                             <div className="text-center group cursor-default">
-                                <div className="font-bold text-white text-lg group-hover:text-[#00FF94] transition-colors">{profile.stats.volunteer_count}</div>
+                                <div className="font-bold text-white text-lg group-hover:text-[#00FF94] transition-colors">{profile.stats.volunteer_count.toLocaleString()}</div>
                                 <div className="text-neutral-500 uppercase tracking-wider text-[10px]">Volunteered</div>
                             </div>
                         </div>
@@ -184,7 +184,9 @@ export default function PublicProfilePage() {
                                         <p className="text-white font-medium">
                                             Booked <span className="text-blue-400">{activity.event_title}</span>
                                         </p>
-                                        <p className="text-xs text-neutral-500">{new Date(activity.date).toLocaleDateString()}</p>
+                                        <p className="text-xs text-neutral-500">
+                                            {new Date(activity.date).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' })}
+                                        </p>
                                     </div>
                                 </StaggerItem>
                             ))
