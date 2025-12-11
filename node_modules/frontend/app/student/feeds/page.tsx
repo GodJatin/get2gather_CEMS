@@ -5,11 +5,29 @@ import api from '@/lib/api';
 // Local helper to avoid build import issues
 const getMediaUrl = (path: string | null | undefined) => {
     if (!path) return '';
-    if (path.startsWith('http') || path.startsWith('data:')) return path;
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8000';
-    const baseUrl = apiUrl.endsWith('/api') ? apiUrl.slice(0, -4) : apiUrl;
-    const cleanPath = path.startsWith('/') ? path.slice(1) : path;
-    return `${baseUrl}/${cleanPath}`;
+    
+    // Fix legacy localhost URLs from database
+    if (path.includes('localhost:8000') || path.includes('127.0.0.1:8000')) {
+        path = path.replace('http://localhost:8000', '').replace('http://127.0.0.1:8000', '');
+    }
+    
+    // If it's still an absolute URL (external), return as is
+    if (path.startsWith('http') || path.startsWith('https') || path.startsWith('data:')) return path;
+
+    // Ensure path starts with /
+    const cleanPath = path.startsWith('/') ? path : `/${path}`;
+    
+    // If we are in development, we might want localhost, but in production we want relative
+    // or the configured API URL.
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL || '';
+    
+    if (apiUrl) {
+        const baseUrl = apiUrl.endsWith('/api') ? apiUrl.slice(0, -4) : apiUrl;
+        return `${baseUrl}${cleanPath}`;
+    }
+    
+    // Default to relative path
+    return cleanPath;
 };
 
 import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';

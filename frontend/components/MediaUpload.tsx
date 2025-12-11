@@ -25,22 +25,30 @@ export default function MediaUpload({ eventId, onUploadSuccess }: MediaUploadPro
             formData.append('event_id', eventId.toString());
             if (caption) formData.append('caption', caption);
 
-            // Use direct axios to avoid default JSON headers from the global api instance
-            // We must manually add the Authorization header
             const token = localStorage.getItem('token');
-            // Do NOT set Content-Type header for FormData, let browser set it with boundary
-            await axios.post('/api/media/upload', formData, {
+            
+            // Use native fetch to ensure correct boundary handling for FormData
+            const response = await fetch('/api/media/upload', {
+                method: 'POST',
                 headers: {
                     'Authorization': token ? `Bearer ${token}` : '',
+                    // Do NOT set Content-Type; fetch sets it to multipart/form-data with boundary automatically
                 },
+                body: formData,
             });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                console.error('Upload Error Details:', errorData);
+                throw new Error(errorData.detail || `Upload failed with status ${response.status}`);
+            }
 
             alert('Media uploaded successfully! It will be visible after approval.');
             setCaption('');
             onUploadSuccess();
-        } catch (error) {
+        } catch (error: any) {
             console.error('Upload failed:', error);
-            alert('Failed to upload media.');
+            alert(error.message || 'Failed to upload media.');
         } finally {
             setUploading(false);
         }
