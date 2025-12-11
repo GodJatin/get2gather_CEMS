@@ -342,7 +342,12 @@ export default function FeedPage() {
         }
     };
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center"><Loader /></div>;
+    if (loading) return (
+        <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+            <Loader />
+            <p className="text-neutral-500 animate-pulse">Loading feed...</p>
+        </div>
+    );
 
     return (
         <MotionWrapper className="max-w-2xl mx-auto px-4 pb-24 relative">

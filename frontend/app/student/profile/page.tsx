@@ -29,6 +29,7 @@ interface UserProfile {
 
 import Counter from '@/components/Counter';
 import LockedFeatureModal from '@/components/LockedFeatureModal';
+import Loader from '@/components/Loader';
 
 interface StudentStats {
     rank: number;
@@ -76,7 +77,12 @@ export default function ProfilePage() {
         fetchData();
     }, []);
 
-    if (loading) return <div className="p-8 text-center text-neutral-400">Loading profile...</div>;
+    if (loading) return (
+        <div className="min-h-[80vh] flex flex-col items-center justify-center gap-4">
+            <Loader />
+            <p className="text-neutral-500 animate-pulse">Loading profile data...</p>
+        </div>
+    );
     if (!user) return <div className="p-8 text-center text-neutral-400">Profile not found</div>;
 
     // Use real points from backend
@@ -181,13 +187,13 @@ export default function ProfilePage() {
                             </span>
                             <span className="text-sm text-neutral-400 relative z-10">Events Attended</span>
                             
-                            <div className="mt-4 pt-4 border-t border-white/5 grid grid-cols-2 gap-2 relative z-10">
+                            <div className="mt-4 pt-4 border-t border-white/5 flex justify-between gap-4 relative z-10">
                                 <div>
-                                    <span className="block text-xs text-neutral-500 uppercase tracking-wider">Attendee</span>
+                                    <span className="block text-xs text-neutral-500 uppercase tracking-wider mb-1">Attendee</span>
                                     <span className="text-lg font-bold text-[#00FF94]"><Counter value={eventsAttended} /></span>
                                 </div>
-                                <div>
-                                    <span className="block text-xs text-neutral-500 uppercase tracking-wider">Volunteer</span>
+                                <div className="text-right">
+                                    <span className="block text-xs text-neutral-500 uppercase tracking-wider mb-1">Volunteer</span>
                                     <span className="text-lg font-bold text-[#00F0FF]"><Counter value={volunteerCount} /></span>
                                 </div>
                             </div>
