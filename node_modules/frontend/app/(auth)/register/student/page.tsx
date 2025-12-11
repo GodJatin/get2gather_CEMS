@@ -181,7 +181,7 @@ export default function StudentRegisterPage() {
     };
 
     return (
-        <div className="min-h-screen flex items-center justify-center bg-neutral-950 p-6">
+        <div className="min-h-screen flex items-center justify-center p-6">
             <Link href="/" className="absolute top-8 left-8 z-50 flex items-center gap-2 group hover:opacity-80 transition-opacity">
                 <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary to-secondary flex items-center justify-center text-xl shadow-lg shadow-primary/20 group-hover:scale-105 transition-transform">
                     🎓
