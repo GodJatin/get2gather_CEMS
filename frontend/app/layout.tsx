@@ -20,6 +20,8 @@ export const viewport: Viewport = {
     userScalable: false,
 };
 
+import ParticleBackground from "@/components/ParticleBackground";
+
 export default function RootLayout({
     children,
 }: Readonly<{
@@ -28,9 +30,12 @@ export default function RootLayout({
     return (
         <html lang="en">
             <body className="antialiased">
+                <ParticleBackground />
                 <ServiceWorkerRegister />
                 <SplashScreen />
-                {children}
+                <div className="relative z-10 w-full min-h-screen">
+                    {children}
+                </div>
                 <Toaster />
             </body>
         </html>
