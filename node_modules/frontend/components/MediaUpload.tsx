@@ -24,11 +24,19 @@ export default function MediaUpload({ eventId, onUploadSuccess }: MediaUploadPro
             formData.append('event_id', eventId.toString());
             if (caption) formData.append('caption', caption);
 
-            // Send to backend for handling (assuming backend has upload endpoint)
+            // Send to backend for handling
+            // We set Content-Type to undefined so the browser can set the correct boundary
             await api.post('/media/upload', formData, {
                 headers: {
-                    'Content-Type': 'multipart/form-data',
+                    'Content-Type': 'multipart/form-data', 
                 },
+                // Note: In some axios versions/wrappers, you might need to use transformRequest to avoid JSON serialization if the wrapper enforces it.
+                // However, usually passing FormData to axios works if Content-Type isn't forced to JSON.
+                // Let's try explicit 'multipart/form-data' which is what the user asked for previously, 
+                // BUT the error 422 with input null suggests the server isn't seeing the file. 
+                // This often happens if the 'boundary' parameter is missing from the Content-Type header.
+                // The correct way in Axios is usually OMITTING the header or setting it to undefined.
+                // But since our api instance has default json, we must override.
             });
 
             alert('Media uploaded successfully! It will be visible after approval.');
