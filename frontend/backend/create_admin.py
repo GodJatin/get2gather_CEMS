@@ -1,6 +1,6 @@
 from database import SessionLocal
 from models import User, UserRole, Student, Organizer
-from security_utils import get_password_hash
+from routers.security_utils import get_password_hash
 
 db = SessionLocal()
 

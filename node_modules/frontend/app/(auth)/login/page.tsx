@@ -53,7 +53,9 @@ export default function LoginPage() {
             }
         } catch (error: any) {
             console.error('Login failed:', error);
-            alert('Login failed: ' + (error.response?.data?.detail || 'Unknown error'));
+            console.error('Login failed:', error);
+            const errorMessage = error.response?.data?.detail || error.message || 'Unknown error';
+            alert('Login failed: ' + errorMessage);
             setIsLoading(false);
         }
     };

@@ -53,29 +53,7 @@ export default function SplashScreen({ onFinish }: { onFinish?: () => void }) {
 
                     {/* Particle Effects (Simple CSS/Framer implementation) */}
                     {[...Array(6)].map((_, i) => (
-                        <motion.div
-                            key={i}
-                            className="absolute rounded-full bg-white/20"
-                            initial={{ 
-                                x: Math.random() * window.innerWidth, 
-                                y: Math.random() * window.innerHeight,
-                                scale: 0
-                            }}
-                            animate={{ 
-                                y: [null, Math.random() * -100],
-                                scale: [0, 1, 0],
-                                opacity: [0, 0.5, 0]
-                            }}
-                            transition={{ 
-                                duration: 2 + Math.random() * 2, 
-                                repeat: Infinity, 
-                                repeatDelay: Math.random() * 2 
-                            }}
-                            style={{
-                                width: Math.random() * 4 + 2 + "px",
-                                height: Math.random() * 4 + 2 + "px",
-                            }}
-                        />
+                        <Particle key={i} />
                     ))}
 
                     {/* Content */}
@@ -139,5 +117,49 @@ export default function SplashScreen({ onFinish }: { onFinish?: () => void }) {
                 </motion.div>
             )}
         </AnimatePresence>
+    );
+}
+
+function Particle() {
+    const [mounted, setMounted] = useState(false);
+    const [uniqueProps, setUniqueProps] = useState({ x: 0, y: 0, size: 0, duration: 2, delay: 0, moveY: -100 });
+
+    useEffect(() => {
+        setMounted(true);
+        setUniqueProps({
+            x: Math.random() * window.innerWidth,
+            y: Math.random() * window.innerHeight,
+            size: Math.random() * 4 + 2,
+            duration: 2 + Math.random() * 2,
+            delay: Math.random() * 2,
+            moveY: Math.random() * -100
+        });
+    }, []);
+
+    if (!mounted) return null;
+
+    return (
+        <motion.div
+            className="absolute rounded-full bg-white/20"
+            initial={{ 
+                x: uniqueProps.x, 
+                y: uniqueProps.y,
+                scale: 0
+            }}
+            animate={{ 
+                y: [null, uniqueProps.moveY],
+                scale: [0, 1, 0],
+                opacity: [0, 0.5, 0]
+            }}
+            transition={{ 
+                duration: uniqueProps.duration, 
+                repeat: Infinity, 
+                repeatDelay: uniqueProps.delay 
+            }}
+            style={{
+                width: uniqueProps.size + "px",
+                height: uniqueProps.size + "px",
+            }}
+        />
     );
 }
