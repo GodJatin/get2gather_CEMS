@@ -91,19 +91,50 @@ async def get_pending_media(current_user: User = Depends(get_current_user), db: 
 
 
 
+from supabase import create_client, Client
+
+# Initialize Supabase (ensure vars are in .env)
+SUPABASE_URL = os.environ.get("SUPABASE_URL")
+SUPABASE_KEY = os.environ.get("SUPABASE_KEY")
+
+# Create client if credentials exist
+supabase: Client = None
+if SUPABASE_URL and SUPABASE_KEY:
+    try:
+        supabase = create_client(SUPABASE_URL, SUPABASE_KEY)
+    except Exception as e:
+        print(f"Failed to init Supabase: {e}")
+
 @router.post("/upload", response_model=dict)
 async def upload_file(file: UploadFile = File(...)):
-    UPLOAD_DIR = "static/uploads"
-    os.makedirs(UPLOAD_DIR, exist_ok=True)
-    
-    # Generate unique filename
-    file_extension = os.path.splitext(file.filename)[1]
-    unique_filename = f"{uuid.uuid4()}{file_extension}"
-    file_path = os.path.join(UPLOAD_DIR, unique_filename)
-    
-    with open(file_path, "wb") as buffer:
-        shutil.copyfileobj(file.file, buffer)
+    # Validate Supabase connection
+    if not supabase:
+        raise HTTPException(status_code=500, detail="Storage configuration missing (Supabase)")
+
+    try:
+        # Read file content
+        file_content = await file.read()
         
-    # Return URL (relative to root, handled by static mount)
-    url = f"/static/uploads/{unique_filename}"
-    return {"url": url}
+        # Generate unique filename
+        file_extension = os.path.splitext(file.filename)[1]
+        unique_filename = f"{uuid.uuid4()}{file_extension}"
+        
+        # Upload to Supabase 'media' bucket
+        # Note: Ensure a public bucket named 'media' exists in your Supabase project
+        bucket_name = "media"
+        
+        # Upload
+        res = supabase.storage.from_(bucket_name).upload(
+            path=unique_filename,
+            file=file_content,
+            file_options={"content-type": file.content_type}
+        )
+        
+        # Get Public URL
+        public_url = supabase.storage.from_(bucket_name).get_public_url(unique_filename)
+        
+        return {"url": public_url}
+        
+    except Exception as e:
+        print(f"Upload failed: {e}")
+        raise HTTPException(status_code=500, detail=f"File upload failed: {str(e)}")

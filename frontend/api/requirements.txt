@@ -16,3 +16,4 @@ bcrypt
 psycopg2-binary
 dnspython
 slowapi
+supabase
