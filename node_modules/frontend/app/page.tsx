@@ -8,7 +8,7 @@ import InteractiveFeatureCard from '@/components/InteractiveFeatureCard';
 
 export default function Home() {
   return (
-    <div className="min-h-screen bg-neutral-950 text-white overflow-hidden">
+    <div className="min-h-screen text-white overflow-hidden relative z-10 w-full">
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 md:pt-0">
         {/* Background Gradients */}

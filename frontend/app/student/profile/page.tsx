@@ -187,13 +187,13 @@ export default function ProfilePage() {
                             </span>
                             <span className="text-sm text-neutral-400 relative z-10">Events Attended</span>
                             
-                            <div className="mt-4 pt-4 border-t border-white/5 flex justify-between gap-4 relative z-10">
-                                <div>
-                                    <span className="block text-xs text-neutral-500 uppercase tracking-wider mb-1">Attendee</span>
+                            <div className="mt-4 pt-4 border-t border-white/5 flex justify-between gap-4 relative z-10 w-full">
+                                <div className="flex flex-col">
+                                    <span className="text-xs text-neutral-500 uppercase tracking-wider mb-1">Attendee</span>
                                     <span className="text-lg font-bold text-[#00FF94]"><Counter value={eventsAttended} /></span>
                                 </div>
-                                <div className="text-right">
-                                    <span className="block text-xs text-neutral-500 uppercase tracking-wider mb-1">Volunteer</span>
+                                <div className="flex flex-col text-right">
+                                    <span className="text-xs text-neutral-500 uppercase tracking-wider mb-1">Volunteer</span>
                                     <span className="text-lg font-bold text-[#00F0FF]"><Counter value={volunteerCount} /></span>
                                 </div>
                             </div>

@@ -19,27 +19,19 @@ export default function MediaUpload({ eventId, onUploadSuccess }: MediaUploadPro
         setUploading(true);
 
         try {
-            // TODO: Replace with actual Cloudinary Upload
-            // For now, we'll simulate an upload and get a dummy URL
-            // const formData = new FormData();
-            // formData.append('file', file);
-            // formData.append('upload_preset', 'your_preset');
-            // const res = await axios.post('https://api.cloudinary.com/v1_1/your_cloud/image/upload', formData);
-            // const url = res.data.secure_url;
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('event_id', eventId.toString());
+            if (caption) formData.append('caption', caption);
 
-            // Mock URL for demonstration
-            await new Promise(resolve => setTimeout(resolve, 1500)); // Simulate network delay
-            const mockUrl = `https://picsum.photos/seed/${Date.now()}/800/600`;
-
-            // Save to Backend
-            await api.post('/media/', {
-                event_id: eventId,
-                url: mockUrl,
-                type: 'image',
-                caption: caption
+            // Send to backend for handling (assuming backend has upload endpoint)
+            await api.post('/media/upload', formData, {
+                headers: {
+                    'Content-Type': 'multipart/form-data',
+                },
             });
 
-            alert('Media uploaded! It will be visible after organizer approval.');
+            alert('Media uploaded successfully! It will be visible after approval.');
             setCaption('');
             onUploadSuccess();
         } catch (error) {

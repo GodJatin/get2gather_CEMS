@@ -64,7 +64,7 @@ export default function NotificationsPage() {
         }
     };
 
-    const unreadCount = notifications.filter(n => !n.is_read).length;
+    const unreadCount = Array.isArray(notifications) ? notifications.filter(n => !n.is_read).length : 0;
 
     return (
         <MotionWrapper className="max-w-2xl mx-auto pb-20 pt-6">
