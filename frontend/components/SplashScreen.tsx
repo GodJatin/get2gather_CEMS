@@ -10,7 +10,7 @@ export default function SplashScreen({ onFinish }: { onFinish?: () => void }) {
         const timer = setTimeout(() => {
             setIsVisible(false);
             if (onFinish) onFinish();
-        }, 3000); // Show for 3 seconds
+        }, 3500); // Show for 3.5 seconds
 
         return () => clearTimeout(timer);
     }, [onFinish]);
@@ -19,64 +19,122 @@ export default function SplashScreen({ onFinish }: { onFinish?: () => void }) {
         <AnimatePresence>
             {isVisible && (
                 <motion.div
-                    className="fixed inset-0 z-50 flex items-center justify-center bg-black overflow-hidden"
+                    className="fixed inset-0 z-50 flex items-center justify-center bg-neutral-950 overflow-hidden"
                     initial={{ opacity: 1 }}
-                    exit={{ opacity: 0, transition: { duration: 0.8, ease: "easeInOut" } }}
+                    exit={{ opacity: 0, scale: 1.1, filter: "blur(10px)", transition: { duration: 0.8, ease: "easeInOut" } }}
                 >
-                    {/* Background Effects */}
-                    <div className="absolute inset-0 opacity-20">
-                        <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-purple-600 rounded-full blur-[120px] animate-pulse" />
-                        <div className="absolute top-1/4 left-1/4 w-[300px] h-[300px] bg-blue-500 rounded-full blur-[100px]" />
-                        <div className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-teal-500 rounded-full blur-[100px]" />
+                    {/* Dynamic Background Effects */}
+                    <div className="absolute inset-0 opacity-30">
+                        <motion.div 
+                            animate={{ 
+                                scale: [1, 1.2, 1],
+                                opacity: [0.3, 0.6, 0.3],
+                            }}
+                            transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
+                            className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] bg-primary rounded-full blur-[150px]" 
+                        />
+                        <motion.div 
+                            animate={{ 
+                                x: [-50, 50, -50],
+                                y: [-50, 50, -50],
+                            }}
+                            transition={{ duration: 7, repeat: Infinity, ease: "easeInOut" }}
+                            className="absolute top-1/4 left-1/4 w-[300px] h-[300px] bg-blue-600 rounded-full blur-[120px]" 
+                        />
+                        <motion.div 
+                            animate={{ 
+                                x: [50, -50, 50],
+                                y: [50, -50, 50],
+                            }}
+                            transition={{ duration: 6, repeat: Infinity, ease: "easeInOut" }}
+                            className="absolute bottom-1/4 right-1/4 w-[400px] h-[400px] bg-purple-600 rounded-full blur-[120px]" 
+                        />
                     </div>
+
+                    {/* Particle Effects (Simple CSS/Framer implementation) */}
+                    {[...Array(6)].map((_, i) => (
+                        <motion.div
+                            key={i}
+                            className="absolute rounded-full bg-white/20"
+                            initial={{ 
+                                x: Math.random() * window.innerWidth, 
+                                y: Math.random() * window.innerHeight,
+                                scale: 0
+                            }}
+                            animate={{ 
+                                y: [null, Math.random() * -100],
+                                scale: [0, 1, 0],
+                                opacity: [0, 0.5, 0]
+                            }}
+                            transition={{ 
+                                duration: 2 + Math.random() * 2, 
+                                repeat: Infinity, 
+                                repeatDelay: Math.random() * 2 
+                            }}
+                            style={{
+                                width: Math.random() * 4 + 2 + "px",
+                                height: Math.random() * 4 + 2 + "px",
+                            }}
+                        />
+                    ))}
 
                     {/* Content */}
                     <div className="relative z-10 flex flex-col items-center">
-                        <motion.div
-                            initial={{ scale: 0.5, opacity: 0 }}
-                            animate={{ scale: 1, opacity: 1 }}
-                            transition={{ duration: 1, type: "spring" }}
-                            className="mb-8"
-                        >
-                             {/* Placeholder for Logo if not using image, or use the image */}
-                             <motion.img 
-                                src="/logo.png" 
-                                alt="Get2Gather" 
-                                className="w-32 h-32 object-contain drop-shadow-[0_0_15px_rgba(255,255,255,0.3)]"
-                                animate={{ 
-                                    y: [0, -20, 0],
-                                    rotate: [0, 5, -5, 0]
-                                }}
-                                transition={{ 
-                                    duration: 4, 
-                                    repeat: Infinity, 
-                                    ease: "easeInOut" 
-                                }}
-                             />
-                        </motion.div>
-
-                        <motion.div
-                            initial={{ width: 0 }}
-                            animate={{ width: "200px" }}
-                            transition={{ duration: 1.5, delay: 0.5, ease: "easeInOut" }}
-                            className="h-1 bg-white/20 rounded-full overflow-hidden"
-                        >
-                            <motion.div 
-                                className="h-full bg-gradient-to-r from-purple-500 via-blue-500 to-teal-400"
-                                initial={{ x: "-100%" }}
-                                animate={{ x: "0%" }}
-                                transition={{ duration: 1.5, delay: 0.5, ease: "easeInOut" }}
+                        <div className="relative">
+                            <motion.div
+                                initial={{ scale: 0, rotate: -180, opacity: 0 }}
+                                animate={{ scale: 1, rotate: 0, opacity: 1 }}
+                                transition={{ duration: 1.2, type: "spring", bounce: 0.5 }}
+                                className="mb-8 relative z-10"
+                            >
+                                <img 
+                                    src="/logo.png" 
+                                    alt="Get2Gather" 
+                                    className="w-40 h-40 object-contain drop-shadow-[0_0_25px_rgba(255,255,255,0.4)]"
+                                />
+                            </motion.div>
+                            
+                            {/* Orbital Ring */}
+                            <motion.div
+                                initial={{ opacity: 0, scale: 0.5 }}
+                                animate={{ opacity: 1, scale: 1, rotate: 360 }}
+                                transition={{ duration: 8, repeat: Infinity, ease: "linear", delay: 0.5 }}
+                                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-48 h-48 border border-white/10 rounded-full border-t-primary border-r-transparent"
                             />
-                        </motion.div>
+                             <motion.div
+                                initial={{ opacity: 0, scale: 0.5 }}
+                                animate={{ opacity: 1, scale: 1, rotate: -360 }}
+                                transition={{ duration: 10, repeat: Infinity, ease: "linear", delay: 0.5 }}
+                                className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-56 h-56 border border-white/5 rounded-full border-b-secondary border-l-transparent"
+                            />
+                        </div>
 
-                        <motion.h1 
-                            className="mt-6 text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-br from-white to-white/50 tracking-widest"
-                            initial={{ opacity: 0, y: 20 }}
-                            animate={{ opacity: 1, y: 0 }}
-                            transition={{ delay: 0.8 }}
-                        >
-                            GET2GATHER
-                        </motion.h1>
+                        <div className="flex flex-col items-center gap-2">
+                            <motion.h1 
+                                className="text-4xl md:text-5xl font-bold text-white tracking-[0.2em]"
+                                initial={{ opacity: 0, y: 20, letterSpacing: "0.5em" }}
+                                animate={{ opacity: 1, y: 0, letterSpacing: "0.2em" }}
+                                transition={{ duration: 1, delay: 0.5 }}
+                            >
+                                GET2GATHER
+                            </motion.h1>
+                            
+                            <motion.div 
+                                className="h-1 w-24 bg-gradient-to-r from-transparent via-primary to-transparent rounded-full"
+                                initial={{ width: 0, opacity: 0 }}
+                                animate={{ width: 96, opacity: 1 }}
+                                transition={{ duration: 1, delay: 1 }}
+                            />
+                            
+                            <motion.p
+                                className="text-neutral-400 text-sm tracking-widest uppercase mt-2"
+                                initial={{ opacity: 0 }}
+                                animate={{ opacity: 1 }}
+                                transition={{ delay: 1.2 }}
+                            >
+                                Campus Events Reimagined
+                            </motion.p>
+                        </div>
                     </div>
                 </motion.div>
             )}

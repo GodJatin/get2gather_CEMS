@@ -67,7 +67,7 @@ export default function Privacy() {
                 If you have questions or comments about this Privacy Policy, please contact us at:
             </p>
             <p className="text-white">
-                <strong>Email:</strong> support@get2gather.com<br />
+                <strong>Email:</strong> get2gather.cems@gmail.com<br />
                 <strong>Address:</strong> Parul University Campus, Vadodara, Gujarat
             </p>
           </div>

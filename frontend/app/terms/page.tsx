@@ -59,7 +59,7 @@ export default function Terms() {
             
             <h2 className="text-2xl font-bold text-white mb-4">7. Contact Us</h2>
              <p className="text-white">
-                If you have questions regarding these terms, please contact us at support@get2gather.com
+                If you have questions regarding these terms, please contact us at get2gather.cems@gmail.com
             </p>
           </div>
         </div>

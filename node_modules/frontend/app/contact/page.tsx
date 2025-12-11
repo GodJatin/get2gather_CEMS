@@ -39,7 +39,7 @@ export default function Contact() {
                 btn.disabled = true;
                 
                 setTimeout(() => {
-                    window.location.href = `mailto:224jatin2006@gmail.com?subject=Contact from ${name}&body=${message}%0D%0A%0D%0AFrom: ${email}`;
+                    window.location.href = `mailto:get2gather.cems@gmail.com?subject=Contact from ${name}&body=${message}%0D%0A%0D%0AFrom: ${email}`;
                     btn.innerText = 'Sent! Opening Mail...';
                     setTimeout(() => {
                         btn.innerText = originalText;
