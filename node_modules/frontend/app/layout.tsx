@@ -4,6 +4,7 @@ import "./globals.css";
 import React from 'react';
 import { Toaster } from "@/components/ui/sonner";
 import ServiceWorkerRegister from "@/components/ServiceWorkerRegister";
+import SplashScreen from "@/components/SplashScreen";
 
 export const metadata: Metadata = {
     title: "Get2Gather",
@@ -28,6 +29,7 @@ export default function RootLayout({
         <html lang="en">
             <body className="antialiased">
                 <ServiceWorkerRegister />
+                <SplashScreen />
                 {children}
                 <Toaster />
             </body>

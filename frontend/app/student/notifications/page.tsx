@@ -5,55 +5,66 @@ import BackButton from '@/components/BackButton';
 import { Bell, Calendar, Star, Info } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
+import api from '@/lib/api';
+import { toast } from 'sonner';
 
-// Mock Data
-const MOCK_NOTIFICATIONS = [
-    {
-        id: 1,
-        title: "Hackathon Date Changed",
-        message: "The 'CodeWar 2024' hackathon has been rescheduled to next Saturday due to maintenance.",
-        type: "alert", // alert, info, success
-        date: "2024-10-25T10:00:00",
-        read: false
-    },
-    {
-        id: 2,
-        title: "New Event: AI Workshop",
-        message: "Join us for an exclusive workshop on Generative AI. Seats are filling fast!",
-        type: "success",
-        date: "2024-10-24T14:30:00",
-        read: false
-    },
-    {
-        id: 3,
-        title: "Point Balance Updated",
-        message: "You received 50 points for attending 'Campus Clean Drive'.",
-        type: "info",
-        date: "2024-10-23T09:15:00",
-        read: true
-    },
-    {
-        id: 4,
-        title: "Volunteer Application Approved",
-        message: "Your application to volunteer for 'Tech Fest' has been approved. Check your dashboard.",
-        type: "success",
-        date: "2024-10-22T16:45:00",
-        read: true
-    }
-];
+interface Notification {
+    id: number;
+    title: string;
+    message: string;
+    type: string;
+    created_at: string;
+    is_read: boolean;
+    data?: any;
+}
 
 export default function NotificationsPage() {
-    const [notifications, setNotifications] = useState(MOCK_NOTIFICATIONS);
+    const [notifications, setNotifications] = useState<Notification[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
 
-    const markAsRead = (id: number) => {
-        setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+    const fetchNotifications = async () => {
+        try {
+            setIsLoading(true);
+            const res = await api.get('/notifications/');
+            setNotifications(res.data);
+        } catch (error) {
+            console.error("Failed to fetch notifications", error);
+            // toast.error("Failed to load notifications"); // Optional: don't spam user on load
+        } finally {
+            setIsLoading(false);
+        }
     };
 
-    const markAllAsRead = () => {
-        setNotifications(prev => prev.map(n => ({ ...n, read: true })));
+    useEffect(() => {
+        fetchNotifications();
+    }, []);
+
+    const markAsRead = async (id: number) => {
+        // Optimistic update
+        setNotifications(prev => prev.map(n => n.id === id ? { ...n, is_read: true } : n));
+        try {
+            await api.put(`/notifications/${id}/read`);
+        } catch (error) {
+            console.error("Failed to mark read", error);
+            toast.error("Failed to update notification");
+            // Revert on failure? Not strictly necessary for read status
+        }
     };
 
-    const unreadCount = notifications.filter(n => !n.read).length;
+    const markAllAsRead = async () => {
+        const original = [...notifications];
+        setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+        try {
+            await api.put('/notifications/read-all');
+            toast.success("All notifications marked as read");
+        } catch (error) {
+            console.error("Failed to mark all read", error);
+            toast.error("Failed to mark all as read");
+            setNotifications(original);
+        }
+    };
+
+    const unreadCount = notifications.filter(n => !n.is_read).length;
 
     return (
         <MotionWrapper className="max-w-2xl mx-auto pb-20 pt-6">
@@ -83,18 +94,23 @@ export default function NotificationsPage() {
             </div>
 
             <StaggerContainer className="space-y-4">
-                {notifications.length > 0 ? (
+                {isLoading ? (
+                    // Skeleton Loading
+                    Array(3).fill(0).map((_, i) => (
+                         <div key={i} className="h-24 bg-neutral-900/50 rounded-2xl animate-pulse" />
+                    ))
+                ) : notifications.length > 0 ? (
                     notifications.map((notif) => (
                         <StaggerItem 
                             key={notif.id}
                             className={`p-4 rounded-2xl border transition-all relative overflow-hidden group ${
-                                notif.read 
+                                notif.is_read 
                                     ? 'bg-neutral-900/50 border-white/5 opacity-70' 
                                     : 'bg-neutral-800/80 border-blue-500/30 shadow-lg shadow-blue-500/5'
                             }`}
-                            onClick={() => markAsRead(notif.id)}
+                            onClick={() => !notif.is_read && markAsRead(notif.id)}
                         >
-                            {!notif.read && (
+                            {!notif.is_read && (
                                 <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
                             )}
                             
@@ -109,14 +125,14 @@ export default function NotificationsPage() {
                                      <Calendar size={24} />}
                                 </div>
                                 <div>
-                                    <h3 className={`font-bold mb-1 ${notif.read ? 'text-neutral-300' : 'text-white'}`}>
+                                    <h3 className={`font-bold mb-1 ${notif.is_read ? 'text-neutral-300' : 'text-white'}`}>
                                         {notif.title}
                                     </h3>
                                     <p className="text-sm text-neutral-400 mb-2 leading-relaxed">
                                         {notif.message}
                                     </p>
                                     <p className="text-xs text-neutral-600">
-                                        {new Date(notif.date).toLocaleString()}
+                                        {new Date(notif.created_at).toLocaleString()}
                                     </p>
                                 </div>
                             </div>

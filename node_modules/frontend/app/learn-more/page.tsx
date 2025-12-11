@@ -16,7 +16,13 @@ export default function LearnMore() {
       
       {/* Hero Section */}
       <section className="relative pt-32 pb-20 overflow-hidden min-h-[80vh] flex items-center justify-center">
-        <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
+        {/* Animated Grid Background */}
+        <div className="absolute inset-0 bg-neutral-950 z-0">
+             <div className="absolute inset-0 bg-[linear-gradient(to_right,#80808012_1px,transparent_1px),linear-gradient(to_bottom,#80808012_1px,transparent_1px)] bg-[size:24px_24px]"></div>
+             <div className="absolute inset-0 bg-gradient-to-t from-neutral-950 via-transparent to-neutral-950"></div>
+        </div>
+
+        <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0 pointing-events-none">
           <motion.div 
             animate={{ y: [0, -20, 0], opacity: [0.5, 0.8, 0.5] }}
             transition={{ duration: 5, repeat: Infinity, ease: "easeInOut" }}
@@ -30,13 +36,13 @@ export default function LearnMore() {
         </div>
 
         <div className="max-w-7xl mx-auto px-6 relative z-10 text-center flex flex-col items-center">
-          <div className="mb-8">
+          <div className="mb-8 p-4 bg-white/5 backdrop-blur-sm rounded-2xl border border-white/10 shadow-2xl">
             <AnimatedTitle />
           </div>
           
           <TextReveal 
-            text="Get2Gather isn't just a ticketing platform. It's a complete ecosystem designed to supercharge campus life, from seamless check-ins to gamified engagement."
-            className="text-xl text-neutral-400 max-w-2xl mx-auto mb-12 leading-relaxed justify-center"
+            text="Get2Gather transforms the campus experience by integrating events, community, and gamification into a single, unified platform."
+            className="text-2xl text-white max-w-3xl mx-auto mb-12 leading-relaxed justify-center font-medium"
             delay={0.5}
           />
         </div>
@@ -244,7 +250,7 @@ export default function LearnMore() {
           <div className="flex justify-center gap-6">
             <MagneticButton>
               <a 
-                href="mailto:224jatin2006@gmail.com?subject=Inquiry%20from%20Get2Gather%20Website" 
+                href="mailto:get2gather.cems@gmail.com?subject=Inquiry%20from%20Get2Gather%20Website" 
                 className="inline-flex items-center gap-3 px-10 py-5 rounded-full bg-white text-black font-bold text-xl hover:scale-105 transition-transform shadow-[0_0_30px_rgba(255,255,255,0.3)]"
               >
                 <span>✉️</span> Contact Us

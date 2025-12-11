@@ -15,7 +15,7 @@ const getMediaUrl = (path: string | null | undefined) => {
 import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';
 import { motion, AnimatePresence } from 'framer-motion';
 import Loader from '@/components/Loader';
-import { Plus, X, Image as ImageIcon, Calendar, UserPlus, MessageCircle, Heart, Share2, MoreHorizontal } from 'lucide-react';
+import { Plus, X, Image as ImageIcon, Calendar, UserPlus, MessageCircle, Heart, Share2, MoreHorizontal, ArrowLeft, ArrowRight } from 'lucide-react';
 
 // Utility for real-time dates
 const formatTimeAgo = (dateString: string) => {
@@ -86,6 +86,37 @@ export default function FeedPage() {
     
     // Image Preview State (Lightbox)
     const [selectedImage, setSelectedImage] = useState<string | null>(null);
+    const [currentLightboxImages, setCurrentLightboxImages] = useState<string[]>([]);
+
+    const openLightbox = (url: string, allUrls: string[]) => {
+        setSelectedImage(getMediaUrl(url));
+        setCurrentLightboxImages(allUrls);
+    };
+
+    const navigateLightbox = (direction: number) => {
+        if (!selectedImage || currentLightboxImages.length === 0) return;
+        
+        // Find current index based on resolved URL
+        const currentIndex = currentLightboxImages.findIndex(url => getMediaUrl(url) === selectedImage);
+        if (currentIndex === -1) return;
+
+        let newIndex = currentIndex + direction;
+        if (newIndex >= currentLightboxImages.length) newIndex = 0;
+        if (newIndex < 0) newIndex = currentLightboxImages.length - 1;
+
+        setSelectedImage(getMediaUrl(currentLightboxImages[newIndex]));
+    };
+
+    useEffect(() => {
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (!selectedImage) return;
+            if (e.key === 'ArrowRight') navigateLightbox(1);
+            if (e.key === 'ArrowLeft') navigateLightbox(-1);
+            if (e.key === 'Escape') setSelectedImage(null);
+        };
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [selectedImage, currentLightboxImages]);
 
     const fetchPosts = async () => {
         try {
@@ -138,9 +169,8 @@ export default function FeedPage() {
         setUploading(true);
         try {
             // Updated endpoint to match backend prefix
-            const res = await api.post('/media/upload', formData, {
-                headers: { 'Content-Type': 'multipart/form-data' }
-            });
+            // Updated endpoint to match backend prefix
+            const res = await api.post('/media/upload', formData);
             setMediaUrls(prev => [...prev, res.data.url]);
         } catch (err) {
             console.error("Upload failed", err);
@@ -401,7 +431,7 @@ export default function FeedPage() {
                         {post.media_urls && post.media_urls.length > 0 && (
                             <div className="flex overflow-x-auto gap-2 mb-4 snap-x snap-mandatory scrollbar-thin scrollbar-thumb-white/20 scrollbar-track-transparent pb-2">
                                 {post.media_urls.map((url, i) => (
-                                    <div key={i} className="flex-shrink-0 w-full sm:w-[90%] md:w-[80%] aspect-video relative snap-center rounded-xl overflow-hidden cursor-pointer" onClick={() => setSelectedImage(getMediaUrl(url))}>
+                                    <div key={i} className="flex-shrink-0 w-full sm:w-[90%] md:w-[80%] aspect-video relative snap-center rounded-xl overflow-hidden cursor-pointer" onClick={() => openLightbox(url, post.media_urls)}>
                                          <img src={getMediaUrl(url)} alt="Post Media" className="w-full h-full object-cover hover:scale-105 transition-transform duration-500" />
                                     </div>
                                 ))}
@@ -618,22 +648,73 @@ export default function FeedPage() {
                         initial={{ opacity: 0 }}
                         animate={{ opacity: 1 }}
                         exit={{ opacity: 0 }}
+                        className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4"
                         onClick={() => setSelectedImage(null)}
-                        className="fixed inset-0 z-[100] bg-black/95 flex items-center justify-center p-4 cursor-zoom-out"
                     >
-                        <motion.button 
-                            className="absolute top-4 right-4 text-white p-2 rounded-full hover:bg-white/20"
+                        <button 
+                            className="absolute top-4 right-4 text-white p-2 rounded-full hover:bg-white/20 z-10"
                             onClick={() => setSelectedImage(null)}
                         >
                             <X className="w-8 h-8" />
-                        </motion.button>
-                        <motion.img 
-                            initial={{ scale: 0.9 }}
-                            animate={{ scale: 1 }}
-                            src={selectedImage} 
-                            alt="Full View" 
-                            className="max-w-full max-h-full object-contain rounded-lg shadow-2xl"
-                        />
+                        </button>
+
+                        <div 
+                            className="relative w-full max-w-5xl flex items-center justify-center" 
+                            onClick={(e) => e.stopPropagation()}
+                        >
+                            {/* Previous Button */}
+                            {currentLightboxImages.length > 1 && (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigateLightbox(-1);
+                                    }}
+                                    className="absolute left-2 md:-left-12 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+                                >
+                                    <ArrowLeft className="w-8 h-8" />
+                                </button>
+                            )}
+
+                            <motion.img 
+                                key={selectedImage}
+                                initial={{ opacity: 0, x: 20 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                src={selectedImage} 
+                                alt="Full View" 
+                                className="max-w-full max-h-[90vh] object-contain rounded-lg shadow-2xl"
+                            />
+
+                            {/* Next Button */}
+                            {currentLightboxImages.length > 1 && (
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation();
+                                        navigateLightbox(1);
+                                    }}
+                                    className="absolute right-2 md:-right-12 p-2 rounded-full bg-white/10 hover:bg-white/20 text-white transition-colors"
+                                >
+                                    <ArrowRight className="w-8 h-8" />
+                                </button>
+                            )}
+                        </div>
+                        
+                        {/* Thumbnails / Indicators */}
+                        {currentLightboxImages.length > 1 && (
+                            <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2">
+                                {currentLightboxImages.map((url, i) => (
+                                    <button
+                                        key={i}
+                                        onClick={(e) => {
+                                            e.stopPropagation();
+                                            setSelectedImage(getMediaUrl(url));
+                                        }}
+                                        className={`w-2 h-2 rounded-full transition-all ${
+                                            getMediaUrl(url) === selectedImage ? 'bg-white w-4' : 'bg-white/30 hover:bg-white/50'
+                                        }`}
+                                    />
+                                ))}
+                            </div>
+                        )}
                     </motion.div>
                 )}
             </AnimatePresence>

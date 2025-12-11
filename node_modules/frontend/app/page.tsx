@@ -12,9 +12,15 @@ export default function Home() {
       {/* Hero Section */}
       <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20 md:pt-0">
         {/* Background Gradients */}
+        {/* Background Gradients */}
         <div className="absolute top-0 left-0 w-full h-full overflow-hidden z-0">
-          <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-secondary/20 rounded-full blur-[120px]" />
-          <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-primary/20 rounded-full blur-[120px]" />
+          <div className="absolute top-0 left-0 w-full h-full bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-neutral-900 via-neutral-950 to-neutral-950" />
+           {/* Aurora-like effects */}
+          <div className="absolute top-[-10%] left-[20%] w-[60%] h-[60%] bg-secondary/10 rounded-full blur-[100px] animate-pulse" />
+          <div className="absolute bottom-[-10%] right-[20%] w-[60%] h-[60%] bg-primary/10 rounded-full blur-[100px] animate-pulse delay-700" />
+          
+          <div className="absolute top-[20%] left-[-10%] w-[40%] h-[40%] bg-purple-500/10 rounded-full blur-[120px] mix-blend-screen" />
+          <div className="absolute bottom-[20%] right-[-10%] w-[40%] h-[40%] bg-blue-500/10 rounded-full blur-[120px] mix-blend-screen" />
         </div>
 
         <MotionWrapper className="relative z-10 text-center px-4 max-w-4xl mx-auto flex flex-col items-center">

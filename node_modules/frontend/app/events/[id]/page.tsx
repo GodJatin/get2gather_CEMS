@@ -552,7 +552,7 @@ export default function EventDetailsPage() {
                             <h3 className="text-sm font-bold text-neutral-400 mb-4 uppercase tracking-wider">Share Event</h3>
                             <div className="grid grid-cols-2 gap-3">
                                 <button
-                                    onClick={() => window.open(`https://wa.me/?text=Check out this event: ${event.title} at ${event.venue} on ${event.date}!`, '_blank')}
+                                    onClick={() => window.open(`https://wa.me/?text=Check out this event: ${event.title} at ${event.venue} on ${event.date}! ${window.location.href}`, '_blank')}
                                     className="flex items-center justify-center gap-2 py-3 rounded-xl bg-[#25D366]/20 text-[#25D366] hover:bg-[#25D366]/30 transition-colors font-bold"
                                 >
                                     <span>WhatsApp</span>

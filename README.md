@@ -1,160 +1,86 @@
-# Get2Gather - College Event Management System
+# Get2Gather - Campus Event Management System
 
-A modern, full-stack event management platform for college events with separate portals for students, organizers, and administrators.
+**Get2Gather** is a comprehensive campus event management platform designed to bridge the gap between students and event organizers. It streamlines event discovery, registration, and management, fostering a vibrant campus community.
 
 ## 🚀 Features
 
-### Student Portal
-- ✅ 4-step registration with email OTP verification
-- ✅ Browse and search college events
-- ✅ Book event tickets
-- ✅ View booking history
-- ✅ Manage profile
+*   **Student Portal**:
+    *   **Feed**: Real-time social feed to see what's happening, share moments, and tag friends/events.
+    *   **Dashboard**: Personalized view of upcoming events, stats, and recommendations.
+    *   **Events**: Browse and search for events (Workshops, Seminars, Socials).
+    *   **Calendar**: Visual schedule of your registered events.
+    *   **Leaderboard**: Gamified engagement with points and rankings.
+    *   **Profile**: Manage your identity and viewing history.
 
-### Organizer Portal
-- ✅ 3-phase registration with invite code validation
-- ✅ Email OTP verification
-- ✅ Create and manage events
-- ✅ Upload event media (Cloudinary integration)
-- ✅ Track bookings and attendees
-- ✅ Event approvals workflow
+*   **Organizer Portal**:
+    *   **Dashboard**: Analytics and overview of event performance.
+    *   **Create Event**: Powerful visual editor to launch events with images, ticketing (Free/Paid), and schedules.
+    *   **Manage Events**: Track registrations, verify attendees with QR Scanning (simulated), and manage volunteers.
+    *   **Analytics**: Insights into attendee demographics and engagement.
 
-### Admin Portal
-- ✅ Approve/reject organizer registrations
-- ✅ Approve/reject events
-- ✅ Manage all users
-- ✅ System analytics
+*   **PWA (Progressive Web App)**: Installable on mobile devices for a native-like experience.
+*   **Authentication**: Secure Role-Based Access Control (RBAC) for Students, Organizers, and Admins.
+*   **Security**: Rate limiting (Backend), Secure Headers, and optimized API structure.
 
 ## 🛠️ Tech Stack
 
-### Backend
-- **FastAPI** - Modern Python web framework
-- **PostgreSQL** - Database with AsyncPG
-- **SQLAlchemy** - ORM with async support
-- **Resend** - Email service for OTP delivery
-- **Python-JOSE** - JWT authentication
-- **Passlib** - Password hashing with bcrypt
+**Frontend**:
+*   **Framework**: Next.js 16 (App Router)
+*   **Language**: TypeScript
+*   **Styling**: Tailwind CSS v4, Framer Motion (Animations)
+*   **Components**: Lucide React (Icons), Sonner (Toasts)
+*   **State**: React Hooks
 
-### Frontend
-- **Next.js 14** - React framework with App Router
-- **TypeScript** - Type-safe JavaScript
-- **Tailwind CSS** - Utility-first styling
-- **Framer Motion** - Smooth animations
-- **Axios** - HTTP client
+**Backend**:
+*   **Framework**: FastAPI (Python)
+*   **Database**: SQLite (SQLAlchemy ORM)
+*   **Security**: OAuth2 with JWT, Passlib (Argon2)
+*   **Rate Limiting**: Custom Middleware (Serverless Compatible)
 
-## 📦 Installation
+## 🏃‍♂️ How to Run
 
 ### Prerequisites
-- Python 3.8+
-- Node.js 18+
-- PostgreSQL 14+
+*   Node.js (v18+)
+*   Python (v3.9+)
 
-### Backend Setup
+### 1. Backend Setup
+The backend is located in `frontend/backend`.
 
-1. Navigate to backend directory:
 ```bash
-cd backend
-```
-
-2. Create virtual environment:
-```bash
+cd frontend/backend
+# Create virtual environment
 python -m venv venv
-.\venv\Scripts\activate  # Windows
-source venv/bin/activate  # Linux/Mac
-```
+# Activate (Windows)
+venv\Scripts\activate
+# Activate (Mac/Linux)
+source venv/bin/activate
 
-3. Install dependencies:
-```bash
+# Install dependencies
 pip install -r requirements.txt
-```
 
-4. Create `.env` file:
-```env
-DATABASE_URL=postgresql+asyncpg://postgres:password@localhost/get2gather
-SECRET_KEY=your-secret-key-here
-ALGORITHM=HS256
-ACCESS_TOKEN_EXPIRE_MINUTES=30
-RESEND_API_KEY=your-resend-api-key-here
-```
-
-5. Run the server:
-```bash
+# Run Server
 uvicorn main:app --reload
 ```
+*Backend runs on `http://localhost:8000`*
 
-### Frontend Setup
+### 2. Frontend Setup
+The frontend is in the `frontend` directory.
 
-1. Navigate to frontend directory:
 ```bash
 cd frontend
-```
-
-2. Install dependencies:
-```bash
+# Install dependencies
 npm install
-```
 
-3. Run development server:
-```bash
+# Run Development Server
 npm run dev
 ```
+*Frontend runs on `http://localhost:3000`*
 
-4. Open [http://localhost:3000](http://localhost:3000)
+## 📱 Mobile & PWA
+*   The app is fully responsive.
+*   **Install App**: On Android (Chrome), tap "Add to Home Screen". On iOS (Safari), tap "Share" > "Add to Home Screen".
+*   *Note*: PWA installation requires HTTPS. On Vercel Preview deployments, the install prompt may be blocked by Authentication Protection. Use the Production URL for the best experience.
 
-## 🔐 Environment Variables
+## 👥 Contributors
+*   **GodJatin** - Lead Developer
 
-### Backend (.env)
-- `DATABASE_URL` - PostgreSQL connection string
-- `SECRET_KEY` - JWT secret key
-- `RESEND_API_KEY` - Email service API key
-
-### Frontend (.env.local)
-- `NEXT_PUBLIC_API_URL` - Backend API URL (default: http://localhost:8000)
-
-## 📧 Email Configuration
-
-This project uses [Resend](https://resend.com) for sending OTP emails:
-
-1. Sign up at resend.com (free tier: 3,000 emails/month)
-2. Get your API key
-3. Add to backend `.env` file
-4. Emails will be sent from `onboarding@resend.dev` (test domain)
-
-## 👥 User Roles
-
-1. **Student** - Register with college email (@paruluniversity.ac.in)
-2. **Organizer** - Requires invite code from admin
-3. **Admin** - Default credentials (create using `create_admin.py`)
-
-## 📝 Database Schema
-
-- `users` - Authentication and role management
-- `students` - Student profiles
-- `organizers` - Organizer profiles and organizations
-- `events` - Event listings
-- `bookings` - Student event bookings
-- `media` - Event media files
-- `organizer_invites` - Pre-approved organizer invites
-- `registration_attempts` - Temporary OTP storage
-
-## 🧪 Testing
-
-Run backend tests:
-```bash
-cd backend
-pytest
-```
-
-## 📄 License
-
-MIT License - feel free to use this project for learning or personal use.
-
-## 👨‍💻 Author
-
-Created by GodJatin
-
-## 🙏 Acknowledgments
-
-- Parul University for inspiration
-- Resend for email service
-- Cloudinary for media storage

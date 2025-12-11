@@ -2,6 +2,7 @@
 
 
 import { useState } from 'react';
+import { Eye, EyeOff } from 'lucide-react';
 import Link from 'next/link';
 import BackButton from '@/components/BackButton';
 import Image from 'next/image';
@@ -127,19 +128,21 @@ export default function LoginPage() {
 
                         <div className="relative">
                             <label className="block text-sm font-medium text-neutral-300 mb-2">Password</label>
-                            <input
-                                name="password"
-                                type={showPassword ? "text" : "password"}
-                                placeholder="••••••••"
-                                className="w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white placeholder:text-neutral-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all pr-12"
-                            />
-                            <button
-                                type="button"
-                                onClick={() => setShowPassword(!showPassword)}
-                                className="absolute right-4 top-[38px] text-neutral-500 hover:text-white transition-colors"
-                            >
-                                {showPassword ? '👁️' : '🙈'}
-                            </button>
+                            <div className="relative">
+                                <input
+                                    name="password"
+                                    type={showPassword ? "text" : "password"}
+                                    placeholder="••••••••"
+                                    className="w-full px-4 py-3 rounded-xl bg-neutral-800/50 border border-white/10 text-white placeholder:text-neutral-600 focus:outline-none focus:border-primary/50 focus:ring-1 focus:ring-primary/50 transition-all pr-12"
+                                />
+                                <button
+                                    type="button"
+                                    onClick={() => setShowPassword(!showPassword)}
+                                    className="absolute right-4 top-1/2 -translate-y-1/2 text-neutral-500 hover:text-white transition-colors p-1"
+                                >
+                                    {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
+                                </button>
+                            </div>
                         </div>
 
                         <motion.button

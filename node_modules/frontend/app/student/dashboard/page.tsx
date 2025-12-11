@@ -31,6 +31,9 @@ interface StudentStats {
     total_volunteer: number;
 }
 
+import Loader from '@/components/Loader';
+import { Bell } from 'lucide-react';
+
 export default function StudentDashboard() {
     const [bookings, setBookings] = useState<Booking[]>([]);
     const [user, setUser] = useState<UserProfile | null>(null);
@@ -65,11 +68,18 @@ export default function StudentDashboard() {
         return 'Good Evening';
     };
 
+    if (loading) return (
+        <div className="min-h-[80vh] flex flex-col items-center justify-center gap-4">
+            <Loader />
+            <p className="text-neutral-500 animate-pulse">Loading dashboard...</p>
+        </div>
+    );
+
     return (
         <MotionWrapper className="max-w-7xl mx-auto">
             {/* Hero Section */}
             <header className="mb-8 relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary/20 to-secondary/20 border border-white/10 p-8 md:p-12 group">
-                <div className="relative z-10">
+                <div className="relative z-10 flex justify-between items-start">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -84,6 +94,17 @@ export default function StudentDashboard() {
                             delay={0.2}
                         />
                     </motion.div>
+
+                    <Link 
+                        href="/student/notifications"
+                        className="p-3 rounded-full bg-white/10 border border-white/10 text-white hover:bg-white/20 transition-all hover:scale-110 relative group/bell"
+                    >
+                        <Bell size={24} />
+                        <div className="absolute top-3 right-3 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                        <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs bg-black/80 text-white px-2 py-1 rounded opacity-0 group-hover/bell:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                            Notifications
+                        </span>
+                    </Link>
                 </div>
                 
                 {/* Decorative Background Elements */}

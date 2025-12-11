@@ -92,7 +92,7 @@ export default function OrganizerDashboard() {
                 <h2 className="text-2xl font-bold mb-6 flex items-center gap-2">
                     <span>⚡</span> Quick Actions
                 </h2>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                     <Link
                         href="/organizer/events/create"
                         className="group p-8 rounded-3xl bg-gradient-to-br from-purple-600 to-pink-600 text-white shadow-lg shadow-purple-900/20 hover:scale-[1.02] transition-transform relative overflow-hidden"
@@ -120,6 +120,22 @@ export default function OrganizerDashboard() {
                             </div>
                             <h3 className="text-2xl font-bold mb-2 text-white">Manage Events</h3>
                             <p className="text-neutral-400 text-lg">View your event calendar, edit details, and manage attendee lists.</p>
+                        </div>
+                    </Link>
+
+                    <Link
+                        href="/organizer/analytics"
+                        className="group p-8 rounded-3xl bg-gradient-to-br from-blue-600 to-cyan-600 text-white shadow-lg shadow-blue-900/20 hover:scale-[1.02] transition-transform relative overflow-hidden"
+                    >
+                        <div className="absolute top-0 right-0 p-8 opacity-10 group-hover:opacity-20 transition-opacity text-9xl font-bold leading-none -mr-4 -mt-4">
+                            ↗
+                        </div>
+                        <div className="relative z-10">
+                            <div className="flex justify-between items-start mb-6">
+                                <span className="text-3xl bg-white/20 w-14 h-14 rounded-2xl flex items-center justify-center backdrop-blur-sm">📊</span>
+                            </div>
+                            <h3 className="text-2xl font-bold mb-2">View Analytics</h3>
+                            <p className="text-white/80 text-lg">Gain insights into event performance, attendee engagement, and growth trends.</p>
                         </div>
                     </Link>
                 </div>

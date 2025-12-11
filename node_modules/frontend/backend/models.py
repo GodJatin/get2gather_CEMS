@@ -262,3 +262,19 @@ class PointTransaction(Base):
 
 # Add relationship to Student model
 Student.transactions = relationship("PointTransaction", back_populates="student")
+
+class Notification(Base):
+    __tablename__ = "notifications"
+
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"))
+    title = Column(String)
+    message = Column(String)
+    type = Column(String) # alert, info, success
+    is_read = Column(Boolean, default=False)
+    created_at = Column(String)
+    data = Column(JSON, nullable=True) # For deep linking e.g. { "event_id": 1 }
+
+    user = relationship("User", back_populates="notifications")
+
+User.notifications = relationship("Notification", back_populates="user")

@@ -1,4 +1,0 @@
-﻿app/student/dashboard/page.tsx(164,39): error TS2339: Property 'booking_date' does not exist on type 'Booking'.
-app/student/dashboard/page.tsx(164,76): error TS2339: Property 'booking_date' does not exist on type 'Booking'.
-app/student/profile/page.tsx(87,33): error TS2339: Property 'events_attended' does not exist on type 'UserProfile'.
-app/student/profile/page.tsx(87,70): error TS2339: Property 'events_attended' does not exist on type 'UserProfile'.
