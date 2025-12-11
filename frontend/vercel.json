@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/static/(.*)",
-      "destination": "/api/index.py"
+      "destination": "/static/$1"
     },
     {
       "source": "/api/(.*)",
