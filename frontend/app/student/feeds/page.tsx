@@ -1,3 +1,5 @@
+'use client';
+
 import { useState, useEffect } from 'react';
 import api from '@/lib/api';
 // Local helper moved to PostItem or we can export it if needed, but PostItem now handles its own image urls. 
