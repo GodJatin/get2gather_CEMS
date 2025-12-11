@@ -439,17 +439,31 @@ export default function StudentRegisterPage() {
                                 type="button"
                                 onClick={handleNext}
                                 disabled={loading}
-                                className="w-full sm:flex-1 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed"
+                                className="w-full sm:flex-1 py-3.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold shadow-lg shadow-blue-900/20 transition-all disabled:opacity-70 disabled:cursor-not-allowed flex items-center justify-center gap-2"
                             >
-                                {loading ? 'Checking...' : 'Next'}
+                                {loading ? (
+                                    <>
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        <span>Checking...</span>
+                                    </>
+                                ) : (
+                                    'Next'
+                                )}
                             </button>
                         ) : (
                             <button
                                 type="submit"
                                 disabled={loading}
-                                className="w-full sm:flex-1 py-3.5 rounded-xl bg-green-600 hover:bg-green-500 disabled:bg-green-800 disabled:cursor-not-allowed text-white font-bold shadow-lg shadow-green-900/20 transition-all"
+                                className="w-full sm:flex-1 py-3.5 rounded-xl bg-green-600 hover:bg-green-500 disabled:bg-green-800 disabled:cursor-not-allowed text-white font-bold shadow-lg shadow-green-900/20 transition-all flex items-center justify-center gap-2"
                             >
-                                {loading ? 'Registering...' : 'Complete Registration'}
+                                {loading ? (
+                                    <>
+                                        <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                        <span>Registering...</span>
+                                    </>
+                                ) : (
+                                    'Complete Registration'
+                                )}
                             </button>
                         )}
                     </div>

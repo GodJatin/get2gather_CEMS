@@ -1,6 +1,7 @@
 'use client';
 
 import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';
+import BackButton from '@/components/BackButton';
 import { Bell, Calendar, Star, Info } from 'lucide-react';
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
@@ -38,7 +39,6 @@ const MOCK_NOTIFICATIONS = [
         type: "success",
         date: "2024-10-22T16:45:00",
         read: true
-    }
 ];
 
 export default function NotificationsPage() {
@@ -55,8 +55,9 @@ export default function NotificationsPage() {
     const unreadCount = notifications.filter(n => !n.read).length;
 
     return (
-        <MotionWrapper className="max-w-2xl mx-auto pb-20">
-            <header className="mb-8 flex items-center justify-between">
+        <MotionWrapper className="max-w-2xl mx-auto pb-20 pt-6">
+            <BackButton />
+            <header className="mb-8 mt-4 flex items-center justify-between">
                 <div>
                     <h1 className="text-3xl font-bold text-white mb-2">Notifications</h1>
                     <p className="text-neutral-400">Stay updated with latest events and announcements.</p>

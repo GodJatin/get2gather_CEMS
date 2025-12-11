@@ -98,7 +98,64 @@ export default function AnalyticsPage() {
                         <span>📉</span> Event Engagement (Last 5 Events)
                     </h2>
                     
-                    <div className="space-y-6">
+                    <div className="space-y-8">
+                        {/* Graph */}
+                        {chartEvents.length > 1 && (
+                            <div className="w-full h-[250px] relative mb-8 select-none">
+                                <svg viewBox="0 0 600 200" className="w-full h-full overflow-visible">
+                                    <defs>
+                                        <linearGradient id="gradient" x1="0" x2="0" y1="0" y2="1">
+                                            <stop offset="0%" stopColor="#60A5FA" stopOpacity="0.5" />
+                                            <stop offset="100%" stopColor="#60A5FA" stopOpacity="0" />
+                                        </linearGradient>
+                                    </defs>
+                                    
+                                    {/* Grid Lines */}
+                                    {[0, 0.25, 0.5, 0.75, 1].map((p, i) => (
+                                        <line key={i} x1="0" y1={200 * p} x2="600" y2={200 * p} stroke="white" strokeOpacity="0.05" />
+                                    ))}
+
+                                    {/* Chart Path */}
+                                    {(() => {
+                                        const maxVal = Math.max(...chartEvents.map(e => e.attended_count), 5);
+                                        const points = chartEvents.map((e, i) => {
+                                            const x = (i / (chartEvents.length - 1)) * 600;
+                                            const y = 200 - (e.attended_count / maxVal) * 170; // Leave space for labels
+                                            return `${x},${y}`;
+                                        }).join(' ');
+                                        
+                                        const fillPath = `M0,200 L${points.replace(/ /g, ' L')} L600,200 Z`; // Close path for fill
+
+                                        return (
+                                            <>
+                                                <path d={fillPath} fill="url(#gradient)" stroke="none" />
+                                                <polyline points={points} fill="none" stroke="#60A5FA" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                                                
+                                                {/* Dots & Labels */}
+                                                {chartEvents.map((e, i) => {
+                                                    const x = (i / (chartEvents.length - 1)) * 600;
+                                                    const y = 200 - (e.attended_count / maxVal) * 170;
+                                                    return (
+                                                        <g key={e.id} className="group cursor-pointer">
+                                                            <circle cx={x} cy={y} r="4" fill="#60A5FA" className="group-hover:r-6 transition-all duration-300" />
+                                                            <foreignObject x={x - 50} y={y - 40} width="100" height="40" className="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
+                                                                <div className="bg-neutral-800 text-white text-xs rounded px-2 py-1 text-center shadow-lg border border-white/10 mx-auto w-fit">
+                                                                    {e.attended_count} Attendees
+                                                                </div>
+                                                            </foreignObject>
+                                                            <text x={x} y="220" textAnchor="middle" fill="#9CA3AF" fontSize="12" className="mt-2">
+                                                                {new Date(e.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                                                            </text>
+                                                        </g>
+                                                    );
+                                                })}
+                                            </>
+                                        );
+                                    })()}
+                                </svg>
+                            </div>
+                        )}
+
                         {chartEvents.length === 0 ? (
                             <p className="text-center text-neutral-500 py-10">No events data available yet.</p>
                         ) : (

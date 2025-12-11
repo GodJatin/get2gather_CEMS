@@ -11,9 +11,11 @@ import { motion } from 'framer-motion';
 export default function LoginPage() {
     const [role, setRole] = useState<'student' | 'organizer' | 'admin'>('student');
     const [showPassword, setShowPassword] = useState(false);
+    const [isLoading, setIsLoading] = useState(false);
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault();
+        setIsLoading(true);
         try {
             const formData = new FormData(e.target as HTMLFormElement);
             const email = formData.get('email') as string;
@@ -51,6 +53,7 @@ export default function LoginPage() {
         } catch (error: any) {
             console.error('Login failed:', error);
             alert('Login failed: ' + (error.response?.data?.detail || 'Unknown error'));
+            setIsLoading(false);
         }
     };
 
@@ -141,16 +144,24 @@ export default function LoginPage() {
 
                         <motion.button
                             type="submit"
+                            disabled={isLoading}
                             whileHover={{ scale: 1.02, boxShadow: "0 0 15px rgba(124, 58, 237, 0.3)" }}
                             whileTap={{ scale: 0.98 }}
-                            className={`w-full py-3.5 rounded-xl font-bold text-white shadow-lg transition-all ${role === 'student'
+                            className={`w-full py-3.5 rounded-xl font-bold text-white shadow-lg transition-all flex items-center justify-center gap-2 ${role === 'student'
                                 ? 'bg-primary hover:bg-primary/80 shadow-primary/20'
                                 : role === 'organizer'
                                     ? 'bg-secondary hover:bg-secondary/80 shadow-secondary/20'
                                     : 'bg-red-600 hover:bg-red-500 shadow-red-900/20'
-                                }`}
+                                } ${isLoading ? 'opacity-70 cursor-not-allowed' : ''}`}
                         >
-                            Sign In
+                            {isLoading ? (
+                                <>
+                                    <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                                    <span>Verifying...</span>
+                                </>
+                            ) : (
+                                "Sign In"
+                            )}
                         </motion.button>
                     </form>
 
