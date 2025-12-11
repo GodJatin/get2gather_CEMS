@@ -13,6 +13,15 @@ try:
 except ImportError as e:
     # Fallback app to show error if import fails
     app = FastAPI()
-    @app.get("/api/{path:path}")
-    def crash_report(path: str):
-        return {"error": "Failed to import backend", "detail": str(e), "path": sys.path}
+    @app.api_route("/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"])
+    async def catch_all(path_name: str):
+        import traceback
+        return {
+            "status": "IMPORT_ERROR",
+            "error": "Failed to import backend", 
+            "detail": str(e), 
+            "trace": traceback.format_exc(),
+            "sys_path": sys.path,
+            "cwd": os.getcwd(),
+            "dir_contents": os.listdir(os.getcwd()) if os.path.exists(os.getcwd()) else "CWD not accessible"
+        }
