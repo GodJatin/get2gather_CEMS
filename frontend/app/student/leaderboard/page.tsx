@@ -13,6 +13,7 @@ interface LeaderboardEntry {
     score: number;
     title?: string;
     badges?: { name: string; icon: string }[];
+    active_effect?: string;
 }
 
 const getRankEmoji = (index: number) => {
@@ -169,13 +170,17 @@ export default function LeaderboardPage() {
                                 {getRankEmoji(index)}
                             </div>
                             
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg shrink-0 ${
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg shrink-0 relative ${
+                                leader.active_effect === 'frame-gold' ? 'ring-2 ring-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.8)] animate-pulse bg-gradient-to-br from-yellow-500 to-yellow-700' :
+                                leader.active_effect === 'frame-silver' ? 'ring-2 ring-slate-300 shadow-[0_0_10px_rgba(203,213,225,0.6)] bg-gradient-to-br from-slate-400 to-slate-600' :
+                                leader.active_effect === 'frame-bronze' ? 'ring-2 ring-orange-700 shadow-[0_0_10px_rgba(194,65,12,0.6)] bg-gradient-to-br from-orange-500 to-orange-800' :
                                 index === 0 ? 'bg-gradient-to-br from-yellow-400 to-orange-600' :
                                 index === 1 ? 'bg-gradient-to-br from-neutral-300 to-neutral-500' :
                                 index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-700' :
                                 'bg-gradient-to-br from-primary to-secondary'
                             }`}>
                                 {leader.student_name[0]}
+                                {leader.active_effect === 'frame-gold' && <div className="absolute -top-2 -right-1 text-base">👑</div>}
                             </div>
 
                             <div className="flex-1 min-w-0">

@@ -122,12 +122,18 @@ export default function ProfilePage() {
                             user.active_effect === 'Neon Blue Glow' ? 'shadow-[0_0_40px_#00F0FF] border-2 border-[#00F0FF]' :
                             user.active_effect === 'Golden Aura' ? 'shadow-[0_0_40px_#FFD700] border-2 border-[#FFD700]' :
                             user.active_effect === 'Cyber Glitch' ? 'shadow-[0_0_20px_#00FF94] animate-pulse border-2 border-[#00FF94]' :
+                            user.active_effect === 'frame-gold' ? 'ring-4 ring-yellow-400 shadow-[0_0_30px_rgba(250,204,21,0.8)] animate-pulse' :
+                            user.active_effect === 'frame-silver' ? 'ring-4 ring-slate-300 shadow-[0_0_20px_rgba(203,213,225,0.6)]' :
+                            user.active_effect === 'frame-bronze' ? 'ring-4 ring-orange-700 shadow-[0_0_20px_rgba(194,65,12,0.6)]' :
                             'bg-gradient-to-br from-[#00F0FF] to-[#00FF94] shadow-[0_0_20px_rgba(0,240,255,0.3)]'
                         }`}>
                             <div className="w-full h-full rounded-full bg-neutral-900 flex items-center justify-center text-5xl font-bold text-white overflow-hidden relative">
                                 <span className="z-10">{user.name?.[0] || 'U'}</span>
                                 <div className="absolute inset-0 bg-gradient-to-br from-[#00F0FF]/20 to-[#00FF94]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
                             </div>
+                            {user.active_effect === 'frame-gold' && (
+                                <div className="absolute -top-4 -right-1 text-4xl z-20 animate-bounce">👑</div>
+                            )}
                         </div>
                         
                         <h2 className="text-2xl font-bold mb-2 text-white">{user.name}</h2>

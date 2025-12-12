@@ -92,11 +92,30 @@ export default function PostItem({ post, activePostId, onToggleComments, onLike,
         >
             {/* Post Header */}
             <div className="flex items-center gap-3 mb-4">
-                <div className="w-12 h-12 rounded-full bg-gradient-to-br from-blue-600 to-purple-600 flex items-center justify-center font-bold text-white text-lg shadow-lg">
-                    {(post.user_name || "U")[0]}
+                <div className="relative">
+                     {/* Avatar Frame */}
+                    <div 
+                        className={`
+                            w-14 h-14 rounded-full flex items-center justify-center font-bold text-white text-lg shadow-lg relative z-10
+                            bg-gradient-to-br from-blue-600 to-purple-600
+                            ${post.user_active_effect === 'frame-gold' ? 'ring-4 ring-yellow-400 shadow-[0_0_20px_rgba(250,204,21,0.8)] animate-pulse' : ''}
+                            ${post.user_active_effect === 'frame-silver' ? 'ring-4 ring-slate-300 shadow-[0_0_15px_rgba(203,213,225,0.6)]' : ''}
+                            ${post.user_active_effect === 'frame-bronze' ? 'ring-4 ring-orange-700 shadow-[0_0_15px_rgba(194,65,12,0.6)]' : ''}
+                        `}
+                    >
+                        {(post.user_name || "U")[0]}
+                    </div>
+                    {/* Crown Icon for Gold */}
+                    {post.user_active_effect === 'frame-gold' && (
+                        <div className="absolute -top-3 -right-1 text-2xl z-20 animate-bounce">👑</div>
+                    )}
                 </div>
+                
                 <div>
-                    <h3 className="font-bold text-white text-lg">{post.user_name}</h3>
+                    <h3 className="font-bold text-white text-lg flex items-center gap-2">
+                        {post.user_name}
+                        {post.user_active_effect === 'frame-gold' && <span className="text-yellow-400 text-xs px-2 py-0.5 border border-yellow-400 rounded-full">#1 Weekly</span>}
+                    </h3>
                     <div className="flex items-center gap-2 text-xs text-neutral-400">
                         <span>{formatTimeAgo(post.created_at)}</span>
                         {post.location && <span className="flex items-center gap-1">| <MapPin className="w-3 h-3"/> {post.location}</span>}

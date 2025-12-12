@@ -110,6 +110,11 @@ async def get_feed(limit: int = 50, current_user: User = Depends(get_current_use
         # Resolve Tags
         t_users, t_events = resolve_tags(post.tagged_users or [], post.tagged_events or [])
 
+        # Get Active Effect
+        active_effect = None
+        if student and student.active_effect:
+            active_effect = student.active_effect
+
         posts_data.append(schemas.FeedPostResponse(
             id=post.id,
             content=post.content or "",
@@ -127,7 +132,8 @@ async def get_feed(limit: int = 50, current_user: User = Depends(get_current_use
             location=post.location,
             feeling=post.feeling,
             tagged_users=t_users,
-            tagged_events=t_events
+            tagged_events=t_events,
+            user_active_effect=active_effect
         ))
         
     return posts_data

@@ -255,6 +255,7 @@ class FeedPostResponse(BaseModel):
     feeling: Optional[str] = None
     tagged_users: Optional[List[TagItem]] = []
     tagged_events: Optional[List[TagItem]] = []
+    user_active_effect: Optional[str] = None
 
     class Config:
         orm_mode = True

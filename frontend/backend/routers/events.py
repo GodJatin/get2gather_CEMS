@@ -10,6 +10,7 @@ from datetime import datetime
 import shutil
 import os
 import uuid
+from routers.notifications import create_notification
 
 router = APIRouter(tags=["Events"])
 
@@ -103,6 +104,19 @@ async def create_event(event: schemas.EventCreate, current_user: User = Depends(
     db.add(new_event)
     db.commit()
     db.refresh(new_event)
+    
+    # Notify all students
+    students = db.query(User).filter(User.role == UserRole.STUDENT).all()
+    for student in students:
+        create_notification(
+            db=db,
+            user_id=student.id,
+            title=f"New Event: {new_event.title}",
+            message=f"{organizer.organization_name} has posted a new event!",
+            type="info",
+            data={"event_id": new_event.id, "link": f"/student/events/{new_event.id}"}
+        )
+        
     return new_event
 
 class ImageUploadRequest(schemas.BaseModel):
@@ -469,7 +483,22 @@ async def update_event(event_id: int, event_update: schemas.EventCreate, current
             
             print(f"🔔 Sending update notifications to {len(recipients)} recipients...")
             for recipient in recipients:
+                # Email
                 send_event_update_notification(recipient["email"], recipient["name"], event.title, changes)
+                
+                # In-App Notification if we can resolve user_id (recipients list currently only has email/name)
+                # To do this efficiently, we should have kept the user object.
+                # Re-fetching user based on email (not efficient but safe)
+                user = db.query(User).filter(User.email == recipient["email"]).first()
+                if user:
+                    create_notification(
+                        db=db,
+                        user_id=user.id,
+                        title=f"Update: {event.title}",
+                        message=f"Event details have changed: {', '.join(changes)}",
+                        type="alert",
+                        data={"event_id": event.id, "link": f"/student/events/{event.id}"}
+                    )
                 
         except Exception as e:
             print(f"❌ Failed to send update notifications: {e}")

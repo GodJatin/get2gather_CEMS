@@ -38,95 +38,99 @@ def send_otp_email(email: str, otp: str, user_type: str = "user") -> bool:
         <html>
         <head>
             <style>
+                @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap');
                 body {{
-                    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                    background-color: #f5f5f5;
+                    font-family: 'Outfit', 'Segoe UI', sans-serif;
+                    background-color: #f0f2f5;
                     margin: 0;
                     padding: 0;
                 }}
                 .container {{
-                    max-width: 600px;
+                    max-width: 500px;
                     margin: 40px auto;
-                    background: white;
-                    border-radius: 12px;
+                    background: #ffffff;
+                    border-radius: 20px;
                     overflow: hidden;
-                    box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+                    box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
                 }}
                 .header {{
-                    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-                    padding: 30px;
+                    background: linear-gradient(135deg, #6366f1 0%, #a855f7 100%);
+                    padding: 40px 20px;
                     text-align: center;
                     color: white;
                 }}
+                .logo {{
+                    width: 60px;
+                    height: 60px;
+                    background: white;
+                    border-radius: 12px;
+                    margin: 0 auto 15px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    font-size: 30px;
+                    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+                }}
                 .header h1 {{
                     margin: 0;
-                    font-size: 28px;
+                    font-size: 24px;
                     font-weight: 600;
+                    letter-spacing: 0.5px;
                 }}
                 .content {{
                     padding: 40px 30px;
+                    text-align: center;
                 }}
                 .otp-box {{
-                    background: #f8f9fa;
-                    border: 2px dashed #667eea;
-                    border-radius: 8px;
+                    background: #f8fafc;
+                    border: 2px dashed #cbd5e1;
+                    border-radius: 16px;
                     padding: 20px;
-                    text-align: center;
-                    margin: 25px 0;
+                    margin: 30px 0;
                 }}
                 .otp-code {{
-                    font-size: 36px;
-                    font-weight: bold;
-                    letter-spacing: 8px;
-                    color: #667eea;
+                    font-size: 32px;
+                    font-weight: 700;
+                    letter-spacing: 5px;
+                    color: #4f46e5;
                     font-family: 'Courier New', monospace;
                 }}
                 .message {{
-                    color: #333;
+                    color: #475569;
                     line-height: 1.6;
                     font-size: 16px;
+                    margin-bottom: 20px;
                 }}
                 .footer {{
-                    background: #f8f9fa;
-                    padding: 20px 30px;
+                    background: #f8fafc;
+                    padding: 20px;
                     text-align: center;
-                    color: #666;
-                    font-size: 14px;
-                }}
-                .warning {{
-                    background: #fff3cd;
-                    border-left: 4px solid #ffc107;
-                    padding: 15px;
-                    margin: 20px 0;
-                    border-radius: 4px;
+                    color: #94a3b8;
+                    font-size: 12px;
+                    border-top: 1px solid #e2e8f0;
                 }}
             </style>
         </head>
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>🎓 Get2Gather</h1>
+                    <div class="logo">🎓</div>
+                    <h1>Get2Gather</h1>
                 </div>
                 <div class="content">
-                    <h2 style="color: #333; margin-top: 0;">Email Verification Required</h2>
-                    <p class="message">Hello!</p>
-                    <p class="message">Thank you for registering with Get2Gather. To complete your {user_type} registration, please use the verification code below:</p>
+                    <h2 style="color: #1e293b; margin-top: 0; font-weight: 600;">Verification Code</h2>
+                    <p class="message">Welcome! To secure your account, please enter the code below:</p>
                     
                     <div class="otp-box">
-                        <div style="color: #666; font-size: 14px; margin-bottom: 10px;">Your Verification Code</div>
                         <div class="otp-code">{otp}</div>
                     </div>
                     
-                    <div class="warning">
-                        <strong>⏰ This code will expire in 10 minutes.</strong><br>
-                        If you didn't request this code, please ignore this email.
-                    </div>
-                    
-                    <p class="message">For security reasons, never share this code with anyone.</p>
+                    <p class="message" style="font-size: 14px; color: #64748b;">
+                        This code expires in 10 minutes. If you didn't request this, simply ignore this email.
+                    </p>
                 </div>
                 <div class="footer">
-                    <p>Get2Gather - College Event Management System</p>
-                    <p style="margin: 5px 0;">This is an automated email, please do not reply.</p>
+                    &copy; {datetime.now().year} Get2Gather. All rights reserved.
                 </div>
             </div>
         </body>
@@ -178,64 +182,63 @@ def send_booking_ticket(email: str, student_name: str, event_title: str, event_d
         
         # Create the HTML part
         html_content = f"""
+
         <!DOCTYPE html>
         <html>
         <head>
             <style>
-                body {{ font-family: 'Segoe UI', sans-serif; background: #f5f5f5; margin: 0; padding: 0; }}
-                .container {{ max-width: 600px; margin: 40px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
-                .header {{ background: linear-gradient(135deg, {'#667eea 0%, #764ba2' if ticket_type == 'attendee' else '#d946ef 0%, #f43f5e'} 100%); padding: 30px; text-align: center; color: white; }}
-                .ticket {{ background: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px; border: 2px dashed #667eea; }}
-                .qr-section {{ text-align: center; margin: 20px 0; }}
-                .manual-code {{ background: #eef2ff; padding: 15px; margin: 15px 20px; border-radius: 8px; text-align: center; border: 1px solid #c7d2fe; }}
-                .code-text {{ font-family: monospace; font-size: 16px; font-weight: bold; color: #4338ca; word-break: break-all; }}
-                .instructions {{ background: #fff3cd; padding: 15px; margin: 20px; border-radius: 8px; border-left: 4px solid #ffc107; }}
+                @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap');
+                body {{ font-family: 'Outfit', sans-serif; background: #f0f2f5; margin: 0; padding: 0; }}
+                .container {{ max-width: 500px; margin: 40px auto; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1); }}
+                .header {{ background: linear-gradient(135deg, {'#0ea5e9 0%, #3b82f6' if ticket_type == 'attendee' else '#ec4899 0%, #d946ef'} 100%); padding: 30px; text-align: center; color: white; }}
+                .logo {{ font-size: 30px; margin-bottom: 10px; }}
+                .content {{ padding: 30px; }}
+                .ticket-card {{ background: #f8fafc; border: 1px solid #e2e8f0; border-radius: 16px; padding: 20px; margin-bottom: 25px; }}
+                .event-title {{ color: #1e293b; font-size: 18px; font-weight: 600; margin: 0 0 10px 0; }}
+                .detail-row {{ display: flex; align-items: center; margin: 8px 0; color: #64748b; font-size: 14px; }}
+                .qr-box {{ background: white; padding: 15px; border-radius: 12px; display: inline-block; margin: 20px 0; box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); border: 1px solid #e2e8f0; }}
+                .manual-code {{ background: #f1f5f9; padding: 12px; border-radius: 8px; font-family: monospace; color: #475569; font-size: 14px; margin-top: 15px; }}
+                .footer {{ background: #f8fafc; padding: 20px; text-align: center; color: #94a3b8; font-size: 12px; border-top: 1px solid #e2e8f0; }}
             </style>
         </head>
         <body>
             <div class="container">
                 <div class="header">
-                    <h1>🎓 Get2Gather</h1>
-                    <h2 style="margin: 10px 0;">{'🎫 Attendee Pass' if ticket_type == 'attendee' else '🤝 Volunteer Pass'}</h2>
+                    <div class="logo">🎫</div>
+                    <h1 style="margin:0; font-size:24px;">{ticket_type.capitalize()} Pass</h1>
                 </div>
-                <div style="padding: 30px;">
-                    <h2 style="color: #333;">Hello {student_name}!</h2>
-                    <p style="font-size: 16px; color: #666;">You're confirmed for:</p>
-                    
-                    <div class="ticket">
-                        <h3 style="margin: 0 0 15px 0; color: #333;">{event_title}</h3>
-                        <p style="margin: 5px 0;"><strong>📅 Date:</strong> {event_date}</p>
-                        <p style="margin: 5px 0;"><strong>🕐 Time:</strong> {event_time}</p>
-                        <p style="margin: 5px 0;"><strong>📍 Venue:</strong> {event_venue}</p>
-                    </div>
-                    
-                    <div class="qr-section">
-                        <p style="font-weight: bold; color: #333;">Show this QR code at the event:</p>
-                        <img src="cid:qrcode_image" alt="Event QR Code" style="max-width: 250px; border: 2px solid #ddd; border-radius: 8px; padding: 10px; background: white;" />
+                <div class="content">
+                    <div style="text-align: center; margin-bottom: 25px;">
+                        <h2 style="margin: 0; color: #1e293b;">Hello {student_name}</h2>
+                        <p style="margin: 5px 0; color: #64748b;">You are confirmed for:</p>
                     </div>
 
-                    {f'''
-                    <div class="manual-code">
-                        <p style="margin: 0 0 5px 0; font-size: 12px; color: #666;">Having trouble scanning? Use this code:</p>
-                        <div class="code-text">{qr_data}</div>
+                    <div class="ticket-card">
+                        <h3 class="event-title">{event_title}</h3>
+                        <div class="detail-row">📅 {event_date}</div>
+                        <div class="detail-row">🕐 {event_time}</div>
+                        <div class="detail-row">📍 {event_venue}</div>
                     </div>
-                    ''' if qr_data else ''}
-                    
-                    <div class="instructions">
-                        <h4 style="margin-top: 0;">⚠️ Important Instructions:</h4>
-                        <ul style="margin: 10px 0;">
-                            <li>Arrive at the venue on time</li>
-                            <li><strong>Scan this QR code at the entrance to mark your attendance</strong></li>
-                            <li>If scanning fails, provide the manual code above to the organizer</li>
-                            <li>Points will be credited ONLY after scanning</li>
-                            <li>Keep this email accessible on your phone</li>
+
+                    <div style="text-align: center;">
+                        <div class="qr-box">
+                            <img src="cid:qrcode_image" alt="QR Code" width="200" style="display: block;" />
+                        </div>
+                        <p style="color: #64748b; font-size: 14px;">Scan at entrance</p>
+                        
+                        {f'<div class="manual-code">Code: {qr_data}</div>' if qr_data else ''}
+                    </div>
+
+                    <div style="background: #fffbeb; border: 1px solid #fcd34d; padding: 15px; border-radius: 12px; margin-top: 25px;">
+                        <strong style="color: #b45309; display: block; margin-bottom: 5px;">⚠️ Instructions</strong>
+                        <ul style="margin: 0; padding-left: 20px; color: #92400e; font-size: 13px;">
+                            <li>Arrive 15 mins early</li>
+                            <li>Have this QR ready</li>
                         </ul>
                     </div>
-                    
-                    <p style="color: #666; text-align: center; margin-top: 30px;">See you at the event! 🎉</p>
                 </div>
-                <div style="background: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 14px;">
-                    <p>Get2Gather - College Event Management System</p>
+                <div class="footer">
+                    &copy; {datetime.now().year} Get2Gather
                 </div>
             </div>
         </body>
@@ -287,48 +290,40 @@ def send_attendance_confirmation(email: str, student_name: str, event_title: str
         subject = f"✅ Attendance Confirmed - {event_title}"
         
         html_content = f"""
+        html_content = f"""
         <!DOCTYPE html>
         <html>
         <head>
             <style>
-                body {{ font-family: 'Segoe UI', sans-serif; background: #f5f5f5; margin: 0; padding: 0; }}
-                .container {{ max-width: 600px; margin: 40px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
-                .header {{ background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 30px; text-align: center; color: white; }}
-                .points-badge {{ background: #fbbf24; color: #78350f; padding: 10px 20px; border-radius: 50px; font-size: 24px; font-weight: bold; display: inline-block; margin: 20px 0; }}
-                .event-details {{ background: #f8f9fa; padding: 20px; margin: 20px; border-radius: 8px; }}
+                @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap');
+                body {{ font-family: 'Outfit', sans-serif; background: #f0f2f5; margin: 0; padding: 0; }}
+                .container {{ max-width: 500px; margin: 40px auto; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1); }}
+                .header {{ background: linear-gradient(135deg, #10b981 0%, #059669 100%); padding: 40px 20px; text-align: center; color: white; }}
+                .content {{ padding: 40px 30px; text-align: center; }}
+                .points-circle {{ width: 100px; height: 100px; background: #fbbf24; color: #78350f; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 24px; font-weight: bold; margin: 0 auto 20px; box-shadow: 0 4px 15px rgba(251, 191, 36, 0.4); }}
+                .event-card {{ background: #f0fdf4; border: 1px solid #bbf7d0; border-radius: 12px; padding: 20px; margin: 20px 0; text-align: left; }}
+                .footer {{ background: #f8fafc; padding: 20px; text-align: center; color: #94a3b8; font-size: 12px; border-top: 1px solid #e2e8f0; }}
             </style>
         </head>
         <body>
             <div class="container">
                 <div class="header">
-                    <h1 style="margin: 0;">✅ Attendance Confirmed!</h1>
+                    <h1 style="margin:0; font-size:24px;">Attendance Confirmed!</h1>
                 </div>
-                <div style="padding: 30px; text-align: center;">
-                    <h2 style="color: #333;">Thank You, {student_name}!</h2>
-                    <p style="font-size: 16px; color: #666;">You successfully {'attended' if attendance_type == 'attendee' else 'volunteered at'}:</p>
+                <div class="content">
+                    <div class="points-circle">+{points_earned}</div>
+                    <h2 style="color: #1e293b; margin: 0;">Great job, {student_name}!</h2>
+                    <p style="color: #64748b;">Your attendance has been marked.</p>
                     
-                    <div class="event-details">
-                        <h3 style="margin: 0 0 10px 0; color: #333;">{event_title}</h3>
-                        <p style="margin: 5px 0; color: #666;"><strong>📅 Date:</strong> {event_date}</p>
-                        <p style="margin: 5px 0; color: #666;"><strong>📍 Venue:</strong> {event_venue}</p>
+                    <div class="event-card">
+                        <strong style="color: #166534; display: block; margin-bottom: 5px;">{event_title}</strong>
+                        <div style="color: #15803d; font-size: 14px;">📅 {event_date} &nbsp;•&nbsp; 📍 {event_venue}</div>
                     </div>
                     
-                    <div class="points-badge">
-                        +{points_earned} Points Earned! 🎉
-                    </div>
-                    
-                    <p style="color: #666; line-height: 1.6; margin-top: 30px;">
-                        Your points have been credited to your account. Keep participating in more events to earn rewards!
-                    </p>
-                    
-                    <p style="color: #666; margin-top: 20px;">
-                        <strong>Thank you for being a part of Get2Gather!</strong><br>
-                        We hope you enjoyed the event. Continue exploring and participating in campus activities through our platform.
-                    </p>
+                    <p style="color: #64748b; font-size: 14px;">Points have been added to your profile.</p>
                 </div>
-                <div style="background: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 14px;">
-                    <p>Get2Gather - College Event Management System</p>
-                    <p style="margin: 5px 0;">Keep participating, keep earning! 🚀</p>
+                <div class="footer">
+                    &copy; {datetime.now().year} Get2Gather
                 </div>
             </div>
         </body>
@@ -370,46 +365,39 @@ def send_event_update_notification(email: str, student_name: str, event_title: s
         changes_html = "".join([f"<li>{change}</li>" for change in changes])
         
         html_content = f"""
+        html_content = f"""
         <!DOCTYPE html>
         <html>
         <head>
             <style>
-                body {{ font-family: 'Segoe UI', sans-serif; background: #f5f5f5; margin: 0; padding: 0; }}
-                .container {{ max-width: 600px; margin: 40px auto; background: white; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }}
+                @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap');
+                body {{ font-family: 'Outfit', sans-serif; background: #f0f2f5; margin: 0; padding: 0; }}
+                .container {{ max-width: 500px; margin: 40px auto; background: white; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1); }}
                 .header {{ background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 30px; text-align: center; color: white; }}
-                .changes-box {{ background: #fffbeb; border: 1px solid #fcd34d; border-radius: 8px; padding: 20px; margin: 20px 0; }}
-                .changes-list {{ margin: 0; padding-left: 20px; color: #92400e; }}
-                .changes-list li {{ margin-bottom: 5px; }}
+                .content {{ padding: 30px; }}
+                .changes-box {{ background: #fffbeb; border: 1px solid #fcd34d; border-radius: 12px; padding: 20px; margin: 20px 0; }}
+                .footer {{ background: #f8fafc; padding: 20px; text-align: center; color: #94a3b8; font-size: 12px; border-top: 1px solid #e2e8f0; }}
             </style>
         </head>
         <body>
             <div class="container">
                 <div class="header">
-                    <h1 style="margin: 0;">📢 Event Update</h1>
+                    <h1 style="margin:0; font-size:24px;">📢 Event Update</h1>
                 </div>
-                <div style="padding: 30px;">
-                    <h2 style="color: #333;">Hello {student_name},</h2>
-                    <p style="font-size: 16px; color: #666;">There have been some changes to an upcoming event you registered for:</p>
-                    
-                    <h3 style="margin: 20px 0 10px 0; color: #333;">{event_title}</h3>
+                <div class="content">
+                    <h2 style="color: #1e293b; margin: 0 0 10px 0;">Hi {student_name},</h2>
+                    <p style="color: #64748b;">Update for <strong>{event_title}</strong>:</p>
                     
                     <div class="changes-box">
-                        <strong style="display: block; margin-bottom: 10px; color: #b45309;">Updated Details:</strong>
-                        <ul class="changes-list">
+                        <ul style="margin: 0; padding-left: 20px; color: #92400e;">
                             {changes_html}
                         </ul>
                     </div>
                     
-                    <p style="color: #666; line-height: 1.6;">
-                        Please check the event page for the latest information.
-                    </p>
-                    
-                    <p style="color: #666; margin-top: 20px;">
-                        See you there!
-                    </p>
+                    <p style="color: #64748b; font-size: 14px;">Check the app for latest details.</p>
                 </div>
-                <div style="background: #f8f9fa; padding: 20px; text-align: center; color: #666; font-size: 14px;">
-                    <p>Get2Gather - College Event Management System</p>
+                <div class="footer">
+                    &copy; {datetime.now().year} Get2Gather
                 </div>
             </div>
         </body>
@@ -432,4 +420,86 @@ def send_event_update_notification(email: str, student_name: str, event_title: s
         
     except Exception as e:
         print(f"❌ Failed to send event update email: {str(e)}")
+        return False
+
+def send_weekly_winner_email(email: str, student_name: str, rank: int, score: int) -> bool:
+    """
+    Send congratulatory email to weekly winners
+    """
+    smtp_email = os.getenv("SMTP_EMAIL")
+    smtp_password = os.getenv("SMTP_PASSWORD")
+
+    if not smtp_email or not smtp_password:
+        print(f"⚠️ SMTP not configured, simulating email. Rank {rank} Winner: {student_name}")
+        return True
+
+    try:
+        subject = f"🏆 You are a Weekly Winner! (Rank #{rank})"
+        
+        medal = "🥇" if rank == 1 else "🥈" if rank == 2 else "🥉" if rank == 3 else "🏅"
+        color = "#eab308" if rank == 1 else "#94a3b8" if rank == 2 else "#b45309" if rank == 3 else "#6366f1"
+        
+        html_content = f"""
+        <!DOCTYPE html>
+        <html>
+        <head>
+            <style>
+                @import url('https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;600&display=swap');
+                body {{ font-family: 'Outfit', sans-serif; background: #0f172a; margin: 0; padding: 0; }}
+                .container {{ max-width: 500px; margin: 40px auto; background: #1e293b; border-radius: 20px; overflow: hidden; box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5); color: white; }}
+                .header {{ background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%); padding: 60px 20px; text-align: center; }}
+                .medal-icon {{ font-size: 80px; margin-bottom: 20px; display: block; filter: drop-shadow(0 0 20px rgba(255, 255, 255, 0.4)); }}
+                .rank-title {{ font-size: 32px; font-weight: bold; margin: 0; text-transform: uppercase; letter-spacing: 2px; }}
+                .content {{ padding: 40px 30px; text-align: center; }}
+                .score-box {{ background: rgba(255, 255, 255, 0.1); border-radius: 12px; padding: 20px; margin: 30px 0; border: 1px solid rgba(255, 255, 255, 0.2); }}
+                .footer {{ background: #020617; padding: 20px; text-align: center; color: #64748b; font-size: 12px; }}
+                .cta-btn {{ display: inline-block; background: {color}; color: white; padding: 12px 30px; border-radius: 50px; text-decoration: none; font-weight: bold; margin-top: 20px; }}
+            </style>
+        </head>
+        <body>
+            <div class="container">
+                <div class="header">
+                    <span class="medal-icon">{medal}</span>
+                    <h1 class="rank-title">Rank #{rank}</h1>
+                    <p style="margin: 10px 0 0 0; opacity: 0.9;">Weekly Top Performer</p>
+                </div>
+                <div class="content">
+                    <h2 style="margin: 0 0 10px 0;">Congratulations, {student_name}!</h2>
+                    <p style="color: #cbd5e1;">You've been simply amazing this week.</p>
+                    
+                    <div class="score-box">
+                        <div style="font-size: 14px; color: #94a3b8; text-transform: uppercase; letter-spacing: 1px;">Points Earned</div>
+                        <div style="font-size: 48px; font-weight: bold; color: {color};">{score}</div>
+                    </div>
+                    
+                    <p style="color: #cbd5e1; font-size: 14px;">
+                        A new badge has been added to your profile. Keep up the great work!
+                    </p>
+                    
+                    <a href="#" class="cta-btn">View Leaderboard</a>
+                </div>
+                <div class="footer">
+                    &copy; {datetime.now().year} Get2Gather
+                </div>
+            </div>
+        </body>
+        </html>
+        """
+        
+        msg = MIMEMultipart()
+        msg['From'] = f"Get2Gather <{smtp_email}>"
+        msg['To'] = email
+        msg['Subject'] = subject
+        msg.attach(MIMEText(html_content, 'html'))
+
+        with smtplib.SMTP('smtp.gmail.com', 587) as server:
+            server.starttls()
+            server.login(smtp_email, smtp_password)
+            server.send_message(msg)
+            
+        print(f"✅ Winner email sent to {email}")
+        return True
+        
+    except Exception as e:
+        print(f"❌ Failed to send winner email: {str(e)}")
         return False

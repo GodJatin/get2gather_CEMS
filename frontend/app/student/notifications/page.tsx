@@ -103,12 +103,15 @@ export default function NotificationsPage() {
                     notifications.map((notif) => (
                         <StaggerItem 
                             key={notif.id}
-                            className={`p-4 rounded-2xl border transition-all relative overflow-hidden group ${
+                            className={`p-4 rounded-2xl border transition-all relative overflow-hidden group cursor-pointer ${
                                 notif.is_read 
-                                    ? 'bg-neutral-900/50 border-white/5 opacity-70' 
-                                    : 'bg-neutral-800/80 border-blue-500/30 shadow-lg shadow-blue-500/5'
+                                    ? 'bg-neutral-900/50 border-white/5 opacity-70 hover:bg-neutral-800' 
+                                    : 'bg-neutral-800/80 border-blue-500/30 shadow-lg shadow-blue-500/5 hover:border-blue-500/50'
                             }`}
-                            onClick={() => !notif.is_read && markAsRead(notif.id)}
+                            onClick={() => {
+                                if (!notif.is_read) markAsRead(notif.id);
+                                if (notif.data?.link) window.location.href = notif.data.link;
+                            }}
                         >
                             {!notif.is_read && (
                                 <div className="absolute top-4 right-4 w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
