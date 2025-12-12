@@ -25,5 +25,4 @@ export interface Post {
     feeling?: string;
     tagged_users?: { id: number, name: string }[];
     tagged_events?: { id: number, name: string }[];
-    user_active_effect?: string;
 }

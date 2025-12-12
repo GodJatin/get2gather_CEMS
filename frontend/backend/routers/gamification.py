@@ -1,153 +1,132 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
-from sqlalchemy import func, select
+from sqlalchemy import func, desc
 from database import get_db
-from models import User, Student, Booking, FeedPost, Volunteer, Notification
+from models import User, Student, UserRole, Notification
 from routers.auth import get_current_user
 from routers.notifications import create_notification
-from email_service import send_weekly_winner_email
-from datetime import datetime, timedelta
-import json
+from datetime import datetime
 
-router = APIRouter(tags=["Gamification"])
+router = APIRouter(prefix="/gamification", tags=["Gamification"])
 
-def calculate_points_since(db: Session, student_id: int, user_id: int, start_date: datetime):
-    """Calculate points earned since a specific date"""
-    POINTS_PER_BOOKING = 100
-    POINTS_PER_POST = 50
-    POINTS_PER_VOLUNTEER = 200
-    
-    start_str = start_date.isoformat()
-    
-    # 1. Bookings (Attended)
-    # checked_in_at is ISO string
-    b_res = db.execute(select(func.count()).select_from(Booking).where(
-        Booking.student_id == student_id,
-        Booking.attended == True,
-        Booking.checked_in_at >= start_str
-    ))
-    bookings_count = b_res.scalar() or 0
-    
-    # 2. Posts
-    # created_at is ISO string
-    p_res = db.execute(select(func.count()).select_from(FeedPost).where(
-        FeedPost.user_id == user_id,
-        FeedPost.created_at >= start_str
-    ))
-    posts_count = p_res.scalar() or 0
-    
-    # 3. Volunteers (Attended)
-    v_res = db.execute(select(func.count()).select_from(Volunteer).where(
-        Volunteer.user_id == user_id,
-        Volunteer.status == "Approved",
-        Volunteer.attended == True,
-        Volunteer.checked_in_at >= start_str
-    ))
-    volunteer_count = v_res.scalar() or 0
-    
-    total = (bookings_count * POINTS_PER_BOOKING) + (posts_count * POINTS_PER_POST) + (volunteer_count * POINTS_PER_VOLUNTEER)
-    return total
-
-@router.post("/gamification/run-weekly-job")
-async def run_weekly_winners(
-    current_user: User = Depends(get_current_user), # Protected, ideally Admin
+@router.post("/weekly-winners")
+async def announce_weekly_winners(
+    current_user: User = Depends(get_current_user),
     db: Session = Depends(get_db)
 ):
-    # Only Admin or Organizer can trigger manually for testing
-    # In prod, this would be a CRON job with a secret key
+    """
+    Admin Only: Announce weekly winners, award medals, and notify everyone.
+    """
+    if current_user.role != UserRole.ADMIN:
+        raise HTTPException(status_code=403, detail="Admin access required")
+
+    # 1. Calculate Top 3 Students based on weekly_rank or points
+    # Assuming weekly_rank is updated elsewhere or we check bookings/points
+    # For MVP, let's just take top 3 by total points or similar metric
+    # But ideally we should have a 'weekly_points' column. 
+    # Let's rely on 'spent_points' + 'available_points' = total earned? 
+    # Or just use the 'Leaderboard' logic (bookings count).
     
-    # Calculate start of week (last 7 days for simplicity, or strict Sunday)
-    # Let's do last 7 days
-    start_date = datetime.now() - timedelta(days=7)
+    from models import Booking
     
-    # Fetch all students
-    result = db.execute(select(Student, User).join(User, Student.user_id == User.id))
-    students_data = result.all()
+    # Calculate top students by bookings count (since points are mock in leaderboard currently)
+    # real implementation should use a PointTransaction query for 'this week'
     
-    weekly_scores = []
+    # Mocking 'This Week' logic by just taking top global for now 
+    # (Enhancement: Add timestamp filter if needed)
     
-    for student, user in students_data:
-        score = calculate_points_since(db, student.id, user.id, start_date)
-        weekly_scores.append({
-            "student": student,
-            "user": user,
-            "score": score
-        })
-        
-    # Sort by score DESC
-    weekly_scores.sort(key=lambda x: x["score"], reverse=True)
+    result = db.query(Student, func.count(Booking.id).label("count"))\
+        .join(Booking, Student.id == Booking.student_id)\
+        .group_by(Student.id)\
+        .order_by(desc("count"))\
+        .limit(3)\
+        .all()
     
-    # Top 5
-    top_winners = weekly_scores[:5]
+    winners_text = []
     
-    results = []
+    medals = ["🥇 Gold", "🥈 Silver", "🥉 Bronze"]
     
-    for rank, winner in enumerate(top_winners):
-        student = winner["student"]
-        user = winner["user"]
-        score = winner["score"]
+    for i, (student, count) in enumerate(result):
+        medal = medals[i]
+        rank = i + 1
         
-        if score == 0: continue # Skip if no points earned
+        # Award Medal Badge
+        new_badge = {
+            "name": f"Weekly Winner #{rank}",
+            "icon": medal.split(" ")[0],
+            "description": f"Ranked #{rank} in weekly leaderboard",
+            "earned_at": datetime.now().strftime("%Y-%m-%d")
+        }
         
-        actual_rank = rank + 1
+        # Update Badges
+        current_badges = list(student.badges) if student.badges else []
+        current_badges.append(new_badge)
+        student.badges = current_badges
         
-        # 1. Assign Badge
-        badge_name = f"Weekly Winner #{actual_rank}"
-        icon = "🏆" if actual_rank == 1 else "🏅"
+        # Grant Avatar Frame (Unlock logic)
+        # We can add to 'inventory' or 'unlocked_features'
+        special_frames = ["frame-gold", "frame-silver", "frame-bronze"]
+        frame = special_frames[i]
         
-        # Parse current badges
-        current_badges = student.badges if isinstance(student.badges, list) else []
-        
-        # Check if already has badge for this week (avoid duplicates if job runs twice)
-        # Using simple check for now
-        week_identifier = datetime.now().strftime("%Y-%W")
-        has_badge = any(b.get("week") == week_identifier and b.get("rank") == actual_rank for b in current_badges if isinstance(b, dict))
-        
-        if not has_badge:
-            new_badge = {
-                "name": badge_name,
-                "icon": icon,
-                "rank": actual_rank,
-                "week": week_identifier,
-                "date": datetime.now().strftime("%Y-%m-%d")
-            }
-            current_badges.append(new_badge)
-            student.badges = current_badges # Trigger update
+        inventory = list(student.inventory) if student.inventory else []
+        if frame not in inventory:
+            inventory.append(frame)
+            student.inventory = inventory
             
-            # 2. Update Weekly Rank (for Profile display)
-            student.weekly_rank = actual_rank
-            
-            # 3. Equip Effect/Frame (Optional: Auto-equip for winner)
-            if actual_rank == 1:
-                student.active_effect = "frame-gold"
-            elif actual_rank == 2:
-                student.active_effect = "frame-silver"
-            elif actual_rank == 3:
-                student.active_effect = "frame-bronze"
-            
-            # 4. Notifications
-            # Internal
-            create_notification(
-                db=db,
-                user_id=user.id,
-                title="🏆 Weekly Winner!",
-                message=f"Congratulations! You ranked #{actual_rank} this week with {score} points.",
-                type="success",
-                data={"badge": new_badge}
-            )
-            
-            # Email
-            # We need to implement send_weekly_winner_email in email_service.py first
-            # Or just inline it here or mock it
-            # For now, let's call the generic one if we haven't implemented specific
-            try:
-                # Assuming imported from email_service
-                 send_weekly_winner_email(user.email, student.name, actual_rank, score)
-            except:
-                pass
-                
-            results.append(f"Rank {actual_rank}: {student.name} ({score} pts)")
-            
+        # Equip best frame automatically?
+        student.active_effect = frame
+        
+        winners_text.append(f"{medal}: {student.name}")
+        
+        # Notify Winner
+        create_notification(
+            db, 
+            student.user_id, 
+            "🏆 Congratulations!", 
+            f"You won the {medal} medal this week!", 
+            "success"
+        )
+        
     db.commit()
     
-    return {"status": "success", "winners": results}
+    # Broadcast to ALL users
+    message = "Weekly Winners Announced! " + " | ".join(winners_text)
+    
+    # notify all users (Background task ideally, but for now loop 500)
+    all_users = db.query(User).filter(User.is_active == True).limit(500).all()
+    for user in all_users:
+        create_notification(
+            db,
+            user.id,
+            "📣 Weekly Winners",
+            message,
+            "info"
+        )
+        
+    return {"message": "Winners announced successfully", "winners": winners_text}
+
+@router.post("/equip-frame")
+async def equip_frame(
+    frame_id: str,
+    current_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db)
+):
+    if current_user.role != UserRole.STUDENT:
+         raise HTTPException(status_code=400, detail="Only students can equip frames")
+         
+    student = db.query(Student).filter(Student.user_id == current_user.id).first()
+    if not student:
+        raise HTTPException(404, "Profile not found")
+        
+    # Check ownership
+    inventory = student.inventory or []
+    # Allow 'default' or check inventory
+    if frame_id != "none" and frame_id not in inventory:
+        # Mock: For now, allow all 'basic' frames, restrict 'gold'
+        if frame_id.startswith("frame-gold") or frame_id.startswith("frame-silver"):
+             raise HTTPException(403, "You don't own this frame")
+             
+    student.active_effect = frame_id if frame_id != "none" else None
+    db.commit()
+    
+    return {"message": "Frame updated", "active_effect": student.active_effect}

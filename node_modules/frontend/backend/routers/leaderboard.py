@@ -19,7 +19,6 @@ class LeaderboardEntry(BaseModel):
     score: int
     title: Optional[str] = None
     badges: List[dict] = []
-    active_effect: Optional[str] = None
 
 @router.get("/leaderboard", response_model=List[LeaderboardEntry])
 async def get_leaderboard(
@@ -36,7 +35,6 @@ async def get_leaderboard(
         Student.title,
         Student.badges,
         Student.spent_points,
-        Student.active_effect,
         User.email
     ).join(User, Student.user_id == User.id)
 
@@ -66,8 +64,7 @@ async def get_leaderboard(
             "department": row.department,
             "score": score,
             "title": gamification_data["title"],
-            "badges": gamification_data["badges"],
-            "active_effect": row.active_effect
+            "badges": gamification_data["badges"]
         })
     
     # Sort by score desc

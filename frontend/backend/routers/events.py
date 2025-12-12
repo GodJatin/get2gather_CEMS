@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
+from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File, BackgroundTasks
 from sqlalchemy.orm import Session
 from sqlalchemy.future import select
 from database import get_db
@@ -10,7 +10,6 @@ from datetime import datetime
 import shutil
 import os
 import uuid
-from routers.notifications import create_notification
 
 router = APIRouter(tags=["Events"])
 
@@ -82,7 +81,12 @@ async def upload_event_image(
     return {"message": "Image uploaded successfully", "url": image_url}
 
 @router.post("/events", response_model=schemas.EventResponse)
-async def create_event(event: schemas.EventCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def create_event(
+    event: schemas.EventCreate, 
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
     if current_user.role != UserRole.ORGANIZER:
         raise HTTPException(status_code=403, detail="Only organizers can create events")
     
@@ -105,19 +109,111 @@ async def create_event(event: schemas.EventCreate, current_user: User = Depends(
     db.commit()
     db.refresh(new_event)
     
-    # Notify all students
-    students = db.query(User).filter(User.role == UserRole.STUDENT).all()
-    for student in students:
-        create_notification(
-            db=db,
-            user_id=student.id,
-            title=f"New Event: {new_event.title}",
-            message=f"{organizer.organization_name} has posted a new event!",
-            type="info",
-            data={"event_id": new_event.id, "link": f"/student/events/{new_event.id}"}
-        )
-        
+    # Background: Notify all students
+    background_tasks.add_task(notify_new_event, new_event.id, new_event.title)
+    
     return new_event
+
+# --------------------------
+# Background Tasks Helpers
+# --------------------------
+def notify_new_event(event_id: int, event_title: str):
+    """
+    Background task to notify all students about a new event.
+    Creates a new DB session.
+    """
+    from database import SessionLocal
+    from models import Student, User
+    from routers.notifications import create_notification
+    import time
+    
+    db = SessionLocal()
+    try:
+        # Fetch up to 500 active students (limit to avoid overload in MVP)
+        students = db.query(Student).join(User).filter(User.is_active == True).limit(500).all()
+        
+        print(f"🔔 [Background] Notifying {len(students)} students about event: {event_title}")
+        
+        for student in students:
+            try:
+                create_notification(
+                    db, 
+                    user_id=student.user_id, 
+                    title="🎉 New Event!", 
+                    message=f"Check out upcoming event: {event_title}", 
+                    type="info",
+                    data={"event_id": event_id}
+                )
+            except Exception as e:
+                print(f"Failed to notify user {student.user_id}: {e}")
+                
+        # Optional: Send Email? Maybe too spammy for EVERY event. 
+        # Only in-app notifications for now as requested "show them in notification page".
+        
+    except Exception as e:
+        print(f"❌ [Background] Error in notify_new_event: {e}")
+    finally:
+        db.close()
+
+def notify_event_update(event_id: int, event_title: str, changes: list):
+    """
+    Background task to notify attendees about event updates.
+    """
+    from database import SessionLocal
+    from models import Booking, Student, Volunteer, User
+    from email_service import send_event_update_notification
+    from routers.notifications import create_notification
+    
+    db = SessionLocal()
+    try:
+        # Fetch attendees
+        attendees = db.query(Student, User)\
+            .join(Booking, Booking.student_id == Student.id)\
+            .join(User, Student.user_id == User.id)\
+            .filter(Booking.event_id == event_id).all()
+
+        # Fetch volunteers
+        volunteers = db.query(Volunteer, User)\
+            .join(User, Volunteer.user_id == User.id)\
+            .where(Volunteer.event_id == event_id, Volunteer.status == "Approved").all()
+            
+        recipients = []
+        seen_ids = set()
+        
+        # Process Attendees
+        for student, user in attendees:
+            if user.id not in seen_ids:
+                recipients.append({"email": user.email, "name": student.name, "user_id": user.id})
+                seen_ids.add(user.id)
+                
+        # Process Volunteers
+        for volunteer, user in volunteers:
+            if user.id not in seen_ids:
+                student_profile = db.query(Student).filter(Student.user_id == user.id).first()
+                name = student_profile.name if student_profile else "Volunteer"
+                recipients.append({"email": user.email, "name": name, "user_id": user.id})
+                seen_ids.add(user.id)
+                
+        print(f"🔔 [Background] Sending update notifications to {len(recipients)} recipients...")
+        
+        for recipient in recipients:
+            # 1. Send In-App Notification
+            create_notification(
+                db, 
+                user_id=recipient["user_id"], 
+                title=f"Update: {event_title}", 
+                message=f"Changes: {', '.join(changes)}", 
+                type="alert",
+                data={"event_id": event_id}
+            )
+            
+            # 2. Send Email
+            send_event_update_notification(recipient["email"], recipient["name"], event_title, changes)
+            
+    except Exception as e:
+        print(f"❌ [Background] Error in notify_event_update: {e}")
+    finally:
+        db.close()
 
 class ImageUploadRequest(schemas.BaseModel):
     image_base64: str
@@ -411,7 +507,13 @@ async def read_event(event_id: int, db: Session = Depends(get_db)):
     return event
 
 @router.put("/events/{event_id}", response_model=schemas.EventResponse)
-async def update_event(event_id: int, event_update: schemas.EventCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def update_event(
+    event_id: int, 
+    event_update: schemas.EventCreate, 
+    background_tasks: BackgroundTasks,
+    current_user: User = Depends(get_current_user), 
+    db: Session = Depends(get_db)
+):
     if current_user.role != UserRole.ORGANIZER:
         raise HTTPException(status_code=403, detail="Only organizers can update events")
     
@@ -440,68 +542,8 @@ async def update_event(event_id: int, event_update: schemas.EventCreate, current
 
     # Send Notifications if critical fields changed
     if changes:
-        try:
-            from models import Booking, Student, Volunteer
-            from email_service import send_event_update_notification
-            
-            # Fetch all attendees (Students)
-            attendees = db.execute(
-                select(Student, User)
-                .join(Booking, Booking.student_id == Student.id)
-                .join(User, Student.user_id == User.id)
-                .where(Booking.event_id == event_id)
-            ).all()
-
-            # Fetch all volunteers
-            volunteers = db.execute(
-                select(Volunteer, User)
-                .join(User, Volunteer.user_id == User.id)
-                .where(Volunteer.event_id == event_id, Volunteer.status == "Approved")
-            ).all()
-            
-            recipients = []
-            seen_emails = set()
-
-            # Process Attendees
-            for student, user in attendees:
-                if user.email not in seen_emails:
-                    recipients.append({"email": user.email, "name": student.name})
-                    seen_emails.add(user.email)
-            
-            # Process Volunteers
-            for volunteer, user in volunteers:
-                if user.email not in seen_emails:
-                    # Volunteers might not have a student profile linked directly easily depending on model, 
-                    # but usually they do. Let's use User's name if we can, or just generic.
-                    # Actually User model has organization_name or contact, but Student linked.
-                    # Let's try to get name from Student profile if exists, else "Volunteer"
-                    student_profile = db.execute(select(Student).where(Student.user_id == user.id)).scalar_one_or_none()
-                    name = student_profile.name if student_profile else "Volunteer"
-                    
-                    recipients.append({"email": user.email, "name": name})
-                    seen_emails.add(user.email)
-            
-            print(f"🔔 Sending update notifications to {len(recipients)} recipients...")
-            for recipient in recipients:
-                # Email
-                send_event_update_notification(recipient["email"], recipient["name"], event.title, changes)
-                
-                # In-App Notification if we can resolve user_id (recipients list currently only has email/name)
-                # To do this efficiently, we should have kept the user object.
-                # Re-fetching user based on email (not efficient but safe)
-                user = db.query(User).filter(User.email == recipient["email"]).first()
-                if user:
-                    create_notification(
-                        db=db,
-                        user_id=user.id,
-                        title=f"Update: {event.title}",
-                        message=f"Event details have changed: {', '.join(changes)}",
-                        type="alert",
-                        data={"event_id": event.id, "link": f"/student/events/{event.id}"}
-                    )
-                
-        except Exception as e:
-            print(f"❌ Failed to send update notifications: {e}")
+        # Use background task to avoid blocking response
+        background_tasks.add_task(notify_event_update, event.id, event.title, changes)
             
     return event
 

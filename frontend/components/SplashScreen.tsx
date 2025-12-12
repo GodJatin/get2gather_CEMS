@@ -16,6 +16,10 @@ export default function SplashScreen({ onFinish }: { onFinish?: () => void }) {
             return;
         }
 
+        // Validate timestamp to prevent stuck splash
+        const splashStart = Date.now();
+        sessionStorage.setItem('splashStartTime', splashStart.toString());
+
         // Total duration: 3.5s
         // Typewriter: 0-1.5s
         // Logo: 1.5s-2.5s
@@ -24,7 +28,7 @@ export default function SplashScreen({ onFinish }: { onFinish?: () => void }) {
             setIsVisible(false);
             sessionStorage.setItem('hasShownSplash', 'true');
             if (onFinish) onFinish();
-        }, 4000); 
+        }, 3500); 
 
         return () => clearTimeout(timer);
     }, [onFinish]);
