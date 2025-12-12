@@ -13,6 +13,17 @@ try:
 except ImportError as e:
     # Fallback app to show error if import fails
     app = FastAPI()
+    
+    # Add CORS to fallback app
+    from fastapi.middleware.cors import CORSMiddleware
+    app.add_middleware(
+        CORSMiddleware,
+        allow_origins=["*"],
+        allow_credentials=True,
+        allow_methods=["*"],
+        allow_headers=["*"],
+    )
+
     @app.api_route("/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"])
     async def catch_all(path_name: str):
         import traceback

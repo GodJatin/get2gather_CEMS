@@ -77,6 +77,8 @@ def read_api_root():
 # Catch-all for debugging 404/405
 @app.api_route("/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"])
 async def catch_all(request: Request, path_name: str):
+    if request.method == "OPTIONS":
+        return {} # Let CORS middleware handle headers
     return {
         "status": "DEBUG_CATCH_ALL",
         "message": "Route not found in routers",
