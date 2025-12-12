@@ -10,7 +10,7 @@ sys.path.append(backend_dir)
 
 try:
     from main import app
-except Exception as e:
+except BaseException as e:
     # Fallback app to show error if import fails
     app = FastAPI()
     
