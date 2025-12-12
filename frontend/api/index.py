@@ -7,6 +7,7 @@ import os
 current_dir = os.path.dirname(os.path.abspath(__file__))
 backend_dir = os.path.join(os.path.dirname(current_dir), "backend")
 sys.path.append(backend_dir)
+print(f"DEBUG_INDEX: Added {backend_dir} to sys.path. Contents: {os.listdir(backend_dir) if os.path.exists(backend_dir) else 'NOT_FOUND'}")
 
 try:
     from main import app
