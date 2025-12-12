@@ -26,8 +26,7 @@ PROJECT_ID = "vqfnndepdzdewugdcwjg"
 
 # Exact URL from Dashboard:
 # postgresql://postgres.PROJECT:[PASSWORD]@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres
-# Using pg8000 driver for better compatibility with serverless environments (Vercel)
-DATABASE_URL = f"postgresql+pg8000://postgres.{PROJECT_ID}:J%40tin224@{REGIONAL_POOLER_HOST}:6543/postgres?sslmode=require"
+DATABASE_URL = f"postgresql://postgres.{PROJECT_ID}:J%40tin224@{REGIONAL_POOLER_HOST}:6543/postgres?sslmode=require"
 
 print(f"Using Regional Pooler (Cluster 1): {REGIONAL_POOLER_HOST}")
 
