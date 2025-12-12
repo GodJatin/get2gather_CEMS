@@ -1,4 +1,5 @@
 from fastapi import FastAPI, Request
+from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
 from routers import auth, events, bookings, media, feed, volunteers, leaderboard, stats, scan, social, student, admin, notifications, gamification
@@ -16,8 +17,26 @@ def on_startup():
         print("Startup successful")
     except Exception as e:
         print(f"Startup error: {e}")
+        print("Startup successful")
+    except Exception as e:
+        print(f"Startup error: {e}")
 
+@app.exception_handler(Exception)
+async def global_exception_handler(request: Request, exc: Exception):
+    import traceback
+    error_details = traceback.format_exc()
+    print(f"GLOBAL CRASH: {error_details}")
+    return JSONResponse(
+        status_code=500,
+        content={
+            "status": "CRITIAL_ERROR", 
+            "message": "Internal Server Error trapped by Global Handler", 
+            "detail": str(exc),
+            "trace": error_details
+        }
+    )
 
+from fastapi.responses import JSONResponse
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
