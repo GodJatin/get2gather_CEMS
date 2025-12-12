@@ -119,17 +119,11 @@ export default function ProfilePage() {
                         <div className="absolute top-0 left-0 w-full h-32 bg-gradient-to-b from-[#00F0FF]/10 to-transparent opacity-50" />
                         
                         <div className={`relative w-36 h-36 rounded-full p-1 mb-6 transition-all duration-500 ${
-                            user.active_effect === 'frame-gold' ? 'shadow-[0_0_40px_#FFD700] border-4 border-[#FFD700] animate-pulse' :
-                            user.active_effect === 'frame-silver' ? 'shadow-[0_0_40px_#C0C0C0] border-4 border-[#C0C0C0]' :
-                            user.active_effect === 'frame-bronze' ? 'shadow-[0_0_40px_#CD7F32] border-4 border-[#CD7F32]' :
                             user.active_effect === 'Neon Blue Glow' ? 'shadow-[0_0_40px_#00F0FF] border-2 border-[#00F0FF]' :
+                            user.active_effect === 'Golden Aura' ? 'shadow-[0_0_40px_#FFD700] border-2 border-[#FFD700]' :
+                            user.active_effect === 'Cyber Glitch' ? 'shadow-[0_0_20px_#00FF94] animate-pulse border-2 border-[#00FF94]' :
                             'bg-gradient-to-br from-[#00F0FF] to-[#00FF94] shadow-[0_0_20px_rgba(0,240,255,0.3)]'
                         }`}>
-                            {user.active_effect?.startsWith('frame-') && (
-                                <div className="absolute -top-6 left-1/2 -translate-x-1/2 text-4xl z-20 animate-bounce">
-                                    {user.active_effect === 'frame-gold' ? '👑' : user.active_effect === 'frame-silver' ? '🥈' : '🥉'}
-                                </div>
-                            )}
                             <div className="w-full h-full rounded-full bg-neutral-900 flex items-center justify-center text-5xl font-bold text-white overflow-hidden relative">
                                 <span className="z-10">{user.name?.[0] || 'U'}</span>
                                 <div className="absolute inset-0 bg-gradient-to-br from-[#00F0FF]/20 to-[#00FF94]/20 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />

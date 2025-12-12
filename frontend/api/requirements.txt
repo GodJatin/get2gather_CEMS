@@ -13,5 +13,7 @@ dnspython
 email-validator
 aiosqlite
 bcrypt
+psycopg2-binary
+dnspython
 slowapi
 supabase

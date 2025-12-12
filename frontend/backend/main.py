@@ -1,7 +1,7 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
-from routers import auth, events, bookings, media, feed, volunteers, leaderboard, stats, scan, social, student, admin, notifications, gamification
+from routers import auth, events, bookings, media, feed, volunteers, leaderboard, stats, scan, social, student, admin, notifications
 import time
 import models
 import models
@@ -58,7 +58,6 @@ app.include_router(social.router, prefix=API_PREFIX)
 app.include_router(student.router, prefix=API_PREFIX)
 app.include_router(admin.router, prefix=API_PREFIX)
 app.include_router(notifications.router, prefix=API_PREFIX)
-app.include_router(gamification.router, prefix=API_PREFIX)
 
 @app.get("/")
 def read_root():

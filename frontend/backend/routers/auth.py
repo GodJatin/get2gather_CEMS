@@ -135,7 +135,6 @@ async def read_users_me(current_user: User = Depends(get_current_user), db: Sess
                 
                 user_data["title"] = gamification_data["title"]
                 user_data["badges"] = gamification_data["badges"]
-                user_data["active_effect"] = student.active_effect or None
             else:
                 print("Student profile not found, returning defaults")
                 

@@ -21,17 +21,12 @@ load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 # 'aws-0' returned "Tenant Not Found" because the tenant is on Cluster 1.
 # This hostname resolves to IPv4 and works on Vercel.
 
+REGIONAL_POOLER_HOST = "aws-1-ap-southeast-1.pooler.supabase.com"
+PROJECT_ID = "vqfnndepdzdewugdcwjg"
+
 # Exact URL from Dashboard:
 # postgresql://postgres.PROJECT:[PASSWORD]@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres
-DATABASE_URL = os.getenv("DATABASE_URL")
-
-if not DATABASE_URL:
-    # Fail fast if credentials are missing
-    print("❌ CRITICAL: DATABASE_URL not found in environment variables.")
-    # Fallback for local testing only if strictly necessary, but better to force .env usage
-    # REGIONAL_POOLER_HOST = "aws-1-ap-southeast-1.pooler.supabase.com"
-    # PROJECT_ID = "vqfnndepdzdewugdcwjg"
-    # DATABASE_URL = f"postgresql://postgres.{PROJECT_ID}:PASSWORD@{REGIONAL_POOLER_HOST}:6543/postgres?sslmode=require"
+DATABASE_URL = f"postgresql://postgres.{PROJECT_ID}:J%40tin224@{REGIONAL_POOLER_HOST}:6543/postgres?sslmode=require"
 
 print(f"Using Regional Pooler (Cluster 1): {REGIONAL_POOLER_HOST}")
 

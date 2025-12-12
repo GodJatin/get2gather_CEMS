@@ -13,7 +13,6 @@ interface LeaderboardEntry {
     score: number;
     title?: string;
     badges?: { name: string; icon: string }[];
-    active_effect?: string;
 }
 
 const getRankEmoji = (index: number) => {
@@ -170,20 +169,12 @@ export default function LeaderboardPage() {
                                 {getRankEmoji(index)}
                             </div>
                             
-                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg shrink-0 relative ${
-                                leader.active_effect === 'frame-gold' ? 'border-2 border-[#FFD700] shadow-[#FFD700]/50' :
-                                leader.active_effect === 'frame-silver' ? 'border-2 border-[#C0C0C0] shadow-[#C0C0C0]/50' :
-                                leader.active_effect === 'frame-bronze' ? 'border-2 border-[#CD7F32] shadow-[#CD7F32]/50' :
+                            <div className={`w-12 h-12 rounded-full flex items-center justify-center text-white font-bold text-lg shadow-lg shrink-0 ${
                                 index === 0 ? 'bg-gradient-to-br from-yellow-400 to-orange-600' :
                                 index === 1 ? 'bg-gradient-to-br from-neutral-300 to-neutral-500' :
                                 index === 2 ? 'bg-gradient-to-br from-orange-400 to-orange-700' :
                                 'bg-gradient-to-br from-primary to-secondary'
                             }`}>
-                                {leader.active_effect?.startsWith('frame-') && (
-                                    <div className="absolute -top-3 left-1/2 -translate-x-1/2 text-sm z-20">
-                                        {leader.active_effect === 'frame-gold' ? '👑' : leader.active_effect === 'frame-silver' ? '🥈' : '🥉'}
-                                    </div>
-                                )}
                                 {leader.student_name[0]}
                             </div>
 
