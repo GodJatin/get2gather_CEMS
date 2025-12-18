@@ -113,9 +113,11 @@ async def create_event(event: schemas.EventCreate, current_user: User = Depends(
             message=f"Check out the new event '{new_event.title}' organized by {organizer.organization_name}!",
             type="info",
             data={"event_id": new_event.id},
-            role=UserRole.STUDENT
+            role=UserRole.STUDENT.value # Pass string value to avoid Enum mismatch
         )
     except Exception as e:
+        import traceback
+        traceback.print_exc()
         print(f"Failed to create broadcast notification: {e}")
 
     # Also notify the organizer (for confirmation)

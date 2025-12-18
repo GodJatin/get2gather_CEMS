@@ -51,7 +51,7 @@ export const completeOrganizerSignup = async (data: { email: string; password: s
 
 // Notifications
 export const getNotifications = async (limit = 20, offset = 0) => {
-    return api.get(`/notifications/?limit=${limit}&offset=${offset}`);
+    return api.get(`/notifications?limit=${limit}&offset=${offset}`);
 };
 
 export const getUnreadCount = async () => {

@@ -27,9 +27,12 @@ def create_broadcast_notification(db: Session, title: str, message: str, type: s
     # Build query
     query = db.query(User)
     if role:
-        query = query.filter(User.role == role)
+        # If role is passed, filter. Handle both Enum and string just in case.
+        # Assuming database stores the string value of the enum.
+        query = query.filter(User.role == str(role))
     
     users = query.all()
+    print(f"DEBUG: Broadcast to role='{role}'. Found {len(users)} users.")
     
     notifications = []
     timestamp = datetime.now().isoformat()
