@@ -49,4 +49,21 @@ export const completeOrganizerSignup = async (data: { email: string; password: s
     return api.post('/auth/organizer/complete', data);
 };
 
+// Notifications
+export const getNotifications = async (limit = 20, offset = 0) => {
+    return api.get(`/notifications/?limit=${limit}&offset=${offset}`);
+};
+
+export const getUnreadCount = async () => {
+    return api.get('/notifications/unread-count');
+};
+
+export const markNotificationRead = async (id: number) => {
+    return api.put(`/notifications/${id}/read`);
+};
+
+export const markAllNotificationsRead = async () => {
+    return api.put('/notifications/read-all');
+};
+
 export default api;

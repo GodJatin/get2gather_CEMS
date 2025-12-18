@@ -103,6 +103,21 @@ async def create_event(event: schemas.EventCreate, current_user: User = Depends(
     db.add(new_event)
     db.commit()
     db.refresh(new_event)
+
+    # Notify all students about the new event
+    try:
+        from utils.notifications import create_broadcast_notification
+        create_broadcast_notification(
+            db=db,
+            title=f"New Event: {new_event.title}",
+            message=f"Check out the new event '{new_event.title}' organized by {organizer.organization_name}!",
+            type="info",
+            data={"event_id": new_event.id},
+            role=UserRole.STUDENT
+        )
+    except Exception as e:
+        print(f"Failed to create broadcast notification: {e}")
+
     return new_event
 
 class ImageUploadRequest(schemas.BaseModel):
@@ -468,6 +483,45 @@ async def update_event(event_id: int, event_update: schemas.EventCreate, current
                     seen_emails.add(user.email)
             
             print(f"🔔 Sending update notifications to {len(recipients)} recipients...")
+            for recipient in recipients:
+                # Send Email
+                send_event_update_notification(recipient["email"], recipient["name"], event.title, changes)
+                
+                # Create In-App Notification
+                # We need user_id, which we might not have efficiently in this loop structure 
+                # (recipient is dict). But we iterated (student, user) and (volunteer, user) before.
+                # Let's adjust the loop or just find user by email (inefficient) or store user_id in recipient.
+                
+            # Better approach: Iterate again or refactor above to store user_id
+            
+            # Refactored notification loop:
+            for student, user in attendees:
+                try:
+                    from utils.notifications import create_notification
+                    create_notification(
+                        db=db,
+                        user_id=user.id,
+                        title=f"Event Update: {event.title}",
+                        message=f"Changes: {', '.join(changes)}",
+                        type="alert",
+                        data={"event_id": event.id}
+                    )
+                except: pass
+                
+            for volunteer, user in volunteers:
+                try:
+                    from utils.notifications import create_notification
+                    create_notification(
+                        db=db,
+                        user_id=user.id,
+                        title=f"Volunteer Update: {event.title}",
+                        message=f"Changes: {', '.join(changes)}",
+                        type="alert",
+                        data={"event_id": event.id}
+                    )
+                except: pass
+
+            # Send Emails (using existing recipients list)
             for recipient in recipients:
                 send_event_update_notification(recipient["email"], recipient["name"], event.title, changes)
                 

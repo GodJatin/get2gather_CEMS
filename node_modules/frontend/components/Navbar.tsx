@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import NotificationCenter from '@/components/NotificationCenter';
 
 export default function Navbar() {
     const pathname = usePathname();
@@ -78,8 +79,11 @@ export default function Navbar() {
                     })}
                 </div>
 
-                {/* Logout Button */}
-                <div className="hidden md:block">
+                <div className="hidden md:flex items-center gap-4">
+                    {/* Notification Center */}
+                    <NotificationCenter />
+                    
+                    {/* Logout Button */}
                     <button
                         onClick={handleLogout}
                         className="px-5 py-2 rounded-full bg-red-500/10 hover:bg-red-500/20 text-red-400 text-sm font-medium transition-colors border border-red-500/10"

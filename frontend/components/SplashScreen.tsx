@@ -7,6 +7,17 @@ export default function SplashScreen({ onFinish }: { onFinish?: () => void }) {
     const [isVisible, setIsVisible] = useState(true);
 
     useEffect(() => {
+        // Check session storage
+        const hasShown = sessionStorage.getItem('hasShownSplash');
+        if (hasShown) {
+            setIsVisible(false);
+            if (onFinish) onFinish();
+            return;
+        }
+
+        // Mark as shown
+        sessionStorage.setItem('hasShownSplash', 'true');
+
         // Total duration: 3.5s
         // Typewriter: 0-1.5s
         // Logo: 1.5s-2.5s

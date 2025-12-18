@@ -57,8 +57,11 @@
 - **Future**: In-app notification center (Bell icon) for reminders, waitlist updates, and announcements.
 
 ### 5. 🔄 Waitlist Automation
-- **Current**: Manual check.
-- **Future**: Automatically promote users from waitlist when a seat is cancelled and notify them.
+-   **Current**: Manual check.
+-   **Future**: Automatically promote users from waitlist when a seat is cancelled and notify them.
+
+### 6. 💧 Splash Screen
+-   **Current**: Optimized to show only once per session.
 
 ### 6. 📜 Certificate Generation
 - **Current**: Points awarded.
@@ -69,5 +72,9 @@
 - **Future**: Web interface to approve new organizers, ban users, and manage global settings.
 
 ### 8. 💬 Feedback & Ratings
-- **Current**: None.
-- **Future**: Allow students to rate events and leave feedback for organizers.
+-   **Current**: Backend ready, Frontend deferred.
+-   **Future**: Enable UI for students to rate events.
+
+### 9. 🔔 Notification System (Enhanced)
+-   **Current**: Real-time notifications for New Events and Updates via Notification Center.
+-   **Future**: Push notifications.
