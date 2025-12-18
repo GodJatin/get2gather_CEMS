@@ -58,7 +58,47 @@ export default function NotificationCenter({ children }: { children?: React.Reac
         }
     };
 
-    // ... (UseEffects remain same)
+    useEffect(() => {
+        fetchUnreadCount();
+        fetchNotifications();
+
+        // Poll every 30 seconds
+        const interval = setInterval(() => {
+            fetchUnreadCount();
+            fetchNotifications();
+        }, 30000);
+
+        return () => clearInterval(interval);
+    }, []);
+
+    const handleMarkAllRead = async () => {
+        try {
+            await markAllNotificationsRead();
+            setNotifications(prev => prev.map(n => ({ ...n, is_read: true })));
+            setUnreadCount(0);
+        } catch (error) {
+            console.error("Failed to mark all as read", error);
+        }
+    };
+
+    const handleNotificationClick = async (notification: Notification) => {
+        if (!notification.is_read) {
+            try {
+                await markNotificationRead(notification.id);
+                setNotifications(prev => 
+                    prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n)
+                );
+                setUnreadCount(prev => Math.max(0, prev - 1));
+            } catch (error) {
+                console.error("Failed to mark notification as read", error);
+            }
+        }
+
+        if (notification.data && notification.data.event_id) {
+            router.push(`/student/events/${notification.data.event_id}`);
+            setIsOpen(false);
+        }
+    };
 
     return (
         <div className="relative" ref={containerRef}>
