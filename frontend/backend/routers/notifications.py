@@ -1,10 +1,13 @@
 from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from database import get_db
 import models
 from routers.auth import get_current_user
 from datetime import datetime
+
+from pydantic import BaseModel
+import json # Added import
 
 router = APIRouter(
     prefix="/notifications",
@@ -12,16 +15,29 @@ router = APIRouter(
     responses={404: {"description": "Not found"}},
 )
 
-@router.get("/")
+# Added NotificationOut schema
+class NotificationOut(BaseModel):
+    id: int
+    title: str
+    message: str
+    type: str
+    is_read: bool = False # Changed 'boolean' to 'bool'
+    created_at: Any
+    data: Optional[Dict[str, Any]] = None
+
+    class Config:
+        from_attributes = True
+
+@router.get("/", response_model=List[NotificationOut]) # Modified path and added response_model
 async def get_notifications(
-    current_user: models.User = Depends(get_current_user),
-    db: Session = Depends(get_db),
     limit: int = 20,
-    offset: int = 0
+    offset: int = 0,
+    current_user: models.User = Depends(get_current_user), # Reordered parameters
+    db: Session = Depends(get_db)
 ):
     notifications = db.query(models.Notification)\
         .filter(models.Notification.user_id == current_user.id)\
-        .order_by(models.Notification.id.desc())\
+        .order_by(models.Notification.created_at.desc())\
         .limit(limit)\
         .offset(offset)\
         .all()
@@ -90,14 +106,32 @@ async def diagnose_notifications(db: Session = Depends(get_db)):
         notifs = db.query(models.Notification).order_by(models.Notification.id.desc()).limit(5).all()
         notif_data = [{"id": n.id, "user_id": n.user_id, "title": n.title} for n in notifs]
         
-        # Get users "Jatin"
-        users = db.query(models.User).filter(models.User.organization_name.ilike('%Jatin%')).limit(5).all()
-        user_data = [{"id": u.id, "email": u.email, "role": str(u.role), "org_name": u.organization_name} for u in users]
+        # Get users "Jatin" or "Testing" - Searching broadly to map IDs
+        # We will fetch ALL users to be safe (limit 20)
+        users = db.query(models.User).limit(20).all()
+        
+        user_list = []
+        for u in users:
+            name_display = "Unknown"
+            # Try to fetch profile name
+            if str(u.role).upper() == "STUDENT":
+                stud = db.query(models.Student).filter(models.Student.user_id == u.id).first()
+                if stud: name_display = f"{stud.name} (Student)"
+            elif str(u.role).upper() == "ORGANIZER":
+                org = db.query(models.Organizer).filter(models.Organizer.user_id == u.id).first()
+                if org: name_display = f"{org.organization_name} (Organizer)"
+                
+            user_list.append({
+                "id": u.id,
+                "email": u.email,
+                "role": str(u.role),
+                "resolved_name": name_display
+            })
         
         return {
             "status": "ok",
             "last_5_notifications": notif_data,
-            "found_users_jatin": user_data,
+            "all_users_dump": user_list,
             "env_check": "Vercel Backend is Running"
         }
     except Exception as e:
