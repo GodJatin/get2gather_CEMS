@@ -33,6 +33,7 @@ interface StudentStats {
 
 import Loader from '@/components/Loader';
 import { Bell } from 'lucide-react';
+import NotificationCenter from '@/components/NotificationCenter';
 
 export default function StudentDashboard() {
     const [bookings, setBookings] = useState<Booking[]>([]);
@@ -95,16 +96,17 @@ export default function StudentDashboard() {
                         />
                     </motion.div>
 
-                    <Link 
-                        href="/student/notifications"
-                        className="p-3 rounded-full bg-white/10 border border-white/10 text-white hover:bg-white/20 transition-all hover:scale-110 relative group/bell"
-                    >
-                        <Bell size={24} />
-                        <div className="absolute top-3 right-3 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                        <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs bg-black/80 text-white px-2 py-1 rounded opacity-0 group-hover/bell:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
-                            Notifications
-                        </span>
-                    </Link>
+                    <div className="relative z-50">
+                        <NotificationCenter>
+                            <div className="p-3 rounded-full bg-white/10 border border-white/10 text-white hover:bg-white/20 transition-all hover:scale-110 relative group/bell">
+                                <Bell size={24} />
+                                <div className="absolute top-3 right-3 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                                <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs bg-black/80 text-white px-2 py-1 rounded opacity-0 group-hover/bell:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                                    Notifications
+                                </span>
+                            </div>
+                        </NotificationCenter>
+                    </div>
                 </div>
                 
                 {/* Decorative Background Elements */}

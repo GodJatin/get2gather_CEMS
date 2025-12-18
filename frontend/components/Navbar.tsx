@@ -80,9 +80,6 @@ export default function Navbar() {
                 </div>
 
                 <div className="hidden md:flex items-center gap-4">
-                    {/* Notification Center */}
-                    <NotificationCenter />
-                    
                     {/* Logout Button */}
                     <button
                         onClick={handleLogout}
