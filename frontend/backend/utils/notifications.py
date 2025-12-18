@@ -1,6 +1,6 @@
 from sqlalchemy.orm import Session
 from models import Notification, Student, User
-from datetime import datetime
+from datetime import datetime, timezone
 from typing import List, Optional
 
 def create_notification(db: Session, user_id: int, title: str, message: str, type: str = "info", data: dict = None):
@@ -12,7 +12,7 @@ def create_notification(db: Session, user_id: int, title: str, message: str, typ
         title=title,
         message=message,
         type=type,
-        created_at=datetime.now().isoformat(),
+        created_at=datetime.now(timezone.utc).isoformat(),
         data=data
     )
     db.add(new_notif)
@@ -35,7 +35,7 @@ def create_broadcast_notification(db: Session, title: str, message: str, type: s
     print(f"DEBUG: Broadcast to role='{role}'. Found {len(users)} users.")
     
     notifications = []
-    timestamp = datetime.now().isoformat()
+    timestamp = datetime.now(timezone.utc).isoformat()
     
     for user in users:
         notifications.append(Notification(

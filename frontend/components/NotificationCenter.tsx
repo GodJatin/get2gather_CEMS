@@ -137,13 +137,11 @@ export default function NotificationCenter({ children }: { children?: React.Reac
                 )}
             </div>
 
-            <AnimatePresence>
-                {isOpen && (
                     <motion.div
                         initial={{ opacity: 0, y: 10, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
                         exit={{ opacity: 0, y: 10, scale: 0.95 }}
-                        className="absolute right-0 mt-2 w-80 md:w-96 bg-neutral-900 border border-white/10 rounded-2xl shadow-xl overflow-hidden z-50 origin-top-right"
+                        className="absolute right-0 mt-2 w-[85vw] md:w-[450px] bg-neutral-900 border border-white/10 rounded-2xl shadow-xl overflow-hidden z-[100] origin-top-right"
                     >
                         <div className="flex items-center justify-between p-4 border-b border-white/10 bg-neutral-800/50">
                             <h3 className="font-semibold text-white">Notifications</h3>
@@ -157,7 +155,7 @@ export default function NotificationCenter({ children }: { children?: React.Reac
                             )}
                         </div>
 
-                        <div className="max-h-[60vh] overflow-y-auto">
+                        <div className="max-h-[60vh] overflow-y-auto [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]">
                             {loading ? (
                                 <div className="p-8 flex justify-center text-neutral-500">
                                     <span className="animate-spin mr-2">⏳</span> Loading...
@@ -189,6 +187,7 @@ export default function NotificationCenter({ children }: { children?: React.Reac
                                                     {n.message}
                                                 </p>
                                                 <p className="text-[10px] text-neutral-600 mt-2">
+                                                    {/* Ensure we parse the date string usually ending in Z or Iso */}
                                                     {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                                                 </p>
                                             </div>
