@@ -1,47 +1,18 @@
-'use client';
+import { Bell } from 'lucide-react';
+import NotificationCenter from '@/components/NotificationCenter';
 
-import Link from 'next/link';
-import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';
-import TextReveal from '@/components/TextReveal';
-import Counter from '@/components/Counter';
-import { motion } from 'framer-motion';
+// ... existing imports ...
 
-import { useEffect, useState } from 'react';
-import api from '@/lib/api';
+// ... inside component ...
 
-export default function OrganizerDashboard() {
-    const [stats, setStats] = useState({
-        totalEvents: 0,
-        totalBookings: 0,
-        totalVolunteers: 0
-    });
-    const [organizerName, setOrganizerName] = useState('Organizer');
+            <header className="mb-12 relative p-8 md:p-12 group">
+                {/* Background Container with Overflow Hidden */}
+                <div className="absolute inset-0 overflow-hidden rounded-3xl bg-gradient-to-r from-purple-900/20 to-pink-900/20 border border-white/10">
+                    <div className="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-purple-600/20 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-1000" />
+                    <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-64 h-64 bg-pink-600/20 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-1000" />
+                </div>
 
-    useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [statsRes, userRes] = await Promise.all([
-                    api.get('/stats/organizer'),
-                    api.get('/auth/me')
-                ]);
-                
-                setStats({
-                    totalEvents: statsRes.data.total_events,
-                    totalBookings: statsRes.data.total_bookings,
-                    totalVolunteers: statsRes.data.total_volunteers
-                });
-                setOrganizerName(userRes.data.name || 'Organizer');
-            } catch (error) {
-                console.error('Failed to fetch data', error);
-            }
-        };
-        fetchData();
-    }, []);
-
-    return (
-        <MotionWrapper>
-            <header className="mb-12 relative overflow-hidden rounded-3xl bg-gradient-to-r from-purple-900/20 to-pink-900/20 border border-white/10 p-8 md:p-12 group">
-                <div className="relative z-10">
+                <div className="relative z-10 flex justify-between items-start">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
                         animate={{ opacity: 1, y: 0 }}
@@ -56,11 +27,18 @@ export default function OrganizerDashboard() {
                             delay={0.2}
                         />
                     </motion.div>
+
+                    <div className="relative z-50">
+                        <NotificationCenter>
+                            <div className="p-3 rounded-full bg-white/10 border border-white/10 text-white hover:bg-white/20 transition-all hover:scale-110 relative group/bell">
+                                <Bell size={24} />
+                                <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs bg-black/80 text-white px-2 py-1 rounded opacity-0 group-hover/bell:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
+                                    Notifications
+                                </span>
+                            </div>
+                        </NotificationCenter>
+                    </div>
                 </div>
-                
-                {/* Decorative Background Elements */}
-                <div className="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-purple-600/20 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-1000" />
-                <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-64 h-64 bg-pink-600/20 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-1000" />
             </header>
 
             {/* Stats Grid */}
