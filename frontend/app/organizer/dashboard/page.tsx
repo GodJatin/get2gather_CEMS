@@ -42,7 +42,7 @@ export default function OrganizerDashboard() {
 
     return (
         <MotionWrapper>
-            <header className="mb-12 relative p-8 md:p-12 group">
+            <header className="mb-12 relative p-8 md:p-12 group z-50">
                 {/* Background Container with Overflow Hidden */}
                 <div className="absolute inset-0 overflow-hidden rounded-3xl bg-gradient-to-r from-purple-900/20 to-pink-900/20 border border-white/10">
                     <div className="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-purple-600/20 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-1000" />

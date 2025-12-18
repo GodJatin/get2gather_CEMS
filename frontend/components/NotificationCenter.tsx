@@ -97,13 +97,7 @@ export default function NotificationCenter({ children }: { children?: React.Reac
         }
 
         if (notification.data && notification.data.event_id) {
-            // Smart Routing
-            const isOrganizer = pathname?.startsWith('/organizer');
-            const targetPath = isOrganizer 
-                ? `/organizer/events/${notification.data.event_id}` // Organizer view (maybe edit page?)
-                : `/student/events/${notification.data.event_id}`; // Student view
-            
-            router.push(targetPath);
+            router.push(`/events/${notification.data.event_id}`);
             setIsOpen(false);
         }
     };
