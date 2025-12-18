@@ -92,11 +92,27 @@ export default function OrganizerScanPage() {
         setTimeMessage(status.message);
     };
 
+    const [isProcessing, setIsProcessing] = useState(false);
+    const processingRef = useRef(false);
+
     const handleCameraScan = (decodedText: string) => {
-        if (decodedText) {
+        if (decodedText && !processingRef.current) {
+            processingRef.current = true;
+            setIsProcessing(true);
+            
+            // Play success sound
+            // const audio = new Audio('/success.mp3');
+            // audio.play().catch(() => {});
+            
             setQrInput(decodedText);
             handleScan(decodedText);
-            setShowCamera(false); // Close camera on scan
+            
+            // Stop scanning immediately
+            if (scannerRef.current) {
+                scannerRef.current.clear().catch(console.error);
+                scannerRef.current = null;
+            }
+            setShowCamera(false); 
         }
     };
 
@@ -120,6 +136,12 @@ export default function OrganizerScanPage() {
         } catch (error: any) {
             const errorMsg = error.response?.data?.detail || 'Scan Failed';
             setScanResult({ success: false, message: errorMsg });
+        } finally {
+             // Add a small delay before allowing next scan to prevent double-trigger
+             setTimeout(() => {
+                 processingRef.current = false;
+                 setIsProcessing(false);
+             }, 2000);
         }
     };
 
