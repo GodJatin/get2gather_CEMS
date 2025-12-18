@@ -79,3 +79,26 @@ def create_notification(db: Session, user_id: int, title: str, message: str, typ
     db.add(new_notif)
     db.commit()
     return new_notif
+
+@router.get("/diagnose")
+async def diagnose_notifications(db: Session = Depends(get_db)):
+    """
+    Public endpoint to debug DB state.
+    """
+    try:
+        # Get last 5 notifications
+        notifs = db.query(models.Notification).order_by(models.Notification.id.desc()).limit(5).all()
+        notif_data = [{"id": n.id, "user_id": n.user_id, "title": n.title} for n in notifs]
+        
+        # Get users "Jatin"
+        users = db.query(models.User).filter(models.User.organization_name.ilike('%Jatin%')).limit(5).all()
+        user_data = [{"id": u.id, "email": u.email, "role": str(u.role), "org_name": u.organization_name} for u in users]
+        
+        return {
+            "status": "ok",
+            "last_5_notifications": notif_data,
+            "found_users_jatin": user_data,
+            "env_check": "Vercel Backend is Running"
+        }
+    except Exception as e:
+        return {"status": "error", "message": str(e)}

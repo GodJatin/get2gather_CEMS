@@ -32,10 +32,48 @@ try:
     if 'type' not in columns:
         print("CRITICAL: 'type' column MISSING in notifications table!")
 
-    # 4. Notifications Data
-    print("\n[4. Data Check]")
-    total_notifs = db.query(Notification).count()
-    print(f"Total Notifications: {total_notifs}")
+    # 4. Forensic Analysis
+    print("\n[4. Forensic Analysis]")
+    
+    # Find Jatin
+    jatin = db.query(User).filter(User.organization_name.ilike('%Jatin%')).first()
+    # Or try by name in Organizer/Student profile?
+    # User model has 'organization_name', Student has 'name'. 
+    # User's 'name' is not in User model (it's in linked profile), but dashboard says "Jatin Shah".
+    # User screenshot says "Good Evening, Jatin Shah".
+    # This name comes from `/auth/me` -> returns `user.dict()` + `name` from profile.
+    
+    # Try finding by looking at profiles
+    from models import Student, Organizer
+    
+    target_user = None
+    target_name = "Jatin"
+    
+    # Try Student
+    stud = db.query(Student).filter(Student.name.ilike(f'%{target_name}%')).first()
+    if stud:
+        print(f"Found Student: {stud.name}, UserID: {stud.user_id}")
+        target_user = stud.user_id
+        
+    # Try Organizer
+    if not target_user:
+        org = db.query(Organizer).filter(Organizer.organization_name.ilike(f'%{target_name}%')).first()
+        if org:
+             print(f"Found Organizer: {org.organization_name}, UserID: {org.user_id}")
+             target_user = org.user_id
+             
+    if target_user:
+        print(f"Target User ID: {target_user}")
+        user_notifs = db.query(Notification).filter(Notification.user_id == target_user).all()
+        print(f"Notifications for Target User: {len(user_notifs)}")
+        for n in user_notifs:
+             print(f" - [{n.type}] {n.title}: {n.message} (Read: {n.is_read})")
+    else:
+        print("Could not find user 'Jatin' in DB.")
+        
+    # Show all unique user_ids in notifications
+    unique_ids = db.query(Notification.user_id).distinct().all()
+    print(f"\nUser IDs with notifications: {[u[0] for u in unique_ids]}")
 
 except Exception as e:
     import traceback
