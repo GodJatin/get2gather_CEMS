@@ -1,9 +1,38 @@
-'use client';
+import { formatDistanceToNow } from 'date-fns';
+import { usePathname } from 'next/navigation';
 
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { getNotifications, getUnreadCount, markNotificationRead, markAllNotificationsRead } from '@/lib/api';
-import { useRouter } from 'next/navigation';
+// ... (existing imports)
+
+export default function NotificationCenter({ children }: { children?: React.ReactNode }) {
+    // ... (existing state)
+    const pathname = usePathname();
+
+    // ... (fetch logic remains)
+
+    const handleNotificationClick = async (notification: Notification) => {
+        if (!notification.is_read) {
+            try {
+                await markNotificationRead(notification.id);
+                setNotifications(prev => 
+                    prev.map(n => n.id === notification.id ? { ...n, is_read: true } : n)
+                );
+                setUnreadCount(prev => Math.max(0, prev - 1));
+            } catch (error) {
+                console.error("Failed to mark notification as read", error);
+            }
+        }
+
+        if (notification.data && notification.data.event_id) {
+            // Smart Routing
+            const isOrganizer = pathname?.startsWith('/organizer');
+            const targetPath = isOrganizer 
+                ? `/organizer/events/${notification.data.event_id}` // Organizer view (maybe edit page?)
+                : `/student/events/${notification.data.event_id}`; // Student view
+            
+            router.push(targetPath);
+            setIsOpen(false);
+        }
+    };
 
 interface Notification {
     id: number;
@@ -181,7 +210,7 @@ export default function NotificationCenter({ children }: { children?: React.Reac
                                                     {n.message}
                                                 </p>
                                                 <p className="text-[10px] text-neutral-600 mt-2">
-                                                    {new Date(n.created_at).toLocaleString()}
+                                                    {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
                                                 </p>
                                             </div>
                                             {!n.is_read && (
