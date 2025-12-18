@@ -1,10 +1,47 @@
+'use client';
+
+import Link from 'next/link';
+import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';
+import TextReveal from '@/components/TextReveal';
+import Counter from '@/components/Counter';
+import { motion } from 'framer-motion';
 import { Bell } from 'lucide-react';
 import NotificationCenter from '@/components/NotificationCenter';
 
-// ... existing imports ...
+import { useEffect, useState } from 'react';
+import api from '@/lib/api';
 
-// ... inside component ...
+export default function OrganizerDashboard() {
+    const [stats, setStats] = useState({
+        totalEvents: 0,
+        totalBookings: 0,
+        totalVolunteers: 0
+    });
+    const [organizerName, setOrganizerName] = useState('Organizer');
 
+    useEffect(() => {
+        const fetchData = async () => {
+            try {
+                const [statsRes, userRes] = await Promise.all([
+                    api.get('/stats/organizer'),
+                    api.get('/auth/me')
+                ]);
+                
+                setStats({
+                    totalEvents: statsRes.data.total_events,
+                    totalBookings: statsRes.data.total_bookings,
+                    totalVolunteers: statsRes.data.total_volunteers
+                });
+                setOrganizerName(userRes.data.name || 'Organizer');
+            } catch (error) {
+                console.error('Failed to fetch data', error);
+            }
+        };
+        fetchData();
+    }, []);
+
+    return (
+        <MotionWrapper>
             <header className="mb-12 relative p-8 md:p-12 group">
                 {/* Background Container with Overflow Hidden */}
                 <div className="absolute inset-0 overflow-hidden rounded-3xl bg-gradient-to-r from-purple-900/20 to-pink-900/20 border border-white/10">
