@@ -38,14 +38,16 @@ export default function NotificationCenter({ children }: { children?: React.Reac
         setLoading(true);
         try {
             const res = await getNotifications();
-            console.log("Notification Response:", res.data); // Debugging
+            console.log("🔔 [NotificationCenter] Fetch Response:", res);
             
-            if (Array.isArray(res.data)) {
+            if (res.data && Array.isArray(res.data)) {
+                console.log(`🔔 [NotificationCenter] Loaded ${res.data.length} notifications`);
                 setNotifications(res.data);
+                // Unread count logic
                 const count = res.data.filter((n: Notification) => !n.is_read).length;
                 // setUnreadCount(count); 
             } else {
-                console.error("Notifications data is not an array:", res.data);
+                console.warn("🔔 [NotificationCenter] Unexpected response format:", res.data);
                 setNotifications([]);
             }
         } catch (error) {

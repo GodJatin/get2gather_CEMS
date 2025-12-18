@@ -28,7 +28,7 @@ class NotificationOut(BaseModel):
     class Config:
         from_attributes = True
 
-@router.get("/", response_model=List[NotificationOut]) # Modified path and added response_model
+@router.get("", response_model=List[NotificationOut])
 async def get_notifications(
     limit: int = 20,
     offset: int = 0,
