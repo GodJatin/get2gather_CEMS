@@ -118,6 +118,20 @@ async def create_event(event: schemas.EventCreate, current_user: User = Depends(
     except Exception as e:
         print(f"Failed to create broadcast notification: {e}")
 
+    # Also notify the organizer (for confirmation)
+    try:
+        from utils.notifications import create_notification
+        create_notification(
+            db=db,
+            user_id=current_user.id,
+            title=f"Event Created: {new_event.title}",
+            message="Your event has been successfully created and broadcasted to students.",
+            type="success",
+            data={"event_id": new_event.id}
+        )
+    except Exception as e:
+        print(f"Failed to notify organizer: {e}")
+
     return new_event
 
 class ImageUploadRequest(schemas.BaseModel):

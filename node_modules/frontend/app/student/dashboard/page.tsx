@@ -79,7 +79,13 @@ export default function StudentDashboard() {
     return (
         <MotionWrapper className="max-w-7xl mx-auto">
             {/* Hero Section */}
-            <header className="mb-8 relative overflow-hidden rounded-3xl bg-gradient-to-r from-primary/20 to-secondary/20 border border-white/10 p-8 md:p-12 group">
+            <header className="mb-8 relative p-8 md:p-12 group">
+                {/* Background Container with Overflow Hidden */}
+                <div className="absolute inset-0 overflow-hidden rounded-3xl border border-white/10 bg-gradient-to-r from-primary/20 to-secondary/20">
+                    <div className="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-primary/20 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-1000" />
+                    <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-64 h-64 bg-secondary/20 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-1000" />
+                </div>
+
                 <div className="relative z-10 flex justify-between items-start">
                     <motion.div
                         initial={{ opacity: 0, y: 20 }}
@@ -100,7 +106,7 @@ export default function StudentDashboard() {
                         <NotificationCenter>
                             <div className="p-3 rounded-full bg-white/10 border border-white/10 text-white hover:bg-white/20 transition-all hover:scale-110 relative group/bell">
                                 <Bell size={24} />
-                                <div className="absolute top-3 right-3 w-2 h-2 bg-red-500 rounded-full animate-pulse" />
+                                {/* Red Dot handled by NotificationCenter */}
                                 <span className="absolute -bottom-8 left-1/2 -translate-x-1/2 text-xs bg-black/80 text-white px-2 py-1 rounded opacity-0 group-hover/bell:opacity-100 transition-opacity pointer-events-none whitespace-nowrap">
                                     Notifications
                                 </span>
@@ -108,10 +114,6 @@ export default function StudentDashboard() {
                         </NotificationCenter>
                     </div>
                 </div>
-                
-                {/* Decorative Background Elements */}
-                <div className="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-primary/20 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-1000" />
-                <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-64 h-64 bg-secondary/20 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-1000" />
             </header>
 
             {/* Stats Grid */}

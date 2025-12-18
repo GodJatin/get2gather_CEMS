@@ -60,9 +60,16 @@ export default function NotificationCenter({ children }: { children?: React.Reac
 
     return (
         <div className="relative" ref={containerRef}>
-            <div onClick={() => setIsOpen(!isOpen)} className="cursor-pointer">
+            <div onClick={() => setIsOpen(!isOpen)} className="cursor-pointer relative">
                 {children ? (
-                    children 
+                    <>
+                        {children}
+                        {unreadCount > 0 && (
+                            <span className="absolute top-0 right-0 translate-x-1/4 -translate-y-1/4 w-5 h-5 bg-red-500 text-[10px] flex items-center justify-center text-white rounded-full border-2 border-neutral-900 z-50">
+                                {unreadCount > 9 ? '9+' : unreadCount}
+                            </span>
+                        )}
+                    </>
                 ) : (
                     <button
                         className="relative p-2 text-neutral-400 hover:text-white transition-colors rounded-full hover:bg-white/10"
