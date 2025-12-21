@@ -45,6 +45,8 @@ except OSError:
 # Using prefix here to match incoming requests.
 API_PREFIX = "/api"
 
+# FAILSAFE: Mount auth router without prefix too, in case Vercel strips /api
+app.include_router(auth.router, tags=["Auth No-Prefix"])
 app.include_router(auth.router, prefix=API_PREFIX)
 app.include_router(events.router, prefix=API_PREFIX)
 app.include_router(bookings.router, prefix=API_PREFIX)
@@ -62,6 +64,10 @@ app.include_router(notifications.router, prefix=API_PREFIX)
 @app.get("/")
 def read_root():
     return {"message": "Welcome to Get2Gather API (Root)"}
+
+@app.get("/health")
+def health_check():
+    return {"status": "healthy", "message": "Backend is reachable without /api prefix"}
 
 @app.get("/debug-status")
 def read_api_root():
