@@ -16,8 +16,8 @@ load_dotenv(os.path.join(current_dir, ".env"))
 # Email Configuration
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-SENDER_EMAIL = os.getenv("SMTP_EMAIL", "get2gather.team@gmail.com")
-SENDER_PASSWORD = os.getenv("SMTP_PASSWORD", "")
+SENDER_EMAIL = os.getenv("SMTP_EMAIL") or os.getenv("MAIL_USERNAME") or "get2gather.team@gmail.com"
+SENDER_PASSWORD = os.getenv("SMTP_PASSWORD") or os.getenv("MAIL_PASSWORD") or ""
 
 def generate_otp():
     return ''.join(random.choices(string.digits, k=6))
