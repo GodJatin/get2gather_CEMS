@@ -388,8 +388,8 @@ def send_booking_ticket(email, student_name, event_title, event_date, event_time
         print(f"Error processing QR image: {e}")
         return False, "QR Processing Error"
         
-    # Format ticket ID
-    ticket_id = qr_data.split(":")[-1] if ":" in qr_data else qr_data
+    # Format ticket ID - Use full QR data for manual entry support
+    ticket_id = qr_data
     
     if ticket_type == "volunteer":
         role_name = "Volunteer" # Or infer from data
