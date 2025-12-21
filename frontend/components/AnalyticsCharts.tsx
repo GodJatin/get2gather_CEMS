@@ -10,27 +10,34 @@ interface AnalyticsChartsProps {
   events: any[];
 }
 
+import { getEventStatus } from '@/lib/dateUtils';
+
+// ... existing imports
+
 export default function AnalyticsCharts({ events }: AnalyticsChartsProps) {
-  // 1. Process Data for "Tickets per Event" (Recent Completed Events)
+  // 1. Process Data for "Tickets per Event" (Recent Completed Events only)
   const ticketData = events
-    .filter(event => event.status === 'Completed') // Filter for Completed
+    .filter(event => getEventStatus(event) === 'Completed') // Use frontend calc status
     .sort((a, b) => {
         // Sort by Date Descending (Newest First)
-        // detailed sort might need time parsing, assuming generic date string comparable or YYYY-MM-DD
-        const dateA = new Date(`${a.date} ${a.time || ''}`);
-        const dateB = new Date(`${b.date} ${b.time || ''}`);
-        return dateB.getTime() - dateA.getTime();
+        try {
+            const dateA = new Date(`${a.date} ${a.time}`);
+            const dateB = new Date(`${b.date} ${b.time}`);
+            return dateB.getTime() - dateA.getTime();
+        } catch (e) {
+            return 0;
+        }
     })
     .slice(0, 5) // Take top 5
     .map(event => ({
       name: event.title.length > 15 ? event.title.substring(0, 15) + '...' : event.title,
-      booked: event.booked_count || 0,
-      capacity: event.max_attendees || 100
+      booked: event.attended_count || 0, // Using attended_count as proxy for now
+      capacity: event.capacity || 100 // Note: API returns 'capacity', schem 'capacity'. 'seats_available' is different.
     }));
 
   // 2. Process Data for "Volunteers vs Attendees" (Aggregate - ALL Events)
-  const totalAttendees = events.reduce((acc, curr) => acc + (curr.booked_count || 0), 0);
-  const totalVolunteers = events.reduce((acc, curr) => acc + (curr.volunteers_count || 0), 0);
+  const totalAttendees = events.reduce((acc, curr) => acc + (curr.attended_count || 0), 0);
+  const totalVolunteers = events.reduce((acc, curr) => acc + (curr.volunteer_count || 0), 0);
   
   const pieData = [
     { name: 'Attendees', value: totalAttendees },
