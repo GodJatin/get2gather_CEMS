@@ -190,7 +190,8 @@ async def update_volunteer_status(volunteer_id: int, update_data: VolunteerUpdat
                     event_venue=event.venue,
                     qr_image=qr_image,
                     qr_data=qr_data,
-                    ticket_type="volunteer"
+                    ticket_type="volunteer",
+                    event_id=event.id
                 )
         except Exception as e:
             print(f"Failed to send volunteer email: {e}")

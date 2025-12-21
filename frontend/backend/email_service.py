@@ -185,6 +185,8 @@ def get_base_css():
     </style>
     """
 
+BASE_URL = "https://get2gather-cems.vercel.app"
+
 def get_email_template(title, body_content, cta_text=None, cta_link=None):
     return f"""
     <!DOCTYPE html>
@@ -210,7 +212,7 @@ def get_email_template(title, body_content, cta_text=None, cta_link=None):
                 </div>
                 <div class="footer">
                     <p class="footer-text">Start exploring more events on our platform!</p>
-                    <p><a href="https://your-domain.com/events" class="footer-link">Browse Events</a></p>
+                    <p><a href="https://get2gather-cems.vercel.app/student/events" class="footer-link">Browse Events</a></p>
                     <p class="footer-text" style="font-size: 12px; margin-top: 20px; opacity: 0.6;">
                         &copy; 2025 Get2Gather. All rights reserved.<br>
                         This is an automated message, please do not reply.
@@ -264,7 +266,7 @@ def send_otp_email(to_email: str, otp: str, user_type: str = "student"):
     content = get_email_template("Verify Your Email", body)
     return send_email(to_email, subject, content)
 
-def send_ticket_email(to_email: str, user_name: str, event_title: str, ticket_id: str, qr_bytes: bytes):
+def send_ticket_email(to_email: str, user_name: str, event_title: str, ticket_id: str, qr_bytes: bytes, event_id: int = 0):
     subject = f"Ticket: {event_title}"
     
     # Instructions Section
@@ -301,7 +303,8 @@ def send_ticket_email(to_email: str, user_name: str, event_title: str, ticket_id
     </div>
     """
     
-    content = get_email_template("Booking Confirmed!", body, "View Event Details", f"https://get2gather.vercel.app/events")
+    event_link = f"{BASE_URL}/events/{event_id}" if event_id else f"{BASE_URL}/student/events"
+    content = get_email_template("Booking Confirmed!", body, "View Event Details", event_link)
     return send_email(to_email, subject, content, {"data": qr_bytes, "name": "ticket_qr.png"})
 
 def send_volunteer_confirmation_email(to_email: str, user_name: str, event_title: str, role: str, qr_bytes: bytes, ticket_id: str = "N/A"):
@@ -346,7 +349,7 @@ def send_volunteer_confirmation_email(to_email: str, user_name: str, event_title
     content = get_email_template("Volunteer Confirmed", body)
     return send_email(to_email, subject, content, {"data": qr_bytes, "name": "volunteer_qr.png"})
 
-def send_event_update_email(to_email: str, user_name: str, event_title: str, update_message: str):
+def send_event_update_email(to_email: str, user_name: str, event_title: str, update_message: str, event_id: int = 0):
     subject = f"Update: {event_title}"
     
     body = f"""
@@ -361,12 +364,13 @@ def send_event_update_email(to_email: str, user_name: str, event_title: str, upd
     <p>Please check the event page for more details.</p>
     """
     
-    content = get_email_template("Event Update", body, "View Event", "https://get2gather.vercel.app/events")
+    event_link = f"{BASE_URL}/events/{event_id}" if event_id else f"{BASE_URL}/student/events"
+    content = get_email_template("Event Update", body, "View Event", event_link)
     return send_email(to_email, subject, content)
 
 # --- Backward Compatibility Adapters (for Routers) ---
 
-def send_booking_ticket(email, student_name, event_title, event_date, event_time, event_venue, qr_image, qr_data, ticket_type="attendee"):
+def send_booking_ticket(email, student_name, event_title, event_date, event_time, event_venue, qr_image, qr_data, ticket_type="attendee", event_id=0):
     """
     Adapter for booking/volunteer routers.
     qr_image: BytesIO object or bytes
@@ -396,11 +400,15 @@ def send_booking_ticket(email, student_name, event_title, event_date, event_time
     
     if ticket_type == "volunteer":
         role_name = "Volunteer" # Or infer from data
+        # Volunteer confirmation doesn't necessarily need the event link CTA as much, but we could add it if we update that function too.
+        # For now, keeping volunteer signature consistent with previous step (ticket_id, no event_id yet unless we modify it too)
+        # Actually I should verify if I changed send_volunteer_confirmation_email signature in this call. I didn't. 
+        # So I won't pass event_id there yet.
         return send_volunteer_confirmation_email(email, student_name, event_title, role_name, qr_bytes, ticket_id)
     else:
-        return send_ticket_email(email, student_name, event_title, ticket_id, qr_bytes)
+        return send_ticket_email(email, student_name, event_title, ticket_id, qr_bytes, event_id)
 
-def send_attendance_confirmation(email, name, event_title, event_date, venue, points, type="attendee"):
+def send_attendance_confirmation(email, name, event_title, event_date, venue, points, type="attendee", event_id=0):
     subject = f"Attendance Confirmed: {event_title}"
     
     body = f"""
@@ -420,10 +428,10 @@ def send_attendance_confirmation(email, name, event_title, event_date, venue, po
     </div>
     """
     
-    content = get_email_template("Attendance Recorded", body, "Check Leaderboard", "https://get2gather.vercel.app/leaderboard")
+    content = get_email_template("Attendance Recorded", body, "Check Leaderboard", f"{BASE_URL}/student/leaderboard")
     return send_email(email, subject, content)
 
-def send_event_update_notification(email, name, event_title, changes: list):
+def send_event_update_notification(email, name, event_title, changes: list, event_id=0):
     # Format changes list into HTML
     changes_html = "<ul style='padding-left: 20px; margin: 0;'>" + "".join([f"<li style='margin-bottom:5px;'>{c}</li>" for c in changes]) + "</ul>"
-    return send_event_update_email(email, name, event_title, changes_html)
+    return send_event_update_email(email, name, event_title, changes_html, event_id)

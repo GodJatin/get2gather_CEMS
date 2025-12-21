@@ -277,7 +277,7 @@ async def checkin_event_scan(
         # Email
         try:
             from email_service import send_attendance_confirmation
-            send_attendance_confirmation(user.email, student.name, event.title, event.date, event.venue, POINTS_PER_BOOKING, "attendee")
+            send_attendance_confirmation(user.email, student.name, event.title, event.date, event.venue, POINTS_PER_BOOKING, "attendee", event_id=event.id)
         except: pass
         
         return CheckinResponse(
@@ -302,7 +302,7 @@ async def checkin_event_scan(
         
         try:
             from email_service import send_attendance_confirmation
-            send_attendance_confirmation(user.email, student.name, event.title, event.date, event.venue, POINTS_PER_VOLUNTEER, "volunteer")
+            send_attendance_confirmation(user.email, student.name, event.title, event.date, event.venue, POINTS_PER_VOLUNTEER, "volunteer", event_id=event.id)
         except: pass
 
         return CheckinResponse(
@@ -501,7 +501,7 @@ async def update_event(event_id: int, event_update: schemas.EventCreate, current
             print(f"🔔 Sending update notifications to {len(recipients)} recipients...")
             for recipient in recipients:
                 # Send Email
-                send_event_update_notification(recipient["email"], recipient["name"], event.title, changes)
+                send_event_update_notification(recipient["email"], recipient["name"], event.title, changes, event_id=event.id)
                 
                 # Create In-App Notification
                 # We need user_id, which we might not have efficiently in this loop structure 
@@ -539,7 +539,7 @@ async def update_event(event_id: int, event_update: schemas.EventCreate, current
 
             # Send Emails (using existing recipients list)
             for recipient in recipients:
-                send_event_update_notification(recipient["email"], recipient["name"], event.title, changes)
+                send_event_update_notification(recipient["email"], recipient["name"], event.title, changes, event_id=event.id)
                 
         except Exception as e:
             print(f"❌ Failed to send update notifications: {e}")

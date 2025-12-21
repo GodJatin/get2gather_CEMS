@@ -90,7 +90,8 @@ async def create_booking(booking: schemas.BookingCreate, current_user: User = De
             event_venue=event.venue,
             qr_image=qr_image,
             qr_data=qr_data,
-            ticket_type="attendee"
+            ticket_type="attendee",
+            event_id=event.id
         )
     except Exception as e:
         print(f"Failed to send booking email: {e}")
