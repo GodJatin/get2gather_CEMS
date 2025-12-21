@@ -8,8 +8,9 @@ import { motion } from 'framer-motion';
 import { Bell } from 'lucide-react';
 import NotificationCenter from '@/components/NotificationCenter';
 
-import { useEffect, useState } from 'react';
-import api from '@/lib/api';
+import AnalyticsCharts from '@/components/AnalyticsCharts';
+
+// ... (imports)
 
 export default function OrganizerDashboard() {
     const [stats, setStats] = useState({
@@ -18,13 +19,15 @@ export default function OrganizerDashboard() {
         totalVolunteers: 0
     });
     const [organizerName, setOrganizerName] = useState('Organizer');
+    const [events, setEvents] = useState([]);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [statsRes, userRes] = await Promise.all([
+                const [statsRes, userRes, eventsRes] = await Promise.all([
                     api.get('/stats/organizer'),
-                    api.get('/auth/me')
+                    api.get('/auth/me'),
+                    api.get('/events/organizer') 
                 ]);
                 
                 setStats({
@@ -33,6 +36,7 @@ export default function OrganizerDashboard() {
                     totalVolunteers: statsRes.data.total_volunteers
                 });
                 setOrganizerName(userRes.data.name || 'Organizer');
+                setEvents(eventsRes.data || []);
             } catch (error) {
                 console.error('Failed to fetch data', error);
             }
@@ -42,7 +46,19 @@ export default function OrganizerDashboard() {
 
     return (
         <MotionWrapper>
-            <header className="mb-12 relative p-8 md:p-12 group z-50">
+            {/* ... (Header) ... */}
+
+            {/* Stats Grid */}
+            <StaggerContainer className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
+               {/* ... (Stats items) ... */}
+            </StaggerContainer>
+
+            {/* Analytics Charts */}
+            <section className="mb-12">
+                <AnalyticsCharts events={events} />
+            </section>
+            
+            {/* Quick Actions */}
                 {/* Background Container with Overflow Hidden */}
                 <div className="absolute inset-0 overflow-hidden rounded-3xl bg-gradient-to-r from-purple-900/20 to-pink-900/20 border border-white/10">
                     <div className="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-purple-600/20 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-1000" />

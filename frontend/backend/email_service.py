@@ -185,6 +185,40 @@ def get_base_css():
     </style>
     """
 
+def generate_ics_string(summary, start_dt, end_dt, location, description):
+    """
+    Generate ICS file content as a string.
+    Dates should be datetime objects.
+    """
+    from datetime import datetime, timedelta
+    
+    def format_dt(dt):
+        return dt.strftime("%Y%m%dT%H%M%S")
+
+    # If simple string dates were passed, try to parse (simple adapter)
+    # But ideal is datetime objects. Let's assume the caller handles parsing or we improve this.
+    # For now, simplistic implementation assuming datetime objects or string parsing inside caller.
+    
+    # Create simple VCALENDAR
+    ics = [
+        "BEGIN:VCALENDAR",
+        "VERSION:2.0",
+        "PRODID:-//Get2Gather//Event Booking//EN",
+        "METHOD:REQUEST",
+        "BEGIN:VEVENT",
+        f"UID:event-{start_dt.strftime('%Y%m%d%H%M')}-{random.randint(1000,9999)}@get2gather.com",
+        f"DTSTAMP:{format_dt(datetime.utcnow())}Z",
+        f"DTSTART:{format_dt(start_dt)}",
+        f"DTEND:{format_dt(end_dt)}",
+        f"SUMMARY:{summary}",
+        f"DESCRIPTION:{description}",
+        f"LOCATION:{location}",
+        "STATUS:CONFIRMED",
+        "END:VEVENT",
+        "END:VCALENDAR"
+    ]
+    return "\r\n".join(ics)
+
 BASE_URL = "https://get2gather-cems.vercel.app"
 
 def get_email_template(title, body_content, cta_text=None, cta_link=None):
@@ -224,7 +258,7 @@ def get_email_template(title, body_content, cta_text=None, cta_link=None):
     </html>
     """
 
-def send_email(to_email: str, subject: str, html_content: str, image_attachment: dict = None) -> bool:
+def send_email(to_email: str, subject: str, html_content: str, attachments: list = None) -> bool:
     try:
         msg = MIMEMultipart()
         msg['From'] = SENDER_EMAIL
@@ -233,12 +267,35 @@ def send_email(to_email: str, subject: str, html_content: str, image_attachment:
 
         msg.attach(MIMEText(html_content, 'html'))
 
-        if image_attachment:
-            # image_attachment expected: {"data": bytes, "name": str}
-            img = MIMEImage(image_attachment['data'])
-            img.add_header('Content-ID', '<qr_code>')
-            img.add_header('Content-Disposition', 'inline', filename=image_attachment['name'])
-            msg.attach(img)
+        if attachments:
+            # Normalize to list if single dict passed (backward compat)
+            if isinstance(attachments, dict):
+                attachments = [attachments]
+                
+            for att in attachments:
+                data = att.get('data')
+                name = att.get('name')
+                # Default to image if no mime specified (legacy behavior)
+                mime_type = att.get('mime_type', 'image/png')
+                cid = att.get('cid') # Content-ID for inline images
+                
+                if mime_type.startswith('image/'):
+                    img = MIMEImage(data)
+                    if cid:
+                        img.add_header('Content-ID', f'<{cid}>')
+                    img.add_header('Content-Disposition', 'inline', filename=name)
+                    msg.attach(img)
+                elif mime_type == 'text/calendar':
+                    # ICS File
+                    from email.mime.base import MIMEBase
+                    from email import encoders
+                    part = MIMEBase('text', 'calendar', method='REQUEST', name=name)
+                    part.set_payload(data)
+                    # encoders.encode_base64(part) # text/calendar doesn't strictly need base64 if ascii, but safer
+                    # Actually standard MIMEText might be easier for calendar? 
+                    # Let's use MIMEBase for correct headers
+                    part.add_header('Content-Disposition', f'attachment; filename="{name}"')
+                    msg.attach(part)
 
         # SMTP Connection
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
@@ -250,7 +307,6 @@ def send_email(to_email: str, subject: str, html_content: str, image_attachment:
     except Exception as e:
         print(f"Failed to send email: {e}")
         return False, str(e)
-
 def send_otp_email(to_email: str, otp: str, user_type: str = "student"):
     subject = f"Your Get2Gather Verification Code"
     
@@ -266,7 +322,7 @@ def send_otp_email(to_email: str, otp: str, user_type: str = "student"):
     content = get_email_template("Verify Your Email", body)
     return send_email(to_email, subject, content)
 
-def send_ticket_email(to_email: str, user_name: str, event_title: str, ticket_id: str, qr_bytes: bytes, event_id: int = 0):
+def send_ticket_email(to_email: str, user_name: str, event_title: str, ticket_id: str, qr_bytes: bytes, event_id: int = 0, ics_data: str = None):
     subject = f"Ticket: {event_title}"
     
     # Instructions Section
@@ -304,8 +360,18 @@ def send_ticket_email(to_email: str, user_name: str, event_title: str, ticket_id
     """
     
     event_link = f"{BASE_URL}/events/{event_id}" if event_id else f"{BASE_URL}/student/events"
+    event_link = f"{BASE_URL}/events/{event_id}" if event_id else f"{BASE_URL}/student/events"
     content = get_email_template("Booking Confirmed!", body, "View Event Details", event_link)
-    return send_email(to_email, subject, content, {"data": qr_bytes, "name": "ticket_qr.png"})
+    
+    attachments = []
+    # QR Code
+    attachments.append({"data": qr_bytes, "name": "ticket_qr.png", "mime_type": "image/png", "cid": "qr_code"})
+    
+    # ICS File
+    if ics_data:
+        attachments.append({"data": ics_data, "name": "event.ics", "mime_type": "text/calendar"})
+        
+    return send_email(to_email, subject, content, attachments)
 
 def send_volunteer_confirmation_email(to_email: str, user_name: str, event_title: str, role: str, qr_bytes: bytes, ticket_id: str = "N/A"):
     subject = f"Volunteer Confirmation: {event_title}"
@@ -346,8 +412,13 @@ def send_volunteer_confirmation_email(to_email: str, user_name: str, event_title
     </div>
     """
     
+    
     content = get_email_template("Volunteer Confirmed", body)
-    return send_email(to_email, subject, content, {"data": qr_bytes, "name": "volunteer_qr.png"})
+    
+    # QR Attachment
+    attachments = [{"data": qr_bytes, "name": "volunteer_qr.png", "mime_type": "image/png", "cid": "qr_code"}]
+    
+    return send_email(to_email, subject, content, attachments)
 
 def send_event_update_email(to_email: str, user_name: str, event_title: str, update_message: str, event_id: int = 0):
     subject = f"Update: {event_title}"
@@ -373,12 +444,42 @@ def send_event_update_email(to_email: str, user_name: str, event_title: str, upd
 def send_booking_ticket(email, student_name, event_title, event_date, event_time, event_venue, qr_image, qr_data, ticket_type="attendee", event_id=0):
     """
     Adapter for booking/volunteer routers.
-    qr_image: BytesIO object or bytes
-    """
-    """
-    Adapter for booking/volunteer routers.
     qr_image: BytesIO object, bytes, or Base64 string
     """
+    try:
+        from datetime import datetime, timedelta
+        
+        # Parse Dates for ICS - Try common formats
+        dt_start = datetime.now() + timedelta(days=1) # Default fallback
+        duration = timedelta(hours=2)
+        
+        try:
+            # Combine Date and Time
+            dt_str = f"{event_date} {event_time}"
+            # Formats to try: YYYY-MM-DD HH:MM, YYYY-MM-DD HH:MM AM/PM
+            for fmt in ["%Y-%m-%d %H:%M", "%Y-%m-%d %I:%M %p", "%d-%m-%Y %H:%M", "%d-%m-%Y %I:%M %p"]:
+                try:
+                    dt_start = datetime.strptime(dt_str, fmt)
+                    break
+                except ValueError:
+                    continue
+        except Exception as e:
+            print(f"ICS Date Parsing failed: {e}")
+            
+        dt_end = dt_start + duration
+        
+        # Generate ICS
+        ics_content = generate_ics_string(
+            summary=event_title,
+            start_dt=dt_start,
+            end_dt=dt_end,
+            location=event_venue,
+            description=f"Ticket ID: {qr_data}\nPresented by Get2Gather"
+        )
+    except Exception as e:
+        print(f"ICS Generation failed, skipping: {e}")
+        ics_content = None
+
     try:
         if hasattr(qr_image, 'getvalue'):
             qr_bytes = qr_image.getvalue()
@@ -400,13 +501,12 @@ def send_booking_ticket(email, student_name, event_title, event_date, event_time
     
     if ticket_type == "volunteer":
         role_name = "Volunteer" # Or infer from data
-        # Volunteer confirmation doesn't necessarily need the event link CTA as much, but we could add it if we update that function too.
-        # For now, keeping volunteer signature consistent with previous step (ticket_id, no event_id yet unless we modify it too)
-        # Actually I should verify if I changed send_volunteer_confirmation_email signature in this call. I didn't. 
-        # So I won't pass event_id there yet.
+        # Volunteer also gets only QR usually, but could get ICS? user asked "booking", so focus on booking.
+        # But harmless to pass ics to volunteer if we wanted, but ticket_email handles it. 
+        # Volunteer confirmation signature doesn't accept ICS yet.
         return send_volunteer_confirmation_email(email, student_name, event_title, role_name, qr_bytes, ticket_id)
     else:
-        return send_ticket_email(email, student_name, event_title, ticket_id, qr_bytes, event_id)
+        return send_ticket_email(email, student_name, event_title, ticket_id, qr_bytes, event_id, ics_data=ics_content)
 
 def send_attendance_confirmation(email, name, event_title, event_date, venue, points, type="attendee", event_id=0):
     subject = f"Attendance Confirmed: {event_title}"
@@ -429,6 +529,25 @@ def send_attendance_confirmation(email, name, event_title, event_date, venue, po
     """
     
     content = get_email_template("Attendance Recorded", body, "Check Leaderboard", f"{BASE_URL}/student/leaderboard")
+    content = get_email_template("Attendance Recorded", body, "Check Leaderboard", f"{BASE_URL}/student/leaderboard")
+    return send_email(email, subject, content)
+
+def send_feedback_request_email(email, name, event_title, event_id):
+    subject = f"Feedback: {event_title}"
+    
+    body = f"""
+    <p>Hi {name},</p>
+    <p>We hope you enjoyed <strong>{event_title}</strong>!</p>
+    
+    <div class="card">
+        <p style="text-align: center; color: #4b5563; margin: 0;">How was your experience?</p>
+    </div>
+    
+    <p style="text-align: center;">Your feedback helps us improve future events. Please take a moment to rate us.</p>
+    """
+    
+    feedback_link = f"{BASE_URL}/events/{event_id}" # Ideally /feedback, but consistent with request
+    content = get_email_template("Rate Your Experience", body, "Give Feedback", feedback_link)
     return send_email(email, subject, content)
 
 def send_event_update_notification(email, name, event_title, changes: list, event_id=0):

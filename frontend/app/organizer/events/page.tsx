@@ -267,6 +267,24 @@ export default function MyEventsPage() {
                                             Reviews
                                         </Link>
                                     </div>
+                                    
+                                    {getEventStatus(event) === 'Completed' && (
+                                        <button
+                                            onClick={async () => {
+                                                if (confirm('Send feedback request email to all attendees?')) {
+                                                    try {
+                                                        const res = await api.post(`/events/${event.id}/request-feedback`);
+                                                        alert(res.data.message);
+                                                    } catch (e) {
+                                                        alert('Failed to send requests');
+                                                    }
+                                                }
+                                            }}
+                                            className="w-full mt-2 py-2.5 rounded-xl bg-orange-500/10 text-orange-400 hover:bg-orange-500/20 border border-orange-500/20 font-medium transition-colors text-center text-xs flex items-center justify-center gap-2"
+                                        >
+                                            📢 Request Feedback
+                                        </button>
+                                    )}
                                 </div>
                             </div>
                         </div>
