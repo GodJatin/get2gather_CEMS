@@ -304,7 +304,7 @@ def send_ticket_email(to_email: str, user_name: str, event_title: str, ticket_id
     content = get_email_template("Booking Confirmed!", body, "View Event Details", f"https://get2gather.vercel.app/events")
     return send_email(to_email, subject, content, {"data": qr_bytes, "name": "ticket_qr.png"})
 
-def send_volunteer_confirmation_email(to_email: str, user_name: str, event_title: str, role: str, qr_bytes: bytes):
+def send_volunteer_confirmation_email(to_email: str, user_name: str, event_title: str, role: str, qr_bytes: bytes, ticket_id: str = "N/A"):
     subject = f"Volunteer Confirmation: {event_title}"
     
     instructions = """
@@ -330,6 +330,9 @@ def send_volunteer_confirmation_email(to_email: str, user_name: str, event_title
         <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 15px 0;">
         <div class="card-label">Event</div>
         <div class="card-value">{event_title}</div>
+        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 15px 0;">
+        <div class="card-label">Volunteer ID</div>
+        <div class="card-value" style="font-size: 16px;">{ticket_id}</div>
     </div>
     
     {instructions}
@@ -393,7 +396,7 @@ def send_booking_ticket(email, student_name, event_title, event_date, event_time
     
     if ticket_type == "volunteer":
         role_name = "Volunteer" # Or infer from data
-        return send_volunteer_confirmation_email(email, student_name, event_title, role_name, qr_bytes)
+        return send_volunteer_confirmation_email(email, student_name, event_title, role_name, qr_bytes, ticket_id)
     else:
         return send_ticket_email(email, student_name, event_title, ticket_id, qr_bytes)
 
