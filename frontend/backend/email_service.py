@@ -1,22 +1,16 @@
-
-import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
-from email.mime.image import MIMEImage
-import os
-import random
-import string
-from io import BytesIO
 import base64
+import os
 from dotenv import load_dotenv
 
-load_dotenv()
+# Load .env from the same directory as this file
+current_dir = os.path.dirname(os.path.abspath(__file__))
+load_dotenv(os.path.join(current_dir, ".env"))
 
 # Email Configuration
 SMTP_SERVER = "smtp.gmail.com"
 SMTP_PORT = 587
-SENDER_EMAIL = os.getenv("MAIL_USERNAME", "get2gather.team@gmail.com")
-SENDER_PASSWORD = os.getenv("MAIL_PASSWORD", "")
+SENDER_EMAIL = os.getenv("SMTP_EMAIL", "get2gather.team@gmail.com")
+SENDER_PASSWORD = os.getenv("SMTP_PASSWORD", "")
 
 def generate_otp():
     return ''.join(random.choices(string.digits, k=6))
