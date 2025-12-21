@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';
 import Link from 'next/link';
+import { getEventStatus } from '@/lib/dateUtils';
 
 interface Event {
     id: number;
@@ -12,6 +13,8 @@ interface Event {
     volunteer_count: number;
     capacity: number;
     date: string;
+    time: string;
+    end_time?: string;
 }
 
 interface LeaderboardEntry {
