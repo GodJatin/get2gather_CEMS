@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';
 import Counter from '@/components/Counter';
+import Link from 'next/link';
 
 interface OrganizerProfile {
     id: number;
