@@ -10,18 +10,18 @@ sys.path.append(backend_dir)
 
 try:
     from main import app
-except Exception as e:
+except ImportError as e:
     # Fallback app to show error if import fails
     app = FastAPI()
     @app.api_route("/{path_name:path}", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"])
     async def catch_all(path_name: str):
         import traceback
         return {
-            "status": "STARTUP_ERROR",
-            "error": "Failed to initialize backend", 
+            "status": "IMPORT_ERROR",
+            "error": "Failed to import backend", 
             "detail": str(e), 
             "trace": traceback.format_exc(),
             "sys_path": sys.path,
             "cwd": os.getcwd(),
-            "backend_dir_contents": os.listdir(backend_dir) if os.path.exists(backend_dir) else "BACKEND_DIR_NOT_FOUND"
+            "dir_contents": os.listdir(os.getcwd()) if os.path.exists(os.getcwd()) else "CWD not accessible"
         }
