@@ -29,9 +29,11 @@ export default function AnalyticsCharts({ events }: AnalyticsChartsProps) {
         }
     })
     .slice(0, 5) // Take top 5
+    .reverse() // Reverse to show Oldest -> Newest (left to right) for better "Timeline" feel
     .map(event => ({
       name: event.title.length > 15 ? event.title.substring(0, 15) + '...' : event.title,
       booked: event.attended_count || 0, // Using attended_count as proxy for now
+      waitlist: event.waitlist_count || 0,
       capacity: event.capacity || 100 // Note: API returns 'capacity', schem 'capacity'. 'seats_available' is different.
     }));
 
@@ -66,6 +68,7 @@ export default function AnalyticsCharts({ events }: AnalyticsChartsProps) {
               />
               <Legend />
               <Bar dataKey="booked" name="Booked" fill="#8884d8" radius={[4, 4, 0, 0]} />
+              <Bar dataKey="waitlist" name="Waitlist" fill="#f59e0b" radius={[4, 4, 0, 0]} />
               <Bar dataKey="capacity" name="Capacity" fill="#374151" radius={[4, 4, 0, 0]} />
             </BarChart>
           </ResponsiveContainer>

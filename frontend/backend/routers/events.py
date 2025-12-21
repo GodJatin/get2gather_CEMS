@@ -396,7 +396,7 @@ async def read_my_events(current_user: User = Depends(get_current_user), db: Ses
     
     events_with_stats = []
     from sqlalchemy import func
-    from models import Booking, Volunteer as VolModel
+    from models import Booking, Volunteer as VolModel, Waitlist
     
     for event in events:
         # Count Attendees
@@ -410,11 +410,17 @@ async def read_my_events(current_user: User = Depends(get_current_user), db: Ses
             VolModel.event_id == event.id,
             VolModel.attended == True
         ).scalar() or 0
+
+        # Count Waitlist
+        waitlisted = db.query(func.count(Waitlist.id)).filter(
+            Waitlist.event_id == event.id
+        ).scalar() or 0
         
         # Convert to Pydantic and enrich
         e_resp = schemas.EventResponse.from_orm(event)
         e_resp.attended_count = attended
         e_resp.volunteer_count = volunteers
+        e_resp.waitlist_count = waitlisted
         events_with_stats.append(e_resp)
         
     return events_with_stats
