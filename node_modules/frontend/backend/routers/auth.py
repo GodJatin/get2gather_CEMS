@@ -521,3 +521,27 @@ async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = 
 async def login_slash(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     """Handle trailing slash for login"""
     return await login(form_data, db)
+
+@router.get("/auth/login")
+@router.get("/auth/login/")
+async def login_debug():
+    """Debug endpoint to verify route accessibility"""
+    return {
+        "message": "Login route is accessible via GET. Please use POST to log in.",
+        "method": "GET",
+        "status": "active"
+    }
+
+@router.options("/auth/login")
+@router.options("/auth/login/")
+async def login_options():
+    """Manual OPTIONS handler for debugging CORS"""
+    from fastapi.responses import Response
+    return Response(
+        status_code=200,
+        headers={
+            "Access-Control-Allow-Origin": "*",
+            "Access-Control-Allow-Methods": "POST, GET, OPTIONS",
+            "Access-Control-Allow-Headers": "*"
+        }
+    )
