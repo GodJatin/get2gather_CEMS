@@ -1,4 +1,15 @@
 {
+  "builds": [
+    {
+      "src": "api/index.py",
+      "use": "@vercel/python",
+      "config": { "maxDuration": 30, "includeFiles": "backend/**" }
+    },
+    {
+      "src": "package.json",
+      "use": "@vercel/next"
+    }
+  ],
   "rewrites": [
     {
       "source": "/static/(.*)",
