@@ -9,8 +9,8 @@ import { Bell } from 'lucide-react';
 import NotificationCenter from '@/components/NotificationCenter';
 
 import AnalyticsCharts from '@/components/AnalyticsCharts';
-
-// ... (imports)
+import { useState, useEffect } from 'react';
+import api from '@/lib/api';
 
 export default function OrganizerDashboard() {
     const [stats, setStats] = useState({
