@@ -8,6 +8,9 @@ import random
 import string
 from io import BytesIO
 import base64
+from dotenv import load_dotenv
+
+load_dotenv()
 
 # Email Configuration
 SMTP_SERVER = "smtp.gmail.com"
@@ -356,3 +359,56 @@ def send_event_update_email(to_email: str, user_name: str, event_title: str, upd
     
     content = get_email_template("Event Update", body, "View Event", "https://get2gather.vercel.app/events")
     return send_email(to_email, subject, content)
+
+# --- Backward Compatibility Adapters (for Routers) ---
+
+def send_booking_ticket(email, student_name, event_title, event_date, event_time, event_venue, qr_image, qr_data, ticket_type="attendee"):
+    """
+    Adapter for booking/volunteer routers.
+    qr_image: BytesIO object or bytes
+    """
+    try:
+        if hasattr(qr_image, 'getvalue'):
+            qr_bytes = qr_image.getvalue()
+        else:
+            qr_bytes = qr_image
+    except Exception as e:
+        print(f"Error processing QR image: {e}")
+        return False, "QR Processing Error"
+        
+    # Format ticket ID
+    ticket_id = qr_data.split(":")[-1] if ":" in qr_data else qr_data
+    
+    if ticket_type == "volunteer":
+        role_name = "Volunteer" # Or infer from data
+        return send_volunteer_confirmation_email(email, student_name, event_title, role_name, qr_bytes)
+    else:
+        return send_ticket_email(email, student_name, event_title, ticket_id, qr_bytes)
+
+def send_attendance_confirmation(email, name, event_title, event_date, venue, points, type="attendee"):
+    subject = f"Attendance Confirmed: {event_title}"
+    
+    body = f"""
+    <p>Hi {name},</p>
+    <p>Your attendance for <strong>{event_title}</strong> has been successfully recorded.</p>
+    
+    <div class="card">
+        <div class="card-label">Points Earned</div>
+        <div class="card-value" style="color: #059669;">+{points} GP</div>
+    </div>
+    
+    <div class="highlight-box" style="background-color: #ecfdf5; border-left-color: #059669;">
+        <div class="instruction-title" style="color: #047857;">🎉 Success!</div>
+        <p style="margin: 0; color: #064e3b; font-size: 14px;">
+            Your points have been credited to your profile. Keep attending events to climb the leaderboard!
+        </p>
+    </div>
+    """
+    
+    content = get_email_template("Attendance Recorded", body, "Check Leaderboard", "https://get2gather.vercel.app/leaderboard")
+    return send_email(email, subject, content)
+
+def send_event_update_notification(email, name, event_title, changes: list):
+    # Format changes list into HTML
+    changes_html = "<ul style='padding-left: 20px; margin: 0;'>" + "".join([f"<li style='margin-bottom:5px;'>{c}</li>" for c in changes]) + "</ul>"
+    return send_event_update_email(email, name, event_title, changes_html)
