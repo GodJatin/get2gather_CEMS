@@ -151,10 +151,10 @@ export default function OrganizerProfilePage() {
                             <span>⚙️</span> Account Settings
                         </h3>
                         <div className="space-y-3">
-                            <button className="w-full text-left px-6 py-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all flex justify-between items-center group border border-transparent hover:border-white/10">
+                            <Link href="/organizer/profile/edit" className="w-full text-left px-6 py-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all flex justify-between items-center group border border-transparent hover:border-white/10">
                                 <span className="font-medium text-neutral-200">Edit Profile</span>
                                 <span className="text-neutral-500 group-hover:text-white transition-colors transform group-hover:translate-x-1">→</span>
-                            </button>
+                            </Link>
                             <button className="w-full text-left px-6 py-4 rounded-2xl bg-white/5 hover:bg-white/10 transition-all flex justify-between items-center group border border-transparent hover:border-white/10">
                                 <span className="font-medium text-neutral-200">Change Password</span>
                                 <span className="text-neutral-500 group-hover:text-white transition-colors transform group-hover:translate-x-1">→</span>

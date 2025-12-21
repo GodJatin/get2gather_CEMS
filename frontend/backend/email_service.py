@@ -554,3 +554,104 @@ def send_event_update_notification(email, name, event_title, changes: list, even
     # Format changes list into HTML
     changes_html = "<ul style='padding-left: 20px; margin: 0;'>" + "".join([f"<li style='margin-bottom:5px;'>{c}</li>" for c in changes]) + "</ul>"
     return send_event_update_email(email, name, event_title, changes_html, event_id)
+
+def send_booking_cancellation_email(email, name, event_title):
+    subject = f"Booking Cancelled: {event_title}"
+    
+    body = f"""
+    <p>Hi {name},</p>
+    <p>Your booking for <strong>{event_title}</strong> has been cancelled as requested.</p>
+    
+    <div class="highlight-box" style="background-color: #fef2f2; border-left-color: #ef4444;">
+        <div class="instruction-title" style="color: #b91c1c;">🚫 Cancellation Confirmed</div>
+        <p style="margin: 0; color: #7f1d1d; font-size: 14px;">
+            Your ticket is no longer valid. If this was a mistake, please re-book if seats are available.
+        </p>
+    </div>
+    """
+    
+    content = get_email_template("Booking Cancelled", body)
+    return send_email(email, subject, content)
+
+def send_waitlist_promotion_email(email, student_name, event_title, event_date, event_time, event_venue, qr_image, qr_data, event_id=0):
+    """
+    Sends a ticket to a user who was promoted from the waitlist.
+    Reuse logic similar to booking ticket but custom message.
+    """
+    subject = f"You're In! Ticket for {event_title}"
+    
+    # Generate ICS (Reuse logic if possible, or duplicate for simplicity since it's short)
+    try:
+        from datetime import datetime, timedelta
+        dt_start = datetime.now() + timedelta(days=1)
+        duration = timedelta(hours=2)
+        try:
+            dt_str = f"{event_date} {event_time}"
+            for fmt in ["%Y-%m-%d %H:%M", "%Y-%m-%d %I:%M %p", "%d-%m-%Y %H:%M", "%d-%m-%Y %I:%M %p"]:
+                try:
+                    dt_start = datetime.strptime(dt_str, fmt)
+                    break
+                except ValueError: continue
+        except: pass
+        dt_end = dt_start + duration
+        
+        ics_content = generate_ics_string(
+            summary=event_title,
+            start_dt=dt_start,
+            end_dt=dt_end,
+            location=event_venue,
+            description=f"Ticket ID: {qr_data}\nPromoted from Waitlist"
+        )
+    except:
+        ics_content = None
+
+    # Processing QR
+    try:
+        if hasattr(qr_image, 'getvalue'): qr_bytes = qr_image.getvalue()
+        elif isinstance(qr_image, str) and "base64," in qr_image: qr_bytes = base64.b64decode(qr_image.split("base64,")[1])
+        elif isinstance(qr_image, str): qr_bytes = base64.b64decode(qr_image)
+        else: qr_bytes = qr_image
+    except: return False, "QR Error"
+
+    instructions = """
+    <div class="highlight-box" style="border-left-color: #059669; background-color: #ecfdf5;">
+        <div class="instruction-title" style="color: #047857;">🎉 Good News!</div>
+        <p style="margin: 0; color: #064e3b; font-size: 14px; margin-bottom: 10px;">
+            A spot opened up and you've been <strong>automatically promoted</strong> from the waitlist!
+        </p>
+        <ul class="instruction-list">
+            <li>Your spot is now reserved.</li>
+            <li>Scan the QR code below at the entrance.</li>
+        </ul>
+    </div>
+    """
+
+    body = f"""
+    <p>Hi {student_name},</p>
+    <p>Great news! We have confirmed your spot for <strong>{event_title}</strong>.</p>
+    
+    <div class="card">
+        <div class="card-label">Event</div>
+        <div class="card-value">{event_title}</div>
+        <hr style="border: 0; border-top: 1px solid #e5e7eb; margin: 15px 0;">
+        <div class="card-label">Ticket ID</div>
+        <div class="card-value">{qr_data}</div>
+    </div>
+    
+    {instructions}
+    
+    <div class="qr-section">
+        <p style="margin-bottom: 10px; font-weight: 600; color: #4b5563;">Your Entry Pass</p>
+        <img src="cid:qr_code" alt="QR Code" class="qr-code">
+    </div>
+    """
+    
+    event_link = f"{BASE_URL}/events/{event_id}"
+    content = get_email_template("You're In!", body, "View Event Details", event_link)
+    
+    attachments = []
+    attachments.append({"data": qr_bytes, "name": "ticket_qr.png", "mime_type": "image/png", "cid": "qr_code"})
+    if ics_content:
+        attachments.append({"data": ics_content, "name": "event.ics", "mime_type": "text/calendar"})
+        
+    return send_email(email, subject, content, attachments)

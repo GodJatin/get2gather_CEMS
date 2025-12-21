@@ -36,6 +36,18 @@ export default function StudentBookingsPage() {
         fetchBookings();
     }, []);
 
+    const handleCancelBooking = async (id: number) => {
+        if (!window.confirm('Are you sure you want to cancel this booking? This action cannot be undone.')) return;
+        try {
+            await api.delete(`/bookings/${id}`);
+            setBookings(prev => prev.filter(b => b.id !== id));
+            if (selectedTicket?.id === id) setSelectedTicket(null);
+        } catch (error) {
+            console.error('Failed to cancel:', error);
+            alert('Failed to cancel booking');
+        }
+    };
+
     const [selectedTicket, setSelectedTicket] = useState<Booking | null>(null);
 
     // Helpers to categorize based on TIME, not just status
@@ -99,6 +111,16 @@ export default function StudentBookingsPage() {
                                     <span className="font-mono text-neutral-400">#{selectedTicket.id}</span>
                                 </div>
                             </div>
+                            
+                            {/* Cancel Button in Modal */}
+                            {selectedTicket.status !== 'Completed' && (
+                                <button
+                                    onClick={() => handleCancelBooking(selectedTicket.id)}
+                                    className="w-full mt-4 py-3 text-red-500 font-bold hover:bg-red-50 rounded-xl transition-colors text-sm"
+                                >
+                                    Cancel Booking
+                                </button>
+                            )}
                         </div>
                         <button 
                             onClick={() => setSelectedTicket(null)}
@@ -158,13 +180,24 @@ export default function StudentBookingsPage() {
                                     href={`/events/${booking.event_id}`}
                                     className="flex-1 text-center px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors font-medium text-sm"
                                 >
-                                    View Event Detail
+                                    Event
                                 </Link>
+                                
+                                {booking.status === 'Confirmed' && (
+                                    <button
+                                        onClick={() => handleCancelBooking(booking.id)}
+                                        className="px-4 py-2 rounded-xl bg-red-500/10 hover:bg-red-500/20 text-red-400 border border-red-500/20 transition-colors text-sm font-bold"
+                                        title="Cancel Booking"
+                                    >
+                                        ✕
+                                    </button>
+                                )}
+
                                 <button
                                     onClick={() => setSelectedTicket(booking)}
                                     className="flex-1 text-center px-4 py-2 rounded-xl bg-primary hover:bg-primary/80 text-white font-bold shadow-lg shadow-primary/20 transition-all text-sm flex items-center justify-center gap-2"
                                 >
-                                    <span>🎟️</span> View Ticket
+                                    <span>🎟️</span> Ticket
                                 </button>
                             </div>
                         </StaggerItem>

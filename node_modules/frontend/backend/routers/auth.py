@@ -9,7 +9,8 @@ from models import User, Student, Organizer, UserRole, OrganizerInvite, Registra
 from schemas import (
     StudentCreate, OrganizerCreate, Token, UserCreate, TokenData, 
     OrganizerSignupInitiate, OrganizerSignupVerify, OrganizerSignupComplete, 
-    StudentSignupInitiate, StudentSignupVerify, StudentSignupComplete
+    StudentSignupInitiate, StudentSignupVerify, StudentSignupComplete,
+    OrganizerProfileUpdate
 )
 from .security_utils import get_password_hash, verify_password, create_access_token, ACCESS_TOKEN_EXPIRE_MINUTES, SECRET_KEY
 from datetime import timedelta
@@ -171,12 +172,34 @@ async def read_users_me(current_user: User = Depends(get_current_user), db: Sess
         print(f"CRITICAL ERROR in /auth/me: {e}")
         import traceback
         traceback.print_exc()
-        # Return JSONResponse to ensure the error is visible to the client
-        from fastapi.responses import JSONResponse
         return JSONResponse(
             status_code=500,
             content={"detail": f"Profile fetch failed: {str(e)}", "trace": traceback.format_exc()}
         )
+
+@router.put("/auth/organizer/profile")
+async def update_organizer_profile(data: OrganizerProfileUpdate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.role != UserRole.ORGANIZER:
+        raise HTTPException(status_code=403, detail="Not authorized")
+    
+    # Update User Table
+    if data.organization_name:
+        current_user.organization_name = data.organization_name
+    if data.contact:
+        current_user.contact = data.contact
+        
+    # Update Organizer Table
+    result = db.execute(select(Organizer).where(Organizer.user_id == current_user.id))
+    organizer = result.scalar_one_or_none()
+    
+    if organizer:
+        if data.organization_name:
+            organizer.organization_name = data.organization_name
+        if data.contact:
+            organizer.contact = data.contact
+            
+    db.commit()
+    return {"message": "Profile updated successfully"}
 
 @router.get("/auth/leaderboard")
 async def get_leaderboard(db: Session = Depends(get_db)):

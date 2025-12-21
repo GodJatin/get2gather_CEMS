@@ -45,6 +45,10 @@ class OrganizerCreate(BaseModel):
     contact: str
     password: str
 
+class OrganizerProfileUpdate(BaseModel):
+    organization_name: Optional[str] = None
+    contact: Optional[str] = None
+
 class OrganizerSignupInitiate(BaseModel):
     email: EmailStr
     organization_name: str

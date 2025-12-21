@@ -2,7 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.future import select
 from database import get_db
-from models import Booking, Event, Student, User, UserRole
+from models import Booking, Event, Student, User, UserRole, Waitlist
+from email_service import send_booking_cancellation_email, send_waitlist_promotion_email
+from qr_utils import generate_qr_code
 import schemas
 # from schemas import BookingCreate, BookingResponse, TokenData
 from typing import List
@@ -10,6 +12,104 @@ from routers.auth import get_current_user
 from datetime import datetime
 
 router = APIRouter(tags=["Bookings"])
+
+@router.delete("/bookings/{booking_id}")
+async def cancel_booking(booking_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.role != UserRole.STUDENT:
+        raise HTTPException(status_code=403, detail="Only students can cancel bookings")
+
+    # Fetch booking
+    result = db.execute(select(Booking).where(Booking.id == booking_id))
+    booking = result.scalar_one_or_none()
+
+    if not booking:
+        raise HTTPException(status_code=404, detail="Booking not found")
+
+    # Verify ownership
+    # Booking -> Student -> User
+    result = db.execute(select(Student).where(Student.id == booking.student_id))
+    student = result.scalar_one()
+
+    if student.user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to cancel this booking")
+
+    event = db.execute(select(Event).where(Event.id == booking.event_id)).scalar_one()
+
+    # Capture details for email before deletion
+    event_title = event.title
+    user_email = current_user.email
+    student_name = student.name
+
+    # DELETE BOOKING
+    db.delete(booking)
+    event.seats_available += 1
+    db.commit()
+
+    # Send Cancellation Email
+    try:
+        send_booking_cancellation_email(user_email, student_name, event_title)
+    except Exception as e:
+        print(f"Failed to send cancellation email: {e}")
+
+    # CHECK WAITLIST & PROMOTE
+    # Get first person in waitlist (oldest created_at)
+    next_in_line = db.execute(
+        select(Waitlist)
+        .where(Waitlist.event_id == event.id)
+        .order_by(Waitlist.created_at.asc())
+    ).scalars().first()
+
+    if next_in_line:
+        print(f"DEBUG: Promoting User {next_in_line.user_id} from Waitlist")
+        
+        try:
+            # Get Student profile for waitlisted user
+            promoted_student = db.execute(select(Student).where(Student.user_id == next_in_line.user_id)).scalar_one()
+            promoted_user = db.execute(select(User).where(User.id == next_in_line.user_id)).scalar_one()
+            
+            # Create Booking
+            new_booking = Booking(
+                event_id=event.id,
+                student_id=promoted_student.id,
+                booking_date=datetime.utcnow().isoformat(),
+                status="Confirmed"
+            )
+            
+            event.seats_available -= 1 # Re-occupy seat
+            
+            db.add(new_booking)
+            db.delete(next_in_line) # Remove from waitlist
+            db.commit()
+            db.refresh(new_booking)
+            
+            # Generate QR
+            qr_data, qr_image = generate_qr_code("booking", new_booking.id)
+            new_booking.qr_code = qr_data
+            db.commit() # Save QR
+            
+            # Send Promotion Email
+            send_waitlist_promotion_email(
+                email=promoted_user.email,
+                student_name=promoted_student.name,
+                event_title=event.title,
+                event_date=event.date,
+                event_time=event.time,
+                event_venue=event.venue,
+                qr_image=qr_image,
+                qr_data=qr_data,
+                event_id=event.id
+            )
+            print(f"DEBUG: Promoted User {promoted_user.email}")
+            
+        except Exception as e:
+            print(f"Failed to promote waitlist user: {e}")
+            # If promotion fails, we rollback? OR just log error and seat remains open.
+            # Ideally rollback, but we already committed the deletion. 
+            # We'll leave it simple: safe try-catch blocks. 
+            # If promotion fails, the seat is open for anyone to book manually.
+            pass
+
+    return {"message": "Booking cancelled successfully"}
 
 @router.post("/bookings", response_model=schemas.BookingResponse)
 async def create_booking(booking: schemas.BookingCreate, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
