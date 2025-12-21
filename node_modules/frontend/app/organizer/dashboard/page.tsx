@@ -27,7 +27,7 @@ export default function OrganizerDashboard() {
                 const [statsRes, userRes, eventsRes] = await Promise.all([
                     api.get('/stats/organizer'),
                     api.get('/auth/me'),
-                    api.get('/events/organizer') 
+                    api.get('/events/my') 
                 ]);
                 
                 setStats({

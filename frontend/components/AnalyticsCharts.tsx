@@ -11,14 +11,24 @@ interface AnalyticsChartsProps {
 }
 
 export default function AnalyticsCharts({ events }: AnalyticsChartsProps) {
-  // 1. Process Data for "Tickets per Event"
-  const ticketData = events.slice(0, 5).map(event => ({
-    name: event.title.length > 15 ? event.title.substring(0, 15) + '...' : event.title,
-    booked: event.booked_count || 0,
-    capacity: event.max_attendees || 100
-  }));
+  // 1. Process Data for "Tickets per Event" (Recent Completed Events)
+  const ticketData = events
+    .filter(event => event.status === 'Completed') // Filter for Completed
+    .sort((a, b) => {
+        // Sort by Date Descending (Newest First)
+        // detailed sort might need time parsing, assuming generic date string comparable or YYYY-MM-DD
+        const dateA = new Date(`${a.date} ${a.time || ''}`);
+        const dateB = new Date(`${b.date} ${b.time || ''}`);
+        return dateB.getTime() - dateA.getTime();
+    })
+    .slice(0, 5) // Take top 5
+    .map(event => ({
+      name: event.title.length > 15 ? event.title.substring(0, 15) + '...' : event.title,
+      booked: event.booked_count || 0,
+      capacity: event.max_attendees || 100
+    }));
 
-  // 2. Process Data for "Volunteers vs Attendees" (Aggregate)
+  // 2. Process Data for "Volunteers vs Attendees" (Aggregate - ALL Events)
   const totalAttendees = events.reduce((acc, curr) => acc + (curr.booked_count || 0), 0);
   const totalVolunteers = events.reduce((acc, curr) => acc + (curr.volunteers_count || 0), 0);
   
