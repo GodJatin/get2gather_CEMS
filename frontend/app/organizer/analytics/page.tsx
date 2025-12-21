@@ -129,33 +129,59 @@ export default function AnalyticsPage() {
 
                                     {/* Chart Path */}
                                     {(() => {
-                                        const maxVal = Math.max(...chartEvents.map(e => e.attended_count), 5);
-                                        const points = chartEvents.map((e, i) => {
+                                        const maxVal = Math.max(...chartEvents.map(e => Math.max(e.attended_count, e.volunteer_count)), 5);
+                                        
+                                        const getPoints = (getValue: (e: Event) => number) => chartEvents.map((e, i) => {
                                             const x = (i / (chartEvents.length - 1)) * 600;
-                                            const y = 200 - (e.attended_count / maxVal) * 170; // Leave space for labels
+                                            const y = 200 - (getValue(e) / maxVal) * 170; // Leave space for labels
                                             return `${x},${y}`;
                                         }).join(' ');
+
+                                        const attPoints = getPoints(e => e.attended_count);
+                                        const volPoints = getPoints(e => e.volunteer_count);
                                         
-                                        const fillPath = `M0,200 L${points.replace(/ /g, ' L')} L600,200 Z`; // Close path for fill
+                                        const fillPath = `M0,200 L${attPoints.replace(/ /g, ' L')} L600,200 Z`;
 
                                         return (
                                             <>
-                                                <path d={fillPath} fill="url(#gradient)" stroke="none" />
-                                                <polyline points={points} fill="none" stroke="#60A5FA" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
+                                                {/* Attendees Area & Line */}
+                                                <path d={fillPath} fill="url(#gradient)" stroke="none" opacity="0.5" />
+                                                <polyline points={attPoints} fill="none" stroke="#60A5FA" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" />
                                                 
-                                                {/* Dots & Labels */}
+                                                {/* Volunteers Line */}
+                                                <polyline points={volPoints} fill="none" stroke="#d946ef" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round" strokeDasharray="4 4" />
+
+                                                {/* Dots & Labels - Attendees */}
                                                 {chartEvents.map((e, i) => {
                                                     const x = (i / (chartEvents.length - 1)) * 600;
                                                     const y = 200 - (e.attended_count / maxVal) * 170;
                                                     return (
-                                                        <g key={e.id} className="group cursor-pointer">
+                                                        <g key={`att-${e.id}`} className="group cursor-pointer">
                                                             <circle cx={x} cy={y} r="4" fill="#60A5FA" className="group-hover:r-6 transition-all duration-300" />
-                                                            <foreignObject x={x - 50} y={y - 40} width="100" height="40" className="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none">
-                                                                <div className="bg-neutral-800 text-white text-xs rounded px-2 py-1 text-center shadow-lg border border-white/10 mx-auto w-fit">
+                                                            <foreignObject x={x - 50} y={y - 45} width="100" height="40" className="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                                                <div className="bg-blue-600 text-white text-[10px] font-bold rounded px-2 py-1 text-center shadow-lg border border-white/10 mx-auto w-fit">
                                                                     {e.attended_count} Attendees
                                                                 </div>
                                                             </foreignObject>
-                                                            <text x={x} y="220" textAnchor="middle" fill="#9CA3AF" fontSize="12" className="mt-2">
+                                                        </g>
+                                                    );
+                                                })}
+
+                                                {/* Dots & Labels - Volunteers */}
+                                                {chartEvents.map((e, i) => {
+                                                    const x = (i / (chartEvents.length - 1)) * 600;
+                                                    const y = 200 - (e.volunteer_count / maxVal) * 170;
+                                                    return (
+                                                        <g key={`vol-${e.id}`} className="group cursor-pointer">
+                                                            <circle cx={x} cy={y} r="4" fill="#d946ef" className="group-hover:r-6 transition-all duration-300" />
+                                                            <foreignObject x={x - 50} y={y - 45} width="100" height="40" className="opacity-0 group-hover:opacity-100 transition-opacity pointer-events-none z-10">
+                                                                <div className="bg-fuchsia-600 text-white text-[10px] font-bold rounded px-2 py-1 text-center shadow-lg border border-white/10 mx-auto w-fit">
+                                                                    {e.volunteer_count} Vols
+                                                                </div>
+                                                            </foreignObject>
+                                                            
+                                                            {/* Date Label (Shared) */}
+                                                            <text x={x} y="220" textAnchor="middle" fill="#9CA3AF" fontSize="12" className="mt-2 font-mono">
                                                                 {new Date(e.date).toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
                                                             </text>
                                                         </g>
