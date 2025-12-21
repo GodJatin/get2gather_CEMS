@@ -54,7 +54,16 @@ export default function AnalyticsPage() {
     const avgAttendance = totalEvents > 0 ? Math.round(totalAttendees / totalEvents) : 0;
 
     // Chart Data Preparation (Last 5 events)
-    const chartEvents = [...events].slice(-5);
+    const chartEvents = events
+        .filter(e => getEventStatus(e) === 'Completed')
+        .sort((a, b) => {
+            // Sort by Date Descending (Newest First)
+            const dateA = new Date(`${a.date} ${a.time || ''}`);
+            const dateB = new Date(`${b.date} ${b.time || ''}`);
+            return dateB.getTime() - dateA.getTime();
+        })
+        .slice(0, 5)
+        .reverse();
     const maxCapacity = Math.max(...chartEvents.map(e => e.capacity), 1);
 
     if (loading) return (
