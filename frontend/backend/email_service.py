@@ -368,9 +368,20 @@ def send_booking_ticket(email, student_name, event_title, event_date, event_time
     Adapter for booking/volunteer routers.
     qr_image: BytesIO object or bytes
     """
+    """
+    Adapter for booking/volunteer routers.
+    qr_image: BytesIO object, bytes, or Base64 string
+    """
     try:
         if hasattr(qr_image, 'getvalue'):
             qr_bytes = qr_image.getvalue()
+        elif isinstance(qr_image, str):
+            # Handle Base64 string (e.g., from qr_utils.py)
+            if "base64," in qr_image:
+                qr_base64 = qr_image.split("base64,")[1]
+            else:
+                qr_base64 = qr_image
+            qr_bytes = base64.b64decode(qr_base64)
         else:
             qr_bytes = qr_image
     except Exception as e:
