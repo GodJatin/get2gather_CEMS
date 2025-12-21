@@ -1,5 +1,12 @@
-import base64
+import smtplib
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from email.mime.image import MIMEImage
 import os
+import random
+import string
+from io import BytesIO
+import base64
 from dotenv import load_dotenv
 
 # Load .env from the same directory as this file
