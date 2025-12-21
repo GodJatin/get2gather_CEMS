@@ -59,14 +59,9 @@ app.include_router(student.router, prefix=API_PREFIX)
 app.include_router(admin.router, prefix=API_PREFIX)
 app.include_router(notifications.router, prefix=API_PREFIX)
 
-@app.api_route("/", methods=["GET", "POST", "PUT", "DELETE", "OPTIONS", "PATCH"])
-async def read_root(request: Request):
-    return {
-        "message": "Welcome to Get2Gather API (Root)",
-        "detected_path": request.url.path,
-        "method": request.method,
-        "scope_path": request.scope.get("path")
-    }
+@app.get("/")
+def read_root():
+    return {"message": "Welcome to Get2Gather API (Root)"}
 
 @app.get("/debug-status")
 def read_api_root():
