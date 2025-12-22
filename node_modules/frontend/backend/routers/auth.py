@@ -503,7 +503,7 @@ async def complete_organizer_signup(data: OrganizerSignupComplete, db: Session =
     )
     return {"access_token": access_token, "token_type": "bearer", "role": "organizer"}
 
-@router.post("/token", response_model=Token)
+@router.post("/auth/token", response_model=Token)
 @limiter.limit("5/minute")
 def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     print(f"DEBUG: Login attempt for {form_data.username}")

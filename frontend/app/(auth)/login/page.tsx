@@ -23,7 +23,7 @@ export default function LoginPage() {
             const password = formData.get('password') as string;
 
             // OAuth2 password flow requires application/x-www-form-urlencoded
-            const response = await api.post('/token',
+            const response = await api.post('/auth/token',
                 new URLSearchParams({
                     username: email,
                     password: password,
@@ -165,7 +165,7 @@ export default function LoginPage() {
                                     <span>Verifying...</span>
                                 </>
                             ) : (
-                                "Sign In (v2.1)"
+                                "Sign In (v2.2)"
                             )}
                         </motion.button>
                     </form>
