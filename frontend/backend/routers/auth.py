@@ -504,7 +504,6 @@ async def complete_organizer_signup(data: OrganizerSignupComplete, db: Session =
     return {"access_token": access_token, "token_type": "bearer", "role": "organizer"}
 
 @router.post("/token", response_model=Token)
-# @limiter.limit("5/minute")
 def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     print(f"DEBUG: Login attempt for {form_data.username}")
     try:
@@ -550,3 +549,8 @@ def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestFor
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Login Handler Crashed: {str(e)}"
         )
+
+# ALIAS for frontend compatibility
+@router.post("/auth/login", response_model=Token)
+def login_alias(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    return login_for_access_token(request, form_data, db)

@@ -4,13 +4,7 @@ from database import engine, Base
 from routers import auth, events, bookings, media, feed, volunteers, leaderboard, stats, social, student, admin, notifications
 import time
 import models
-from slowapi.errors import RateLimitExceeded
-from slowapi import _rate_limit_exceeded_handler
-from limiter import limiter
-
 app = FastAPI(title="Get2Gather API")
-app.state.limiter = limiter
-app.add_exception_handler(RateLimitExceeded, _rate_limit_exceeded_handler)
 
 @app.on_event("startup")
 def on_startup():
