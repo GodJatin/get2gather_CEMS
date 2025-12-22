@@ -605,3 +605,37 @@ async def get_event_bookings(event_id: int, current_user: User = Depends(get_cur
         bookings_with_details.append(booking_resp)
 
     return bookings_with_details
+
+@router.post("/events/{event_id}/request-feedback")
+async def request_feedback(event_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if current_user.role != UserRole.ORGANIZER:
+        raise HTTPException(status_code=403, detail="Only organizers can request feedback")
+    
+    # Check if event exists and belongs to organizer
+    result = db.execute(select(Event).join(Organizer).where(Event.id == event_id, Organizer.user_id == current_user.id))
+    event = result.scalar_one_or_none()
+    
+    if not event:
+        raise HTTPException(status_code=404, detail="Event not found")
+        
+    # Get all attendees who checked in
+    bookings = db.execute(
+        select(Student, User)
+        .join(Booking, Booking.student_id == Student.id)
+        .join(User, Student.user_id == User.id)
+        .where(Booking.event_id == event_id, Booking.attended == True)
+    ).all()
+    
+    if not bookings:
+         return {"message": "No attendees found for this event"}
+
+    count = 0
+    from email_service import send_feedback_request_email
+    for student, user in bookings:
+        try:
+            send_feedback_request_email(user.email, student.name, event.title, event.id)
+            count += 1
+        except Exception as e:
+            print(f"Failed to send feedback email to {user.email}: {e}")
+            
+    return {"message": f"Feedback requested from {count} attendees"}
