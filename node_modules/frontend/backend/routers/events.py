@@ -608,34 +608,47 @@ async def get_event_bookings(event_id: int, current_user: User = Depends(get_cur
 
 @router.post("/events/{event_id}/request-feedback")
 async def request_feedback(event_id: int, current_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    if current_user.role != UserRole.ORGANIZER:
-        raise HTTPException(status_code=403, detail="Only organizers can request feedback")
-    
-    # Check if event exists and belongs to organizer
-    result = db.execute(select(Event).join(Organizer).where(Event.id == event_id, Organizer.user_id == current_user.id))
-    event = result.scalar_one_or_none()
-    
-    if not event:
-        raise HTTPException(status_code=404, detail="Event not found")
+    try:
+        print(f"DEBUG: request_feedback called for event {event_id} by user {current_user.email}")
         
-    # Get all attendees who checked in
-    bookings = db.execute(
-        select(Student, User)
-        .join(Booking, Booking.student_id == Student.id)
-        .join(User, Student.user_id == User.id)
-        .where(Booking.event_id == event_id, Booking.attended == True)
-    ).all()
-    
-    if not bookings:
-         return {"message": "No attendees found for this event"}
-
-    count = 0
-    from email_service import send_feedback_request_email
-    for student, user in bookings:
-        try:
-            send_feedback_request_email(user.email, student.name, event.title, event.id)
-            count += 1
-        except Exception as e:
-            print(f"Failed to send feedback email to {user.email}: {e}")
+        if current_user.role != UserRole.ORGANIZER:
+            raise HTTPException(status_code=403, detail="Only organizers can request feedback")
+        
+        # Check if event exists and belongs to organizer
+        result = db.execute(select(Event).join(Organizer).where(Event.id == event_id, Organizer.user_id == current_user.id))
+        event = result.scalar_one_or_none()
+        
+        if not event:
+            raise HTTPException(status_code=404, detail="Event not found")
             
-    return {"message": f"Feedback requested from {count} attendees"}
+        # Get all attendees who checked in
+        bookings = db.execute(
+            select(Student, User)
+            .join(Booking, Booking.student_id == Student.id)
+            .join(User, Student.user_id == User.id)
+            .where(Booking.event_id == event_id, Booking.attended == True)
+        ).all()
+        
+        print(f"DEBUG: Found {len(bookings)} attended bookings")
+        
+        if not bookings:
+             return {"message": "No attendees found for this event"}
+
+        count = 0
+        from email_service import send_feedback_request_email
+        for student, user in bookings:
+            try:
+                print(f"DEBUG: Sending to {user.email}")
+                send_feedback_request_email(user.email, student.name, event.title, event.id)
+                count += 1
+            except Exception as e:
+                print(f"Failed to send feedback email to {user.email}: {e}")
+                
+        return {"message": f"Feedback requested from {count} attendees"}
+        
+    except HTTPException:
+        raise
+    except Exception as e:
+        import traceback
+        traceback.print_exc()
+        raise HTTPException(status_code=500, detail=f"Server Error: {str(e)}")
