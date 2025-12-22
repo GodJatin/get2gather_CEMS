@@ -329,15 +329,20 @@ async def get_trending_events(db: Session = Depends(get_db)):
             try:
                 dt = datetime.strptime(dt_str, "%Y-%m-%d %I:%M %p")
             except ValueError:
-                # Fallback to 24hr format
                 dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M")
             
-            if dt >= datetime.now():
-                active_events.append(e)
-        except Exception:
-            continue # Skip invalid dates
+            # Filter: Must be Future AND Have Seats (Booking Open)
+            if dt < datetime.now():
+                continue
             
-    # Sort by seats_available ASC (least seats = most popular/full)
+            if e.seats_available <= 0:
+                continue
+
+            active_events.append(e)
+        except Exception:
+            continue
+            
+    # Sort by seats_available ASC (scarcity)
     active_events.sort(key=lambda x: x.seats_available)
     
     return active_events[:3]

@@ -1,12 +1,13 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Fragment } from 'react';
 import { useParams } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
 import api from '@/lib/api';
 import BookingSuccessModal from '@/components/BookingSuccessModal';
 import VolunteerSuccessModal from '@/components/VolunteerSuccessModal';
 import { triggerConfetti } from '@/components/Confetti';
+import { Dialog, Transition } from '@headlessui/react';
 
 interface Event {
     id: number;
@@ -190,6 +191,91 @@ export default function EventDetailsPage() {
 
             <BookingSuccessModal isOpen={showSuccessModal} onClose={() => setShowSuccessModal(false)} />
             <VolunteerSuccessModal isOpen={showVolunteerModal} onClose={() => setShowVolunteerModal(false)} />
+
+            {/* Review Modal */}
+            <Transition appear show={reviewModal.isOpen} as={Fragment}>
+                <Dialog as="div" className="relative z-50" onClose={() => setReviewModal(prev => ({ ...prev, isOpen: false }))}>
+                    <Transition.Child
+                        as={Fragment}
+                        enter="ease-out duration-300"
+                        enterFrom="opacity-0"
+                        enterTo="opacity-100"
+                        leave="ease-in duration-200"
+                        leaveFrom="opacity-100"
+                        leaveTo="opacity-0"
+                    >
+                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" />
+                    </Transition.Child>
+
+                    <div className="fixed inset-0 overflow-y-auto">
+                        <div className="flex min-h-full items-center justify-center p-4 text-center">
+                            <Transition.Child
+                                as={Fragment}
+                                enter="ease-out duration-300"
+                                enterFrom="opacity-0 scale-95"
+                                enterTo="opacity-100 scale-100"
+                                leave="ease-in duration-200"
+                                leaveFrom="opacity-100 scale-100"
+                                leaveTo="opacity-0 scale-95"
+                            >
+                                <Dialog.Panel className="w-full max-w-md transform overflow-hidden rounded-2xl bg-neutral-900 border border-white/10 p-8 text-left align-middle shadow-2xl transition-all">
+                                    <Dialog.Title as="h3" className="text-2xl font-bold leading-6 text-white mb-2">
+                                        Rate & Review
+                                    </Dialog.Title>
+                                    <p className="text-neutral-400 mb-6">
+                                        How was your experience at <span className="text-[#00F0FF]">{event?.title}</span>?
+                                    </p>
+
+                                    <div className="space-y-6">
+                                        <div className="flex justify-center gap-2">
+                                            {[1, 2, 3, 4, 5].map((star) => (
+                                                <button
+                                                    key={star}
+                                                    onClick={() => setReviewModal(prev => ({ ...prev, rating: star }))}
+                                                    className={`text-4xl transition-transform hover:scale-110 ${
+                                                        reviewModal.rating >= star ? 'text-yellow-400' : 'text-neutral-700 hover:text-yellow-400/50'
+                                                    }`}
+                                                >
+                                                    ★
+                                                </button>
+                                            ))}
+                                        </div>
+
+                                        <div>
+                                            <label className="block text-sm font-medium text-neutral-400 mb-2">Feedback (Optional)</label>
+                                            <textarea
+                                                rows={4}
+                                                className="w-full rounded-xl bg-neutral-800 border border-white/5 p-4 text-white focus:outline-none focus:border-primary/50 transition-colors"
+                                                placeholder="Share your thoughts..."
+                                                value={reviewModal.review}
+                                                onChange={(e) => setReviewModal(prev => ({ ...prev, review: e.target.value }))}
+                                            />
+                                        </div>
+
+                                        <div className="flex gap-3 mt-6">
+                                            <button
+                                                type="button"
+                                                className="flex-1 rounded-xl bg-neutral-800 px-4 py-3 text-sm font-medium text-neutral-300 hover:bg-neutral-700 transition-colors"
+                                                onClick={() => setReviewModal(prev => ({ ...prev, isOpen: false }))}
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                type="button"
+                                                className={`flex-1 rounded-xl bg-primary px-4 py-3 text-sm font-medium text-white hover:bg-primary/80 transition-colors shadow-lg shadow-primary/20 ${reviewModal.rating === 0 ? 'opacity-50 cursor-not-allowed' : ''}`}
+                                                onClick={submitReview}
+                                                disabled={reviewModal.rating === 0}
+                                            >
+                                                Submit Review
+                                            </button>
+                                        </div>
+                                    </div>
+                                </Dialog.Panel>
+                            </Transition.Child>
+                        </div>
+                    </div>
+                </Dialog>
+            </Transition>
             
             {/* Waitlist Warning Modal */}
             <AnimatePresence>
@@ -407,6 +493,21 @@ export default function EventDetailsPage() {
                                         const isPast = !isNaN(eventDate.getTime()) && eventDate < new Date();
 
                                         if (isPast) {
+                                            if (myBooking && myBooking.attended) {
+                                                return (
+                                                    <div className="space-y-3">
+                                                        <div className="w-full py-4 rounded-xl bg-neutral-800 text-neutral-400 font-bold border border-neutral-700 text-center">
+                                                            ✅ Attended
+                                                        </div>
+                                                        <button 
+                                                            onClick={() => setReviewModal(prev => ({ ...prev, isOpen: true }))}
+                                                            className="w-full py-3 rounded-xl bg-yellow-500/10 text-yellow-400 border border-yellow-500/20 font-bold hover:bg-yellow-500/20 transition-all flex items-center justify-center gap-2"
+                                                        >
+                                                            {myBooking.rating ? `★ You rated ${myBooking.rating}/5 (Edit)` : '★ Leave a Review'}
+                                                        </button>
+                                                    </div>
+                                                );
+                                            }
                                             return (
                                                 <div className="w-full py-4 rounded-xl bg-neutral-800 text-neutral-400 font-bold border border-neutral-700 text-center cursor-not-allowed">
                                                     Event Ended

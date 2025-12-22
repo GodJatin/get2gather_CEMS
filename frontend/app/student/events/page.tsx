@@ -251,11 +251,36 @@ export default function EventsPage() {
         }
 
         // Filter out past events for specific sections
-        if (section || filter !== 'All') {
-             filtered = filtered.filter(e => {
-                 return getEventStatus(e) !== 'Completed';
-             });
+        if (section && section !== 'Completed') { // Only hide past if not specifically asking for them (though logic below handles sort)
+             // Existing logic: specific sections hide completed
+             if (section === 'Department' || section === 'Open') {
+                 filtered = filtered.filter(e => getEventStatus(e) !== 'Completed');
+             }
         }
+
+        // Sort: Upcoming (ASC) -> Completed (DESC)
+        filtered.sort((a, b) => {
+            const statusA = getEventStatus(a);
+            const statusB = getEventStatus(b);
+            
+            // Parse Date safely (assume yyyy-mm-dd)
+            // If format is dd-mm-yyyy, new Date() might fail or be ambiguous. 
+            // The backend seems to send YYYY-MM-DD based on other files.
+            const timeA = new Date(`${a.date} ${a.time}`).getTime() || 0;
+            const timeB = new Date(`${b.date} ${b.time}`).getTime() || 0;
+            
+            const isCompletedA = statusA === 'Completed';
+            const isCompletedB = statusB === 'Completed';
+
+            if (isCompletedA && isCompletedB) {
+                return timeB - timeA; // Descending (Newest completed first)
+            }
+            if (!isCompletedA && !isCompletedB) {
+                return timeA - timeB; // Ascending (Nearest upcoming first)
+            }
+            // Put Upcoming before Completed
+            return isCompletedA ? 1 : -1;
+        });
 
         return filtered;
     };
