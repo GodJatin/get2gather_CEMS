@@ -42,6 +42,14 @@ export default function EventDetailsPage() {
     const [showVolunteerModal, setShowVolunteerModal] = useState(false);
     const [bookingStatus, setBookingStatus] = useState<'idle' | 'submitting' | 'confirming' | 'confirmed'>('idle');
     const [volunteerStatus, setVolunteerStatus] = useState<'idle' | 'submitting' | 'confirming' | 'confirmed'>('idle');
+    
+    // Review State
+    const [myBooking, setMyBooking] = useState<any>(null);
+    const [reviewModal, setReviewModal] = useState({
+        isOpen: false,
+        rating: 0,
+        review: ''
+    });
 
     const fetchEvent = async () => {
         try {
@@ -65,10 +73,42 @@ export default function EventDetailsPage() {
         try {
             const res = await api.get('/bookings/my');
             const myBookings = res.data;
-            const hasBooked = myBookings.some((b: any) => b.event_id === Number(params.id));
-            setIsBooked(hasBooked);
+            const found = myBookings.find((b: any) => b.event_id === Number(params.id));
+            if (found) {
+                setIsBooked(true);
+                setMyBooking(found);
+                // Pre-fill review if exists
+                if (found.rating) {
+                    setReviewModal(prev => ({
+                        ...prev,
+                        rating: found.rating,
+                        review: found.review || ''
+                    }));
+                }
+            }
         } catch (error) {
-            // Ignore error if not logged in or not student
+            // Ignore error if not logged in
+        }
+    };
+
+    const submitReview = async () => {
+        if (!myBooking) return;
+        try {
+            await api.post(`/bookings/${myBooking.id}/feedback`, {
+                rating: reviewModal.rating,
+                review: reviewModal.review
+            });
+            
+            // Update local state
+            setMyBooking((prev: any) => ({ ...prev, rating: reviewModal.rating, review: reviewModal.review }));
+            setReviewModal(prev => ({ ...prev, isOpen: false }));
+            setToastMessage('Review submitted successfully!');
+            setShowToast(true);
+            setTimeout(() => setShowToast(false), 3000);
+            triggerConfetti();
+        } catch (error) {
+            console.error(error);
+            alert('Failed to submit review');
         }
     };
 
