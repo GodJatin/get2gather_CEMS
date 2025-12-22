@@ -34,7 +34,8 @@ interface StudentStats {
     total_volunteer: number;
 }
 
-import Loader from '@/components/Loader';
+import { StudentDashboardSkeleton } from '@/components/skeletons';
+import Loader from '@/components/Loader'; // Keep Loader if needed elsewhere, but mostly replacing usage here.
 import { Bell } from 'lucide-react';
 import NotificationCenter from '@/components/NotificationCenter';
 
@@ -48,14 +49,18 @@ export default function StudentDashboard() {
 
     useEffect(() => {
         const fetchData = async () => {
+            const minDelay = new Promise(resolve => setTimeout(resolve, 1500));
+            
             try {
-                const userRes = await api.get('/auth/me');
+                const [userRes, bookingsRes, statsRes] = await Promise.all([
+                    api.get('/auth/me'),
+                    api.get('/bookings/my'),
+                    api.get('/stats/student'),
+                    minDelay
+                ]);
+
                 setUser(userRes.data);
-
-                const bookingsRes = await api.get('/bookings/my');
                 setBookings(bookingsRes.data);
-
-                const statsRes = await api.get('/stats/student');
                 setStats(statsRes.data);
             } catch (error) {
                 console.error('Failed to fetch data:', error);
@@ -67,6 +72,7 @@ export default function StudentDashboard() {
         fetchData();
     }, []);
 
+
     const getGreeting = () => {
         const hour = new Date().getHours();
         if (hour < 12) return 'Good Morning';
@@ -74,12 +80,7 @@ export default function StudentDashboard() {
         return 'Good Evening';
     };
 
-    if (loading) return (
-        <div className="min-h-[80vh] flex flex-col items-center justify-center gap-4">
-            <Loader />
-            <p className="text-neutral-500 animate-pulse">Loading dashboard...</p>
-        </div>
-    );
+    if (loading) return <StudentDashboardSkeleton />;
 
     return (
         <MotionWrapper className="max-w-7xl mx-auto">

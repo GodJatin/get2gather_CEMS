@@ -7,6 +7,8 @@ import MotionWrapper from '@/components/MotionWrapper';
 import { Dialog, Transition } from '@headlessui/react';
 import { getEventStatus, parseEventDate } from '@/lib/dateUtils';
 import { getImageUrl } from '@/lib/image-utils';
+import { EventCardSkeleton } from '@/components/skeletons';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Event {
     id: number;
@@ -162,16 +164,23 @@ export default function EventsPage() {
     });
 
     useEffect(() => {
-        const fetchData = async () => {
+        const init = async () => {
+            const minDelay = new Promise(resolve => setTimeout(resolve, 1500));
             try {
-                const userRes = await api.get('/auth/me');
+                const [userRes, eventsRes, trendingRes, bookingsRes] = await Promise.all([
+                    api.get('/auth/me'),
+                    api.get('/events/'),
+                    api.get('/events/trending'),
+                    api.get('/bookings/my'),
+                    minDelay
+                ]);
+
                 setUser(userRes.data);
-
-                const eventsRes = await api.get('/events/');
                 setEvents(Array.isArray(eventsRes.data) ? eventsRes.data : []);
-
-                const trendingRes = await api.get('/events/trending');
                 setTrendingEvents(Array.isArray(trendingRes.data) ? trendingRes.data : []);
+                
+                setBookingsData(bookingsRes.data);
+                setBookings(bookingsRes.data.map((b: any) => b.event_id));
 
             } catch (error) {
                 console.error('Failed to fetch data:', error);
@@ -180,16 +189,7 @@ export default function EventsPage() {
             }
         };
 
-        const fetchBookings = async () => {
-             try {
-                const res = await api.get('/bookings/my');
-                setBookingsData(res.data);
-                setBookings(res.data.map((b: any) => b.event_id));
-             } catch (e) { console.error(e); }
-        };
-
-        fetchData();
-        fetchBookings();
+        init();
     }, []);
 
     const openReviewModal = (booking: any) => {
@@ -284,6 +284,20 @@ export default function EventsPage() {
 
         return filtered;
     };
+
+    if (loading) return (
+        <div className="max-w-7xl mx-auto p-6 md:p-12">
+            <div className="mb-12">
+                <Skeleton className="h-12 w-64 mb-4" />
+                <Skeleton className="h-6 w-96 mb-8" />
+                <div className="flex flex-col md:flex-row gap-4">
+                     <Skeleton className="h-12 flex-1 rounded-xl" />
+                     <Skeleton className="h-12 w-48 rounded-xl" />
+                </div>
+            </div>
+            <EventCardSkeleton />
+        </div>
+    );
 
     return (
         <MotionWrapper className="max-w-7xl mx-auto p-6 md:p-12">

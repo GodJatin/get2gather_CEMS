@@ -3,6 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import MotionWrapper from '@/components/MotionWrapper';
+import { TableRowSkeleton } from '@/components/skeletons';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface User {
     id: number;
@@ -29,14 +31,18 @@ export default function AdminUsersPage() {
 
     const fetchUsers = async () => {
         setLoading(true);
+        const minDelay = new Promise(resolve => setTimeout(resolve, 1500));
         try {
             const skip = (page - 1) * limit;
-            const res = await api.get(`/admin/users?skip=${skip}&limit=${limit}`);
+            const [res] = await Promise.all([
+                 api.get(`/admin/users?skip=${skip}&limit=${limit}`),
+                 minDelay
+            ]);
+
             if (res.data.users) {
                 setUsers(res.data.users);
                 setTotal(res.data.total);
             } else {
-                // Fallback for non-paginated API
                 setUsers(res.data);
                 setTotal(res.data.length);
             }
@@ -61,29 +67,23 @@ export default function AdminUsersPage() {
     const filteredUsers = users.filter(user => filter === 'all' || user.role === filter);
     const totalPages = Math.ceil(total / limit);
 
-    const downloadCSV = () => {
-        if (users.length === 0) return;
-
-        const headers = ["ID", "Email", "Role", "Organization", "Contact"];
-        const csvContent = [
-            headers.join(","),
-            ...filteredUsers.map(u => [
-                u.id, 
-                u.email, 
-                u.role, 
-                u.organization_name || "", 
-                u.contact || ""
-            ].join(","))
-        ].join("\n");
-
-        const blob = new Blob([csvContent], { type: 'text/csv' });
-        const url = window.URL.createObjectURL(blob);
-        const a = document.createElement('a');
-        a.href = url;
-        a.download = `users_page${page}_${new Date().toISOString().split('T')[0]}.csv`;
-        document.body.appendChild(a);
-        a.click();
-        document.body.removeChild(a);
+    const handleExportAll = async () => {
+        try {
+            const response = await api.get('/admin/users/export', { responseType: 'blob' });
+            
+            // Create download link
+            const url = window.URL.createObjectURL(new Blob([response.data]));
+            const link = document.createElement('a');
+            link.href = url;
+            link.setAttribute('download', `all_users_export_${new Date().toISOString().split('T')[0]}.csv`); 
+            document.body.appendChild(link);
+            link.click();
+            if (link.parentNode) link.parentNode.removeChild(link);
+            
+         } catch (error) {
+             console.error('Export failed', error);
+             alert('Failed to export users');
+         }
     };
 
     const tabs = [
@@ -94,9 +94,32 @@ export default function AdminUsersPage() {
     ];
 
     if (loading) return (
-        <div className="min-h-[60vh] flex items-center justify-center">
-            <div className="w-12 h-12 border-4 border-blue-500 border-t-transparent rounded-full animate-spin"></div>
-        </div>
+         <MotionWrapper>
+             <div className="flex flex-col gap-6 mb-8">
+                <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                    <div>
+                        <Skeleton className="h-10 w-64 mb-2" />
+                        <Skeleton className="h-5 w-48" />
+                    </div>
+                    <div className="flex gap-3">
+                         <Skeleton className="h-10 w-24 rounded-xl" />
+                         <Skeleton className="h-10 w-64 rounded-xl" />
+                    </div>
+                </div>
+             </div>
+             
+             <div className="bg-neutral-900/50 rounded-3xl border border-white/10 overflow-hidden">
+                  <div className="p-6 border-b border-white/10 hidden md:flex gap-6">
+                      <Skeleton className="h-4 w-12" />
+                      <Skeleton className="h-4 w-48" />
+                      <Skeleton className="h-4 w-24" />
+                      <Skeleton className="h-4 w-full" />
+                  </div>
+                  <div className="p-4">
+                      <TableRowSkeleton />
+                  </div>
+             </div>
+         </MotionWrapper>
     );
 
     return (
@@ -113,10 +136,10 @@ export default function AdminUsersPage() {
                     {/* Desktop Actions */}
                     <div className="hidden md:flex gap-3">
                         <button 
-                            onClick={downloadCSV}
+                            onClick={handleExportAll}
                             className="flex items-center gap-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-600/30 px-4 py-2 rounded-xl font-medium transition-colors whitespace-nowrap"
                         >
-                            <span>⬇️</span> CSV (Page {page})
+                            <span>⬇️</span> Export All Users
                         </button>
                         <div className="flex bg-neutral-900 border border-white/10 p-1 rounded-xl">
                             {tabs.map(tab => (
@@ -157,9 +180,9 @@ export default function AdminUsersPage() {
 
                 {/* Mobile Floating Download Button */}
                 <button 
-                    onClick={downloadCSV}
+                    onClick={handleExportAll}
                     className="md:hidden fixed bottom-6 right-6 z-50 w-12 h-12 bg-blue-600 text-white rounded-full shadow-2xl flex items-center justify-center text-xl border border-white/20 active:scale-95 transition-transform"
-                    aria-label="Download CSV"
+                    aria-label="Export All CSV"
                 >
                     ⬇️
                 </button>

@@ -8,6 +8,7 @@ import BookingSuccessModal from '@/components/BookingSuccessModal';
 import VolunteerSuccessModal from '@/components/VolunteerSuccessModal';
 import { triggerConfetti } from '@/components/Confetti';
 import { Dialog, Transition } from '@headlessui/react';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface Event {
     id: number;
@@ -115,9 +116,14 @@ export default function EventDetailsPage() {
     useEffect(() => {
         const init = async () => {
             setLoading(true);
-            await fetchEvent();
-            await checkWaitlistStatus();
-            await checkBookingStatus();
+            const minDelay = new Promise(resolve => setTimeout(resolve, 1500));
+            // Run all independent fetches + delay
+            await Promise.all([
+                 fetchEvent(),
+                 checkWaitlistStatus(),
+                 checkBookingStatus(),
+                 minDelay
+            ]);
             setLoading(false);
         };
 
@@ -202,7 +208,28 @@ export default function EventDetailsPage() {
         }
     };
 
-    if (loading) return <div className="min-h-screen flex items-center justify-center text-neutral-400">Loading...</div>;
+    if (loading) return (
+        <div className="min-h-screen bg-neutral-950 p-6 md:p-12">
+             <div className="max-w-6xl mx-auto">
+                 <Skeleton className="h-10 w-32 rounded-full mb-8 bg-neutral-900" />
+                 <Skeleton className="h-[450px] w-full rounded-[2rem] mb-8 bg-neutral-900 border border-white/10" />
+
+                 <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                      <div className="lg:col-span-2 space-y-8">
+                          <div className="space-y-4">
+                              <Skeleton className="h-8 w-48 bg-neutral-900" />
+                              <Skeleton className="h-4 w-full bg-neutral-900" />
+                              <Skeleton className="h-4 w-full bg-neutral-900" />
+                              <Skeleton className="h-4 w-3/4 bg-neutral-900" />
+                          </div>
+                      </div>
+                      <div className="lg:col-span-1">
+                           <Skeleton className="h-96 w-full rounded-[2rem] bg-neutral-900" />
+                      </div>
+                 </div>
+             </div>
+        </div>
+    );
     if (!event) return <div className="min-h-screen flex items-center justify-center text-red-400">Event not found</div>;
 
     const eventImages = (() => {

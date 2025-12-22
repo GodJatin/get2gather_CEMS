@@ -1,4 +1,5 @@
 from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi.responses import StreamingResponse
 from sqlalchemy.orm import Session
 from sqlalchemy import func
 from typing import List, Optional
@@ -6,6 +7,8 @@ from database import get_db
 from models import User, UserRole, Student, Organizer, Event, Booking
 from routers.auth import get_current_user
 import schemas
+import csv
+import io
 
 router = APIRouter(
     prefix="/admin",
@@ -40,6 +43,40 @@ def get_admin_stats(db: Session = Depends(get_db), current_user: User = Depends(
     }
 
 # --- Users ---
+@router.get("/users/export")
+def export_users_csv(db: Session = Depends(get_db), current_user: User = Depends(get_current_admin)):
+    users = db.query(User).order_by(User.id.asc()).all()
+    
+    def iter_csv():
+        output = io.StringIO()
+        writer = csv.writer(output)
+        
+        # Write Header
+        writer.writerow(["ID", "Email", "Role", "Organization", "Contact", "Is Active"])
+        yield output.getvalue()
+        output.seek(0)
+        output.truncate(0)
+        
+        # Write Rows
+        for u in users:
+            writer.writerow([
+                u.id, 
+                u.email, 
+                u.role.value if hasattr(u.role, 'value') else u.role, 
+                u.organization_name or "", 
+                u.contact or "", 
+                "Yes" if u.is_active else "No"
+            ])
+            yield output.getvalue()
+            output.seek(0)
+            output.truncate(0)
+
+    return StreamingResponse(
+        iter_csv(), 
+        media_type="text/csv", 
+        headers={"Content-Disposition": "attachment; filename=all_users_export.csv"}
+    )
+
 @router.get("/users")
 def get_users_paginated(
     skip: int = 0, 
