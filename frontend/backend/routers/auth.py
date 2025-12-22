@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException, status
+```python
+from fastapi import APIRouter, Depends, HTTPException, status, Request
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy.future import select
@@ -283,7 +284,8 @@ async def initiate_student_signup(data: StudentSignupInitiate, db: Session = Dep
     return {"message": "OTP sent to your email"}
 
 @router.post("/auth/student/verify")
-async def verify_student_otp(data: StudentSignupVerify, db: Session = Depends(get_db)):
+@limiter.limit("5/minute")
+async def verify_student_otp(request: Request, data: StudentSignupVerify, db: Session = Depends(get_db)):
     from models import StudentRegistrationAttempt
     
     result = db.execute(select(StudentRegistrationAttempt).where(StudentRegistrationAttempt.email == data.email))
@@ -501,8 +503,9 @@ async def complete_organizer_signup(data: OrganizerSignupComplete, db: Session =
     )
     return {"access_token": access_token, "token_type": "bearer", "role": "organizer"}
 
-@router.post("/auth/login", response_model=Token)
-async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+@router.post("/token", response_model=Token)
+@limiter.limit("5/minute")
+def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
     print(f"DEBUG: Login attempt for {form_data.username}")
     try:
         # Find User
