@@ -41,17 +41,28 @@ def get_admin_stats(db: Session = Depends(get_db), current_user: User = Depends(
 
 # --- Users ---
 @router.get("/users")
-def get_all_users(db: Session = Depends(get_db), current_user: User = Depends(get_current_admin)):
-    # Simple list for now, can add pagination later
-    users = db.query(User).all()
-    return [{
-        "id": u.id,
-        "email": u.email,
-        "role": u.role,
-        "is_active": u.is_active,
-        "organization_name": u.organization_name,
-        "contact": u.contact
-    } for u in users]
+def get_users_paginated(
+    skip: int = 0, 
+    limit: int = 20, 
+    db: Session = Depends(get_db), 
+    current_user: User = Depends(get_current_admin)
+):
+    total = db.query(User).count()
+    users = db.query(User).order_by(User.id.desc()).offset(skip).limit(limit).all()
+    
+    return {
+        "total": total,
+        "page": (skip // limit) + 1,
+        "size": limit,
+        "users": [{
+            "id": u.id,
+            "email": u.email,
+            "role": u.role,
+            "is_active": u.is_active,
+            "organization_name": u.organization_name,
+            "contact": u.contact
+        } for u in users]
+    }
 
 @router.delete("/users/{user_id}")
 def delete_user(user_id: int, db: Session = Depends(get_db), current_user: User = Depends(get_current_admin)):
