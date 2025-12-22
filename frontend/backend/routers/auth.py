@@ -289,10 +289,16 @@ async def verify_student_otp(data: StudentSignupVerify, db: Session = Depends(ge
     result = db.execute(select(StudentRegistrationAttempt).where(StudentRegistrationAttempt.email == data.email))
     attempt = result.scalar_one_or_none()
 
+    print(f"\n🔍 DEBUG VERIFY: Email={data.email}, Received OTP='{data.otp}'")
+
     if not attempt:
+        print("❌ DEBUG VERIFY: Attempt not found in DB")
         raise HTTPException(status_code=400, detail="Registration attempt not found")
     
+    print(f"🔍 DEBUG VERIFY: Found Attempt ID={attempt.id}, Stored OTP='{attempt.otp}'")
+
     if attempt.otp != data.otp:
+        print(f"❌ DEBUG VERIFY: MISMATCH! '{attempt.otp}' != '{data.otp}'")
         raise HTTPException(status_code=400, detail="Invalid OTP")
     
     attempt.is_verified = True
