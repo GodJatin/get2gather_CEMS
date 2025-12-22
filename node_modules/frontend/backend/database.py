@@ -6,40 +6,28 @@ from dotenv import load_dotenv
 load_dotenv(os.path.join(os.path.dirname(__file__), ".env"))
 
 # ---------------------------------------------------------
-# UNIFIED DATABASE CONFIGURATION (Supabase Only)
+# DATABASE CONFIGURATION
 # ---------------------------------------------------------
-# We use Port 6543 (Transaction Pooler) because:
-# 1. It works on Vercel (avoids IPv6 "Cannot assign requested address" errors).
-# 2. It works Locally (standard IPv4).
-# 3. It creates a SINGLE Source of Truth for data.
-# ---------------------------------------------------------
-# ---------------------------------------------------------
-# UNIFIED DATABASE CONFIGURATION (Supabase Only)
-# ---------------------------------------------------------
-# CRITICAL FIX: CORRECT REGIONAL POOLER (CLUSTER 1)
-# User Dashboard confirms the project is on 'aws-1-ap-southeast-1', NOT 'aws-0'.
-# 'aws-0' returned "Tenant Not Found" because the tenant is on Cluster 1.
-# This hostname resolves to IPv4 and works on Vercel.
+# Use Environment Variable for Security
+DATABASE_URL = os.getenv("DATABASE_URL")
 
-REGIONAL_POOLER_HOST = "aws-1-ap-southeast-1.pooler.supabase.com"
-PROJECT_ID = "vqfnndepdzdewugdcwjg"
+if not DATABASE_URL:
+    print("WARNING: DATABASE_URL not found in environment variables. Using SQLite fallback for LOCAL ONLY.")
+    DATABASE_URL = "sqlite:///./test.db"
+else:
+    print("Using configured DATABASE_URL")
 
-# Exact URL from Dashboard:
-# postgresql://postgres.PROJECT:[PASSWORD]@aws-1-ap-southeast-1.pooler.supabase.com:6543/postgres
-DATABASE_URL = f"postgresql://postgres.{PROJECT_ID}:J%40tin224@{REGIONAL_POOLER_HOST}:6543/postgres?sslmode=require"
-
-print(f"Using Regional Pooler (Cluster 1): {REGIONAL_POOLER_HOST}")
-
-
-
-print(f"Using UNIFIED Database: Supabase (Pooler Mode)")
-print(f"-----------------")
+print(f"Database Configured: {DATABASE_URL.split('@')[-1] if '@' in DATABASE_URL else 'SQLite/Local'}")
 
 # SQLAlchemy Engine
 try:
-    engine = create_engine(DATABASE_URL, echo=True, pool_pre_ping=True)
+    if DATABASE_URL.startswith("sqlite"):
+        engine = create_engine(DATABASE_URL, connect_args={"check_same_thread": False})
+    else:
+        # Postgres/Supabase
+        engine = create_engine(DATABASE_URL, pool_pre_ping=True)
 except Exception as e:
-    print(f"CRITICAL: Failed to connect to Supabase: {e}")
+    print(f"CRITICAL: Failed to connect to Database: {e}")
     raise e
 
 SessionLocal = sessionmaker(

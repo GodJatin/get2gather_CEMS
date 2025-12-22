@@ -1,9 +1,8 @@
 from fastapi import FastAPI, Request
 from fastapi.middleware.cors import CORSMiddleware
 from database import engine, Base
-from routers import auth, events, bookings, media, feed, volunteers, leaderboard, stats, scan, social, student, admin, notifications
+from routers import auth, events, bookings, media, feed, volunteers, leaderboard, stats, social, student, admin, notifications
 import time
-import models
 import models
 
 app = FastAPI(title="Get2Gather API")
@@ -53,7 +52,6 @@ app.include_router(feed.router, prefix=API_PREFIX)
 app.include_router(volunteers.router, prefix=API_PREFIX)
 app.include_router(leaderboard.router, prefix=API_PREFIX)
 app.include_router(stats.router, prefix=API_PREFIX)
-app.include_router(scan.router, prefix=API_PREFIX)
 app.include_router(social.router, prefix=API_PREFIX)
 app.include_router(student.router, prefix=API_PREFIX)
 app.include_router(admin.router, prefix=API_PREFIX)
