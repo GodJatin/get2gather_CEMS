@@ -4,44 +4,40 @@
 
 ## 🚀 Features
 
-*   **Student Portal**:
-    *   **Feed**: Real-time social feed to see what's happening, share moments, and tag friends/events.
-    *   **Dashboard**: Personalized view of upcoming events, stats, and recommendations.
-    *   **Events**: Browse and search for events (Workshops, Seminars, Socials).
-    *   **Calendar**: Visual schedule of your registered events.
-    *   **Leaderboard**: Gamified engagement with points and rankings.
-    *   **Profile**: Manage your identity and viewing history.
+### For Students
+*   **Social Feed**: Real-time social feed to see what's happening, share moments, and tag friends.
+*   **Event Booking**: Seamless booking with QR Code tickets delivered via Email.
+*   **Waitlist System**: Automatic waitlist handling. If a spot opens up (via cancellation), you get promoted automatically!
+*   **Gamification**: Earn points for attending events and volunteering. Climb the Leaderboard!
+*   **Inventory**: Collect badges and profile effects.
 
-*   **Organizer Portal**:
-    *   **Dashboard**: Analytics and overview of event performance.
-    *   **Create Event**: Powerful visual editor to launch events with images, ticketing (Free/Paid), and schedules.
-    *   **Manage Events**: Track registrations, verify attendees with QR Scanning (simulated), and manage volunteers.
-    *   **Analytics**: Insights into attendee demographics and engagement.
-
-*   **PWA (Progressive Web App)**: Installable on mobile devices for a native-like experience.
-*   **Authentication**: Secure Role-Based Access Control (RBAC) for Students, Organizers, and Admins.
-*   **Security**: Rate limiting (Backend), Secure Headers, and optimized API structure.
+### For Organizers
+*   **Dashboard**: Real-time analytics on ticket sales, attendance, and volunteer engagement.
+*   **Event Management**: Create rich event pages with images, schedules, and capacity limits.
+*   **Smart Attendance**: Built-in QR Code Scanner (Camera & Manual) to verify tickets instantly.
+*   **Feedback Loop**: One-click "Request Feedback" to survey attendees after an event properly.
+*   **Profile Management**: Update organization details easily.
 
 ## 🛠️ Tech Stack
 
 **Frontend**:
-*   **Framework**: Next.js 16 (App Router)
+*   **Framework**: Next.js 14 (App Router)
 *   **Language**: TypeScript
-*   **Styling**: Tailwind CSS v4, Framer Motion (Animations)
-*   **Components**: Lucide React (Icons), Sonner (Toasts)
-*   **State**: React Hooks
+*   **Styling**: Tailwind CSS, Framer Motion
+*   **Components**: Recharts (Analytics), Lucide Icons
 
 **Backend**:
 *   **Framework**: FastAPI (Python)
-*   **Database**: SQLite (SQLAlchemy ORM)
-*   **Security**: OAuth2 with JWT, Passlib (Argon2)
-*   **Rate Limiting**: Custom Middleware (Serverless Compatible)
+*   **Database**: PostgreSQL (Supabase)
+*   **ORM**: SQLAlchemy
+*   **Email**: SMTP (Gmail) for OTPs, Tickets, and Notifications.
 
 ## 🏃‍♂️ How to Run
 
 ### Prerequisites
 *   Node.js (v18+)
 *   Python (v3.9+)
+*   PostgreSQL Database (Supabase recommended)
 
 ### 1. Backend Setup
 The backend is located in `frontend/backend`.
@@ -57,6 +53,12 @@ source venv/bin/activate
 
 # Install dependencies
 pip install -r requirements.txt
+
+# Create .env file with:
+# DATABASE_URL=...
+# SECRET_KEY=...
+# SMTP_EMAIL=...
+# SMTP_PASSWORD=...
 
 # Run Server
 uvicorn main:app --reload
@@ -76,16 +78,10 @@ npm run dev
 ```
 *Frontend runs on `http://localhost:3000`*
 
-## 📱 Mobile & PWA
-*   The app is fully responsive.
-*   **Install App**: On Android (Chrome), tap "Add to Home Screen". On iOS (Safari), tap "Share" > "Add to Home Screen".
-*   *Note*: PWA installation requires HTTPS. On Vercel Preview deployments, the install prompt may be blocked by Authentication Protection. Use the Production URL for the best experience.
-
-## 🔧 Troubleshooting
-
-*   **500 Login Error**: Use the latest code with the `limiter.py` fix for serverless environments.
-*   **Images not loading**: Ensure the backend is running. Local development images are served from `http://localhost:8000/static`.
-*   **401 Manifest Error**: Use a Production deployment to bypass Vercel Preview authentication.
+## 📱 Troubleshooting
+*   **Email Issues**: Check your `SMTP_PASSWORD`. If using Gmail, ensure it's an App Password, not your login password.
+*   **Database Connection**: Ensure your IP is allowed in Supabase/Postgres settings.
+*   **Login Errors**: Check the Backend Console for debug logs.
 
 ## 👥 Contributors
 *   **GodJatin** - Lead Developer
