@@ -2,7 +2,7 @@ from fastapi import APIRouter, Depends, HTTPException, status, UploadFile, File
 from sqlalchemy.orm import Session
 from sqlalchemy.future import select
 from database import get_db
-from models import Event, User, Organizer, UserRole, Waitlist, Booking
+from models import Event, User, Organizer, UserRole, Waitlist, Booking, Student
 import schemas
 from typing import List
 from routers.auth import get_current_user
