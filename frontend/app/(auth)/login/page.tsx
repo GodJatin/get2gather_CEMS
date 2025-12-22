@@ -23,7 +23,7 @@ export default function LoginPage() {
             const password = formData.get('password') as string;
 
             // OAuth2 password flow requires application/x-www-form-urlencoded
-            const response = await api.post('/auth/login',
+            const response = await api.post('/token',
                 new URLSearchParams({
                     username: email,
                     password: password,
