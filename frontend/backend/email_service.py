@@ -260,6 +260,7 @@ def get_email_template(title, body_content, cta_text=None, cta_link=None):
 
 def send_email(to_email: str, subject: str, html_content: str, attachments: list = None) -> bool:
     try:
+        print(f"DEBUG: Configuration - Server: {SMTP_SERVER}:{SMTP_PORT}, Email: {SENDER_EMAIL[:3]}***")
         msg = MIMEMultipart()
         msg['From'] = SENDER_EMAIL
         msg['To'] = to_email
@@ -298,15 +299,20 @@ def send_email(to_email: str, subject: str, html_content: str, attachments: list
                     msg.attach(part)
 
         # SMTP Connection
+        print("DEBUG: Connecting to SMTP server...")
         with smtplib.SMTP(SMTP_SERVER, SMTP_PORT) as server:
             server.starttls()
+            print("DEBUG: Login attempt...")
             server.login(SENDER_EMAIL, SENDER_PASSWORD)
+            print("DEBUG: Login successful. Sending message...")
             server.send_message(msg)
+            print("DEBUG: Message sent.")
         
         return True, "Email sent successfully"
     except Exception as e:
         print(f"Failed to send email: {e}")
         return False, str(e)
+
 def send_otp_email(to_email: str, otp: str, user_type: str = "student"):
     subject = f"Your Get2Gather Verification Code"
     
