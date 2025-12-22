@@ -284,7 +284,7 @@ async def initiate_student_signup(data: StudentSignupInitiate, db: Session = Dep
     return {"message": "OTP sent to your email"}
 
 @router.post("/auth/student/verify")
-@limiter.limit("5/minute")
+# @limiter.limit("5/minute")
 async def verify_student_otp(request: Request, data: StudentSignupVerify, db: Session = Depends(get_db)):
     from models import StudentRegistrationAttempt
     
