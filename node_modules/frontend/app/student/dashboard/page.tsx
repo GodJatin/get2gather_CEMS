@@ -9,6 +9,7 @@ import Counter from '@/components/Counter';
 import TextReveal from '@/components/TextReveal';
 import { Dialog, Transition } from '@headlessui/react';
 
+interface Booking {
     id: number;
     event_id: number;
     status: string;
