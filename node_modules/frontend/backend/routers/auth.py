@@ -503,40 +503,40 @@ async def complete_organizer_signup(data: OrganizerSignupComplete, db: Session =
 
 @router.post("/auth/login", response_model=Token)
 async def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    print(f"DEBUG: Login attempt for {form_data.username}")
     try:
         # Find User
         result = db.execute(select(User).where(User.email == form_data.username))
         user = result.scalar_one_or_none()
         
         if not user:
-            # DEBUG: User not found
-            from database import DATABASE_URL
-            masked_url = DATABASE_URL.split("@")[-1] if "@" in DATABASE_URL else "NO_CREDENTIALS"
-            detail_msg = f"User {form_data.username} NOT FOUND in DB connected to: {masked_url}"
-            print(detail_msg)
+            print(f"DEBUG: User {form_data.username} NOT FOUND in DB")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=detail_msg,
+                detail="Incorrect username or password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
             
         if not verify_password(form_data.password, user.hashed_password):
-            # DEBUG: Password mismatch
-            detail_msg = f"Password MISMATCH for {form_data.username}"
-            print(detail_msg)
+            print(f"DEBUG: Password mismatch for {form_data.username}")
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail=detail_msg,
+                detail="Incorrect username or password",
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
+        # Handle Role (Enum vs String safety)
+        role_val = user.role
+        if hasattr(user.role, 'value'):
+            role_val = user.role.value
+        
+        print(f"DEBUG: Login Success. Role={role_val}")
+        
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
-            data={"sub": user.email, "role": user.role.value}, expires_delta=access_token_expires
+            data={"sub": user.email, "role": role_val}, expires_delta=access_token_expires
         )
-        return {"access_token": access_token, "token_type": "bearer", "role": user.role.value}
-    except HTTPException:
-        raise
+        return {"access_token": access_token, "token_type": "bearer", "role": role_val}
     except HTTPException:
         raise
     except Exception as e:
