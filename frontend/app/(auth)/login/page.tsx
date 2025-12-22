@@ -165,7 +165,7 @@ export default function LoginPage() {
                                     <span>Verifying...</span>
                                 </>
                             ) : (
-                                "Sign In (v2.3)"
+                                "Sign In (v2.4)"
                             )}
                         </motion.button>
                     </form>
