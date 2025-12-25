@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import api from '@/lib/api';
 import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';
 import Link from 'next/link';
+import { toast } from 'sonner';
 
 interface Event {
     id: number;
@@ -45,8 +46,9 @@ export default function AdminEventsPage() {
         try {
             await api.delete(`/admin/events/${id}`);
             setEvents(events.filter(e => e.id !== id));
+            toast.success("Event deleted successfully");
         } catch (error) {
-            alert("Failed to delete event");
+            toast.error("Failed to delete event");
         }
     };
 
@@ -56,12 +58,12 @@ export default function AdminEventsPage() {
         const csvContent = [
             headers.join(","),
             ...events.map(e => [
-                e.id, 
-                `"${e.title.replace(/"/g, '""')}"`, 
-                e.date, 
-                e.time, 
-                e.status, 
-                e.capacity, 
+                e.id,
+                `"${e.title.replace(/"/g, '""')}"`,
+                e.date,
+                e.time,
+                e.status,
+                e.capacity,
                 e.avg_rating || "N/A"
             ].join(","))
         ].join("\n");
@@ -76,7 +78,7 @@ export default function AdminEventsPage() {
         document.body.removeChild(a);
     };
 
-    const filteredEvents = events.filter(e => 
+    const filteredEvents = events.filter(e =>
         e.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
         e.status.toLowerCase().includes(searchTerm.toLowerCase())
     );
@@ -88,7 +90,7 @@ export default function AdminEventsPage() {
             if (!isNaN(eventDate.getTime()) && new Date() > eventDate) {
                 status = 'Completed';
             }
-        } catch (e) {}
+        } catch (e) { }
         return status;
     };
 
@@ -108,14 +110,14 @@ export default function AdminEventsPage() {
                     <p className="text-neutral-400">Manage all platform events</p>
                 </div>
                 <div className="flex gap-3">
-                    <input 
-                        type="text" 
-                        placeholder="Search events..." 
+                    <input
+                        type="text"
+                        placeholder="Search events..."
                         value={searchTerm}
                         onChange={(e) => setSearchTerm(e.target.value)}
                         className="bg-neutral-900 border border-white/10 rounded-xl px-4 py-2 focus:border-blue-500 outline-none w-full md:w-64"
                     />
-                    <button 
+                    <button
                         onClick={downloadCSV}
                         className="flex items-center gap-2 bg-blue-600/20 hover:bg-blue-600/30 text-blue-400 border border-blue-600/30 px-4 py-2 rounded-xl font-medium transition-colors whitespace-nowrap"
                     >
@@ -123,7 +125,7 @@ export default function AdminEventsPage() {
                     </button>
                 </div>
             </div>
-            
+
             <div className="bg-neutral-900/50 rounded-3xl border border-white/10 overflow-hidden backdrop-blur-sm shadow-xl">
                 {/* Desktop Table View */}
                 <div className="hidden md:block overflow-x-auto">
@@ -159,11 +161,10 @@ export default function AdminEventsPage() {
                                         {(() => {
                                             const status = getStatus(event);
                                             return (
-                                                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                                                    status === 'Completed' ? 'bg-neutral-800 text-neutral-400 border-neutral-700' :
-                                                    status === 'Upcoming' ? 'bg-green-500/10 text-green-400 border-green-500/20' : 
-                                                    'bg-blue-500/10 text-blue-400 border-blue-500/20'
-                                                }`}>
+                                                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${status === 'Completed' ? 'bg-neutral-800 text-neutral-400 border-neutral-700' :
+                                                        status === 'Upcoming' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                                                            'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                                    }`}>
                                                     {status}
                                                 </span>
                                             );
@@ -173,8 +174,8 @@ export default function AdminEventsPage() {
                                         <div className="flex flex-col gap-1">
                                             <span className="text-white font-mono">{event.seats_available} / {event.capacity}</span>
                                             <div className="w-20 h-1 bg-neutral-800 rounded-full overflow-hidden">
-                                                <div 
-                                                    className="h-full bg-blue-500 rounded-full" 
+                                                <div
+                                                    className="h-full bg-blue-500 rounded-full"
                                                     style={{ width: `${((event.capacity - event.seats_available) / event.capacity) * 100}%` }}
                                                 />
                                             </div>
@@ -190,7 +191,7 @@ export default function AdminEventsPage() {
                                         )}
                                     </td>
                                     <td className="p-6 text-right">
-                                        <button 
+                                        <button
                                             onClick={() => handleDelete(event.id)}
                                             className="text-red-400 hover:text-red-300 hover:bg-red-500/10 px-4 py-2 rounded-xl transition-all border border-transparent hover:border-red-500/20"
                                         >
@@ -206,13 +207,13 @@ export default function AdminEventsPage() {
                 {/* Mobile Card View */}
                 <div className="md:hidden divide-y divide-white/5">
                     {filteredEvents.map((event) => {
-                         const status = getStatus(event);
-                         return (
+                        const status = getStatus(event);
+                        return (
                             <div key={event.id} className="p-4 flex flex-col gap-4">
                                 <div className="flex justify-between items-start">
                                     <div className="flex items-center gap-3">
                                         <div className="w-10 h-10 rounded-lg bg-neutral-800 flex items-center justify-center text-xl border border-white/5">
-                                             {event.image_url ? (
+                                            {event.image_url ? (
                                                 <img src={event.image_url} alt="" className="w-full h-full object-cover rounded-lg" />
                                             ) : '📅'}
                                         </div>
@@ -221,14 +222,14 @@ export default function AdminEventsPage() {
                                             <p className="text-xs text-neutral-400">#{event.id}</p>
                                         </div>
                                     </div>
-                                    <button 
+                                    <button
                                         onClick={() => handleDelete(event.id)}
                                         className="p-2 rounded-lg bg-red-500/10 text-red-400 border border-red-500/20"
                                     >
                                         🗑️
                                     </button>
                                 </div>
-                                
+
                                 <div className="grid grid-cols-2 gap-2 text-sm">
                                     <div className="bg-white/5 rounded-lg p-2 border border-white/5">
                                         <p className="text-xs text-neutral-500 uppercase">Date</p>
@@ -236,11 +237,10 @@ export default function AdminEventsPage() {
                                     </div>
                                     <div className="bg-white/5 rounded-lg p-2 border border-white/5">
                                         <p className="text-xs text-neutral-500 uppercase">Status</p>
-                                        <span className={`text-xs font-bold ${
-                                            status === 'Completed' ? 'text-neutral-400' :
-                                            status === 'Upcoming' ? 'text-green-400' : 
-                                            'text-blue-400'
-                                        }`}>
+                                        <span className={`text-xs font-bold ${status === 'Completed' ? 'text-neutral-400' :
+                                                status === 'Upcoming' ? 'text-green-400' :
+                                                    'text-blue-400'
+                                            }`}>
                                             {status}
                                         </span>
                                     </div>
