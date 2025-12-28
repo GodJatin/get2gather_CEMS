@@ -22,79 +22,101 @@ interface LeaderboardEntry {
     badges: Badge[];
 }
 
+import { createPortal } from 'react-dom';
+
 // Student Profile Modal Component
 const StudentProfileModal = ({ student, onClose }: { student: LeaderboardEntry | null, onClose: () => void }) => {
-    if (!student) return null;
+    const [mounted, setMounted] = useState(false);
 
-    return (
-        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
-            <motion.div
-                initial={{ opacity: 0, scale: 0.9, y: 20 }}
-                animate={{ opacity: 1, scale: 1, y: 0 }}
-                exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="relative z-10 w-full max-w-md bg-neutral-900 border border-white/10 rounded-3xl p-8 shadow-2xl overflow-y-auto max-h-[85vh] custom-scrollbar"
-            >
-                {/* Decorative Background */}
-                <div className="absolute top-0 right-0 -mt-16 -mr-16 w-32 h-32 bg-yellow-500/20 rounded-full blur-3xl" />
-                <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl" />
+    useEffect(() => {
+        setMounted(true);
+        // Prevent body scroll when modal is open
+        document.body.style.overflow = 'hidden';
+        return () => {
+            document.body.style.overflow = 'unset';
+        };
+    }, []);
 
-                <div className="relative text-center mb-8">
-                    <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-neutral-800 to-neutral-700 border-4 border-neutral-900 shadow-xl flex items-center justify-center text-4xl font-bold text-white relative">
-                        {student.student_name[0]}
-                        {student.rank <= 3 && (
-                            <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-lg shadow-lg border-2 border-neutral-900">
-                                {['🥇', '🥈', '🥉'][student.rank - 1]}
+    if (!student || !mounted) return null;
+
+    return createPortal(
+        <div className="fixed inset-0 z-[200] overflow-y-auto custom-scrollbar">
+            {/* Wrapper to center modal but allow scrolling if taller than screen */}
+            <div className="flex min-h-full items-center justify-center p-4 text-center">
+
+                {/* Backdrop */}
+                <div className="fixed inset-0 bg-black/90 backdrop-blur-md transition-opacity" onClick={onClose} aria-hidden="true" />
+
+                {/* Modal Panel */}
+                <motion.div
+                    initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                    animate={{ opacity: 1, scale: 1, y: 0 }}
+                    exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                    transition={{ ease: "out", duration: 0.3 }}
+                    className="relative w-full max-w-md transform overflow-hidden rounded-3xl bg-neutral-900 border border-white/10 p-8 text-left align-middle shadow-2xl transition-all"
+                >
+                    {/* Decorative Background */}
+                    <div className="absolute top-0 right-0 -mt-16 -mr-16 w-32 h-32 bg-yellow-500/20 rounded-full blur-3xl" />
+                    <div className="absolute bottom-0 left-0 -mb-16 -ml-16 w-32 h-32 bg-purple-500/20 rounded-full blur-3xl" />
+
+                    <div className="relative text-center mb-8">
+                        <div className="w-24 h-24 mx-auto mb-4 rounded-full bg-gradient-to-br from-neutral-800 to-neutral-700 border-4 border-neutral-900 shadow-xl flex items-center justify-center text-4xl font-bold text-white relative">
+                            {student.student_name[0]}
+                            {student.rank <= 3 && (
+                                <div className="absolute -bottom-2 -right-2 w-8 h-8 rounded-full bg-yellow-500 flex items-center justify-center text-lg shadow-lg border-2 border-neutral-900">
+                                    {['🥇', '🥈', '🥉'][student.rank - 1]}
+                                </div>
+                            )}
+                        </div>
+                        <h2 className="text-2xl font-bold text-white mb-1">{student.student_name}</h2>
+                        <p className="text-yellow-500 font-bold text-sm tracking-wider uppercase mb-2">{student.title || 'Novice'}</p>
+                        <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10 text-xs text-neutral-400">
+                            {student.department}
+                        </div>
+                    </div>
+
+                    <div className="space-y-4 mb-8">
+                        <div className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5">
+                            <span className="text-neutral-400 text-sm">Total Score</span>
+                            <span className="text-2xl font-bold text-yellow-400 font-mono">{student.score.toLocaleString()}</span>
+                        </div>
+
+                        <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-left">
+                            <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2 block">Contact Info</label>
+                            <div className="flex items-center gap-2 text-neutral-300">
+                                <span>✉️</span>
+                                <a href={`mailto:${student.email}`} className="text-white hover:text-yellow-400 transition-colors break-all">{student.email}</a>
+                            </div>
+                        </div>
+
+                        {student.badges.length > 0 && (
+                            <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-left">
+                                <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3 block">Earned Badges</label>
+                                <div className="flex flex-wrap gap-3">
+                                    {student.badges.map((badge, i) => (
+                                        <div key={i} className="group relative flex items-center justify-center w-10 h-10 bg-black/40 rounded-full border border-yellow-500/20 shadow-sm cursor-help hover:scale-110 transition-transform hover:bg-yellow-500/10 hover:border-yellow-500/50">
+                                            <span className="text-xl">{badge.icon}</span>
+                                            {/* Tooltip */}
+                                            <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-neutral-900 border border-white/10 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-20">
+                                                {badge.name}
+                                            </div>
+                                        </div>
+                                    ))}
+                                </div>
                             </div>
                         )}
                     </div>
-                    <h2 className="text-2xl font-bold text-white mb-1">{student.student_name}</h2>
-                    <p className="text-yellow-500 font-bold text-sm tracking-wider uppercase mb-2">{student.title || 'Novice'}</p>
-                    <div className="inline-flex items-center gap-2 px-3 py-1 bg-white/5 rounded-full border border-white/10 text-xs text-neutral-400">
-                        {student.department}
-                    </div>
-                </div>
 
-                <div className="space-y-4 mb-8">
-                    <div className="flex justify-between items-center p-4 bg-white/5 rounded-2xl border border-white/5">
-                        <span className="text-neutral-400 text-sm">Total Score</span>
-                        <span className="text-2xl font-bold text-yellow-400 font-mono">{student.score.toLocaleString()}</span>
-                    </div>
-
-                    <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-left">
-                        <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-2 block">Contact Info</label>
-                        <div className="flex items-center gap-2 text-neutral-300">
-                            <span>✉️</span>
-                            <a href={`mailto:${student.email}`} className="text-white hover:text-yellow-400 transition-colors break-all">{student.email}</a>
-                        </div>
-                    </div>
-
-                    {student.badges.length > 0 && (
-                        <div className="p-4 bg-white/5 rounded-2xl border border-white/5 text-left">
-                            <label className="text-xs font-bold text-neutral-500 uppercase tracking-wider mb-3 block">Earned Badges</label>
-                            <div className="flex flex-wrap gap-3">
-                                {student.badges.map((badge, i) => (
-                                    <div key={i} className="group relative flex items-center justify-center w-10 h-10 bg-black/40 rounded-full border border-yellow-500/20 shadow-sm cursor-help hover:scale-110 transition-transform hover:bg-yellow-500/10 hover:border-yellow-500/50">
-                                        <span className="text-xl">{badge.icon}</span>
-                                        {/* Tooltip */}
-                                        <div className="absolute bottom-full mb-2 left-1/2 -translate-x-1/2 px-2 py-1 bg-neutral-900 border border-white/10 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none z-20">
-                                            {badge.name}
-                                        </div>
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-                    )}
-                </div>
-
-                <button
-                    onClick={onClose}
-                    className="w-full py-3 rounded-xl bg-white text-black font-bold hover:bg-neutral-200 transition-colors"
-                >
-                    Close Profile
-                </button>
-            </motion.div>
-        </div>
+                    <button
+                        onClick={onClose}
+                        className="w-full py-3 rounded-xl bg-white text-black font-bold hover:bg-neutral-200 transition-colors"
+                    >
+                        Close Profile
+                    </button>
+                </motion.div>
+            </div>
+        </div>,
+        document.body
     );
 };
 
