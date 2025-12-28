@@ -7,7 +7,6 @@ import MotionWrapper from '@/components/MotionWrapper';
 import { motion } from 'framer-motion';
 import Counter from '@/components/Counter';
 import TextReveal from '@/components/TextReveal';
-import { Dialog, Transition } from '@headlessui/react';
 
 interface Booking {
     id: number;
@@ -38,6 +37,7 @@ import { StudentDashboardSkeleton } from '@/components/skeletons';
 import Loader from '@/components/Loader'; // Keep Loader if needed elsewhere, but mostly replacing usage here.
 import { Bell } from 'lucide-react';
 import NotificationCenter from '@/components/NotificationCenter';
+import TicketModal from '@/components/TicketModal';
 
 export default function StudentDashboard() {
     const [bookings, setBookings] = useState<Booking[]>([]);
@@ -50,7 +50,7 @@ export default function StudentDashboard() {
     useEffect(() => {
         const fetchData = async () => {
             const minDelay = new Promise(resolve => setTimeout(resolve, 1500));
-            
+
             try {
                 const [userRes, bookingsRes, statsRes] = await Promise.all([
                     api.get('/auth/me'),
@@ -101,7 +101,7 @@ export default function StudentDashboard() {
                         <h1 className="text-4xl md:text-5xl font-bold mb-4 flex flex-wrap gap-x-3">
                             {getGreeting()}, <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">{user?.name || 'Student'}</span>! 👋
                         </h1>
-                        <TextReveal 
+                        <TextReveal
                             text="Ready to explore what's happening on campus? Check out the latest events and secure your spot today."
                             className="text-lg text-neutral-300 max-w-2xl"
                             delay={0.2}
@@ -179,82 +179,13 @@ export default function StudentDashboard() {
             </div>
 
             {/* Ticket Modal */}
-            <Transition appear show={showTicketModal} as={Fragment}>
-                <Dialog as="div" className="relative z-50" onClose={() => setShowTicketModal(false)}>
-                    <Transition.Child
-                        as={Fragment}
-                        enter="ease-out duration-300"
-                        enterFrom="opacity-0"
-                        enterTo="opacity-100"
-                        leave="ease-in duration-200"
-                        leaveFrom="opacity-100"
-                        leaveTo="opacity-0"
-                    >
-                        <div className="fixed inset-0 bg-black/80 backdrop-blur-sm" />
-                    </Transition.Child>
+            <TicketModal
+                isOpen={showTicketModal}
+                onClose={() => setShowTicketModal(false)}
+                ticket={selectedTicket}
+            />
 
-                    <div className="fixed inset-0 overflow-y-auto">
-                        <div className="flex min-h-full items-center justify-center p-4 text-center">
-                            <Transition.Child
-                                as={Fragment}
-                                enter="ease-out duration-300"
-                                enterFrom="opacity-0 scale-95"
-                                enterTo="opacity-100 scale-100"
-                                leave="ease-in duration-200"
-                                leaveFrom="opacity-100 scale-100"
-                                leaveTo="opacity-0 scale-95"
-                            >
-                                <Dialog.Panel className="w-full max-w-sm transform overflow-hidden rounded-2xl bg-white p-6 text-left align-middle shadow-xl transition-all relative">
-                                    <button 
-                                        onClick={() => setShowTicketModal(false)}
-                                        className="absolute top-4 right-4 text-neutral-400 hover:text-neutral-600"
-                                    >
-                                        ✕
-                                    </button>
-                                    
-                                    <div className="text-center">
-                                        <h3 className="text-xl font-bold text-black mb-1">
-                                            {selectedTicket?.event_title}
-                                        </h3>
-                                        <p className="text-sm text-neutral-500 mb-6">
-                                            {selectedTicket?.event_date} • {selectedTicket?.event_time}
-                                        </p>
-
-                                        <div className="bg-white p-4 rounded-xl border-2 border-dashed border-neutral-300 mb-6 inline-block">
-                                            {selectedTicket?.qr_code || selectedTicket?.qr_data ? (
-                                                <img 
-                                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(selectedTicket?.qr_code || selectedTicket?.qr_data || '')}`} 
-                                                    alt="Ticket QR"
-                                                    className="w-48 h-48"
-                                                />
-                                            ) : (
-                                                <div className="w-48 h-48 bg-neutral-100 flex items-center justify-center text-neutral-400">
-                                                    No QR Code
-                                                </div>
-                                            )}
-                                        </div>
-
-                                        <p className="text-xs text-neutral-500 mb-6">
-                                            Show this QR code at the event entrance for check-in.
-                                        </p>
-
-                                        <div className="bg-neutral-50 rounded-lg p-3 text-sm text-left">
-                                            <div className="flex justify-between mb-1">
-                                                <span className="text-neutral-500">Venue</span>
-                                                <span className="font-bold text-neutral-800">{selectedTicket?.event_venue}</span>
-                                            </div>
-                                            <div className="flex justify-between">
-                                                <span className="text-neutral-500">Ticket ID</span>
-                                                <span className="font-mono text-neutral-800">#{selectedTicket?.id}</span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </Dialog.Panel>
-                            </Transition.Child>
-                        </div>
-                    </div>
-                </Dialog>
-            </Transition>
+            {/* My Bookings Section */}
 
             {/* My Bookings Section */}
             <section className="mb-12">
@@ -276,7 +207,7 @@ export default function StudentDashboard() {
                             // Fallback to simple date check if time parse fails
                             const eventDay = new Date(b.event_date);
                             const today = new Date();
-                            today.setHours(0,0,0,0);
+                            today.setHours(0, 0, 0, 0);
                             return eventDay >= today;
                         }
                         return eventDate > new Date();
@@ -291,63 +222,62 @@ export default function StudentDashboard() {
                                 if (isNaN(eventDate.getTime())) {
                                     const eventDay = new Date(b.event_date);
                                     const today = new Date();
-                                    today.setHours(0,0,0,0);
+                                    today.setHours(0, 0, 0, 0);
                                     return eventDay >= today;
                                 }
                                 return eventDate > new Date();
                             } catch (e) { return true; }
                         })
-                        .sort((a, b) => new Date(`${a.event_date} ${a.event_time}`).getTime() - new Date(`${b.event_date} ${b.event_time}`).getTime())
-                        .map((booking) => (
-                            <div key={`${booking.id}-${booking.event_title}`} className="p-6 rounded-3xl bg-gradient-to-br from-secondary/20 to-primary/20 border border-secondary/30 shadow-lg shadow-secondary/10 relative overflow-hidden group hover:scale-[1.02] transition-transform">
-                                <Link href={`/events/${booking.event_id}`} className="absolute inset-0 z-0" />
-                                
-                                <div className="relative z-10 pointer-events-none">
-                                    <div className="absolute top-0 right-0">
-                                        <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                                            booking.status === 'Confirmed' 
-                                                ? 'bg-green-500/20 text-green-400 border-green-500/20' 
-                                                : booking.status === 'Completed'
-                                                ? 'bg-neutral-500/20 text-neutral-400 border-neutral-500/20'
-                                                : 'bg-red-500/20 text-red-400 border-red-500/20'
-                                        }`}>
-                                            {booking.status}
-                                        </span>
-                                    </div>
-                                    <h3 className="text-2xl font-bold mb-2 pr-20">{booking.event_title}</h3>
-                                    <div className="space-y-2 text-neutral-300 mb-6">
-                                        <div className="flex items-center gap-2">
-                                            <span>📅</span>
-                                            <span>{booking.event_date} • {booking.event_time}</span>
-                                        </div>
-                                        <div className="flex items-center gap-2">
-                                            <span>📍</span>
-                                            <span>{booking.event_venue}</span>
-                                        </div>
-                                    </div>
-                                </div>
+                            .sort((a, b) => new Date(`${a.event_date} ${a.event_time}`).getTime() - new Date(`${b.event_date} ${b.event_time}`).getTime())
+                            .map((booking) => (
+                                <div key={`${booking.id}-${booking.event_title}`} className="p-6 rounded-3xl bg-gradient-to-br from-secondary/20 to-primary/20 border border-secondary/30 shadow-lg shadow-secondary/10 relative overflow-hidden group hover:scale-[1.02] transition-transform">
+                                    <Link href={`/events/${booking.event_id}`} className="absolute inset-0 z-0" />
 
-                                <div className="relative z-20 flex gap-3">
-                                    <Link 
-                                        href={`/events/${booking.event_id}`} 
-                                        className="flex-1 text-center px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 transition-colors font-medium text-sm text-white flex items-center justify-center"
-                                    >
-                                        View Event Details
-                                    </Link>
-                                    <button
-                                        onClick={(e) => {
-                                            e.preventDefault();
-                                            e.stopPropagation();
-                                            setSelectedTicket(booking);
-                                            setShowTicketModal(true);
-                                        }}
-                                        className="px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-sm shadow-lg shadow-primary/20 transition-all flex items-center gap-2"
-                                    >
-                                        <span>🎫</span> View Ticket
-                                    </button>
+                                    <div className="relative z-10 pointer-events-none">
+                                        <div className="absolute top-0 right-0">
+                                            <span className={`px-3 py-1 rounded-full text-xs font-bold border ${booking.status === 'Confirmed'
+                                                ? 'bg-green-500/20 text-green-400 border-green-500/20'
+                                                : booking.status === 'Completed'
+                                                    ? 'bg-neutral-500/20 text-neutral-400 border-neutral-500/20'
+                                                    : 'bg-red-500/20 text-red-400 border-red-500/20'
+                                                }`}>
+                                                {booking.status}
+                                            </span>
+                                        </div>
+                                        <h3 className="text-2xl font-bold mb-2 pr-20">{booking.event_title}</h3>
+                                        <div className="space-y-2 text-neutral-300 mb-6">
+                                            <div className="flex items-center gap-2">
+                                                <span>📅</span>
+                                                <span>{booking.event_date} • {booking.event_time}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <span>📍</span>
+                                                <span>{booking.event_venue}</span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    <div className="relative z-20 flex gap-3">
+                                        <Link
+                                            href={`/events/${booking.event_id}`}
+                                            className="flex-1 text-center px-4 py-2 rounded-xl bg-white/10 hover:bg-white/20 border border-white/10 transition-colors font-medium text-sm text-white flex items-center justify-center"
+                                        >
+                                            View Event Details
+                                        </Link>
+                                        <button
+                                            onClick={(e) => {
+                                                e.preventDefault();
+                                                e.stopPropagation();
+                                                setSelectedTicket(booking);
+                                                setShowTicketModal(true);
+                                            }}
+                                            className="px-4 py-2 rounded-xl bg-primary hover:bg-primary/90 text-white font-bold text-sm shadow-lg shadow-primary/20 transition-all flex items-center gap-2"
+                                        >
+                                            <span>🎫</span> View Ticket
+                                        </button>
+                                    </div>
                                 </div>
-                            </div>
-                        ))}
+                            ))}
                     </div>
                 ) : (
                     <div className="p-8 rounded-3xl bg-neutral-900/30 border border-white/5 text-center">

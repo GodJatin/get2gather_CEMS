@@ -5,6 +5,7 @@ import api from '@/lib/api';
 import Link from 'next/link';
 import MotionWrapper, { StaggerContainer, StaggerItem } from '@/components/MotionWrapper';
 import { getEventStatus, parseEventDate } from '@/lib/dateUtils';
+import TicketModal from '@/components/TicketModal';
 
 interface Booking {
     id: number;
@@ -74,63 +75,11 @@ export default function StudentBookingsPage() {
     return (
         <MotionWrapper className="max-w-7xl mx-auto">
             {/* Ticket Modal */}
-            {selectedTicket && (
-                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/80 backdrop-blur-sm" onClick={() => setSelectedTicket(null)}>
-                    <div className="bg-white text-black rounded-3xl overflow-hidden max-w-sm w-full shadow-2xl relative" onClick={e => e.stopPropagation()}>
-                        <div className="bg-primary p-6 text-white text-center relative overflow-hidden">
-                            <div className="absolute top-0 left-0 w-full h-full bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-20"></div>
-                            <h3 className="text-2xl font-bold relative z-10">Event Ticket</h3>
-                            <p className="text-white/80 text-sm relative z-10">Scan at entry</p>
-                        </div>
-                        <div className="p-8 flex flex-col items-center">
-                            <h4 className="text-xl font-bold text-center mb-2">{selectedTicket.event_title}</h4>
-                            <p className="text-neutral-500 text-sm mb-6 text-center">{selectedTicket.event_date} • {selectedTicket.event_time}</p>
-                            
-                            <div className="p-4 bg-white rounded-xl border-2 border-dashed border-neutral-300 mb-6">
-                                <img 
-                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=200x200&data=${encodeURIComponent(selectedTicket.qr_code || '')}`} 
-                                    alt="Ticket QR" 
-                                    className="w-48 h-48"
-                                />
-                            </div>
-                            
-                            <div className="w-full space-y-2 text-sm">
-                                <div className="flex justify-between">
-                                    <span className="text-neutral-500">Venue</span>
-                                    <span className="font-bold">{selectedTicket.event_venue}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-neutral-500">Status</span>
-                                    <span className={`font-bold ${
-                                        selectedTicket.status === 'Confirmed' ? 'text-green-600' :
-                                        selectedTicket.status === 'Completed' ? 'text-neutral-500' : 'text-red-600'
-                                    }`}>{selectedTicket.status}</span>
-                                </div>
-                                <div className="flex justify-between">
-                                    <span className="text-neutral-500">Booking ID</span>
-                                    <span className="font-mono text-neutral-400">#{selectedTicket.id}</span>
-                                </div>
-                            </div>
-                            
-                            {/* Cancel Button in Modal */}
-                            {selectedTicket.status !== 'Completed' && (
-                                <button
-                                    onClick={() => handleCancelBooking(selectedTicket.id)}
-                                    className="w-full mt-4 py-3 text-red-500 font-bold hover:bg-red-50 rounded-xl transition-colors text-sm"
-                                >
-                                    Cancel Booking
-                                </button>
-                            )}
-                        </div>
-                        <button 
-                            onClick={() => setSelectedTicket(null)}
-                            className="w-full py-4 bg-neutral-100 hover:bg-neutral-200 font-bold transition-colors"
-                        >
-                            Close Ticket
-                        </button>
-                    </div>
-                </div>
-            )}
+            <TicketModal
+                isOpen={!!selectedTicket}
+                onClose={() => setSelectedTicket(null)}
+                ticket={selectedTicket}
+            />
 
             <header className="mb-12 flex items-center gap-4">
                 <Link href="/student/dashboard" className="w-10 h-10 rounded-full bg-white/5 flex items-center justify-center hover:bg-white/10 transition-colors">
@@ -155,11 +104,10 @@ export default function StudentBookingsPage() {
                     {upcomingBookings.map((booking) => (
                         <StaggerItem key={`${booking.id}-${booking.event_title}`} className="p-6 rounded-3xl bg-neutral-900/50 border border-white/10 hover:border-primary/50 transition-colors shadow-lg relative overflow-hidden group">
                             <div className="absolute top-0 right-0 p-4">
-                                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${
-                                    booking.status === 'Confirmed' 
-                                        ? 'bg-green-500/10 text-green-400 border-green-500/20' 
-                                        : 'bg-red-500/10 text-red-400 border-red-500/20'
-                                }`}>
+                                <span className={`px-3 py-1 rounded-full text-xs font-bold border ${booking.status === 'Confirmed'
+                                    ? 'bg-green-500/10 text-green-400 border-green-500/20'
+                                    : 'bg-red-500/10 text-red-400 border-red-500/20'
+                                    }`}>
                                     {booking.status}
                                 </span>
                             </div>
@@ -174,15 +122,15 @@ export default function StudentBookingsPage() {
                                     <span>{booking.event_venue}</span>
                                 </div>
                             </div>
-                            
+
                             <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/10">
-                                <Link 
+                                <Link
                                     href={`/events/${booking.event_id}`}
                                     className="flex-1 text-center px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/10 transition-colors font-medium text-sm"
                                 >
                                     Event
                                 </Link>
-                                
+
                                 {booking.status === 'Confirmed' && (
                                     <button
                                         onClick={() => handleCancelBooking(booking.id)}
@@ -225,9 +173,9 @@ export default function StudentBookingsPage() {
                                             <span>{booking.event_venue}</span>
                                         </div>
                                     </div>
-                                    
+
                                     <div className="flex items-center gap-3 mt-4 pt-4 border-t border-white/5">
-                                        <Link 
+                                        <Link
                                             href={`/events/${booking.event_id}`}
                                             className="flex-1 text-center px-4 py-2 rounded-xl bg-white/5 hover:bg-white/10 border border-white/5 transition-colors font-medium text-sm text-neutral-400"
                                         >
