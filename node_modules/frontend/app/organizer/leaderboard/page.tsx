@@ -27,13 +27,13 @@ const StudentProfileModal = ({ student, onClose }: { student: LeaderboardEntry |
     if (!student) return null;
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose} />
+        <div className="fixed inset-0 z-[150] flex items-center justify-center p-4">
+            <div className="absolute inset-0 bg-black/80 backdrop-blur-md" onClick={onClose} />
             <motion.div
                 initial={{ opacity: 0, scale: 0.9, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.9, y: 20 }}
-                className="relative z-10 w-full max-w-md bg-neutral-900 border border-white/10 rounded-3xl p-8 shadow-2xl overflow-hidden"
+                className="relative z-10 w-full max-w-md bg-neutral-900 border border-white/10 rounded-3xl p-8 shadow-2xl overflow-y-auto max-h-[85vh] custom-scrollbar"
             >
                 {/* Decorative Background */}
                 <div className="absolute top-0 right-0 -mt-16 -mr-16 w-32 h-32 bg-yellow-500/20 rounded-full blur-3xl" />
@@ -127,9 +127,9 @@ export default function LeaderboardPage() {
         <MotionWrapper className="max-w-4xl mx-auto relative">
             {/* Unique Background for Leaderboard */}
             <div className="fixed inset-0 z-0 overflow-hidden pointer-events-none">
-                <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-[100px] animate-pulse" />
-                <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-yellow-600/20 rounded-full blur-[100px] animate-pulse delay-1000" />
-                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-neutral-900/0 via-neutral-950/50 to-neutral-950" />
+                <div className="absolute top-0 left-1/4 w-96 h-96 bg-purple-600/40 rounded-full blur-[100px] animate-pulse" />
+                <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-yellow-600/40 rounded-full blur-[100px] animate-pulse delay-1000" />
+                <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-full h-full bg-[radial-gradient(circle_at_center,_var(--tw-gradient-stops))] from-neutral-900/0 via-neutral-950/30 to-neutral-950" />
             </div>
 
             <div className="relative z-10">
@@ -173,11 +173,19 @@ export default function LeaderboardPage() {
                 </header>
 
                 <div className="bg-neutral-900/50 rounded-3xl border border-white/10 overflow-hidden backdrop-blur-sm shadow-2xl shadow-black/50">
+                    {/* Desktop Header */}
                     <div className="hidden md:grid grid-cols-12 gap-4 p-6 border-b border-white/10 bg-white/5 text-neutral-400 font-medium text-sm uppercase tracking-wider">
                         <div className="col-span-2 text-center">Rank</div>
                         <div className="col-span-5">Student</div>
                         <div className="col-span-3">Department</div>
                         <div className="col-span-2 text-right">Score</div>
+                    </div>
+
+                    {/* Mobile Header */}
+                    <div className="md:hidden flex items-center justify-between p-4 border-b border-white/10 bg-white/5 text-neutral-400 font-medium text-xs uppercase tracking-wider">
+                        <div className="w-12 text-center">Rank</div>
+                        <div className="flex-1 ml-4">Student</div>
+                        <div className="text-right">Score</div>
                     </div>
 
                     <StaggerContainer className="divide-y divide-white/5">
