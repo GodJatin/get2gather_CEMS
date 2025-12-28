@@ -24,7 +24,7 @@ export default function OrganizerLayout({
     return (
         <div className="min-h-screen bg-neutral-950 text-white">
             {/* Navbar */}
-            <nav className="fixed top-0 left-0 w-full z-50 bg-neutral-900/80 backdrop-blur-xl border-b border-white/10">
+            <nav className="fixed top-0 left-0 w-full z-[100] bg-neutral-900/80 backdrop-blur-xl border-b border-white/10">
                 <div className="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-purple-600 to-pink-600 flex items-center justify-center font-bold text-xl">
@@ -44,11 +44,10 @@ export default function OrganizerLayout({
                                 <Link
                                     key={item.href}
                                     href={item.href}
-                                    className={`px-5 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${
-                                        isActive
+                                    className={`px-5 py-2 rounded-xl text-sm font-medium transition-all flex items-center gap-2 ${isActive
                                             ? 'bg-purple-600 text-white shadow-lg shadow-purple-900/20'
                                             : 'text-neutral-400 hover:text-white hover:bg-white/5'
-                                    }`}
+                                        }`}
                                 >
                                     <span>{item.icon}</span>
                                     <span>{item.name}</span>
@@ -66,7 +65,7 @@ export default function OrganizerLayout({
                     </Link>
 
                     {/* Mobile Menu Button */}
-                    <button 
+                    <button
                         onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
                         className="md:hidden p-2 rounded-xl bg-white/5 border border-white/10 text-neutral-400"
                     >
@@ -84,11 +83,10 @@ export default function OrganizerLayout({
                                     key={item.href}
                                     href={item.href}
                                     onClick={() => setIsMobileMenuOpen(false)}
-                                    className={`p-4 rounded-xl text-base font-medium transition-all flex items-center gap-3 ${
-                                        isActive
+                                    className={`p-4 rounded-xl text-base font-medium transition-all flex items-center gap-3 ${isActive
                                             ? 'bg-purple-600 text-white'
                                             : 'bg-white/5 text-neutral-400'
-                                    }`}
+                                        }`}
                                 >
                                     <span className="text-xl">{item.icon}</span>
                                     <span>{item.name}</span>

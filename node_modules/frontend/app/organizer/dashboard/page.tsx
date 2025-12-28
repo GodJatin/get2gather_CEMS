@@ -35,7 +35,7 @@ export default function OrganizerDashboard() {
                     api.get('/events/my'),
                     minDelay
                 ]);
-                
+
                 setStats({
                     totalEvents: statsRes.data.total_events,
                     totalBookings: statsRes.data.total_bookings,
@@ -57,7 +57,7 @@ export default function OrganizerDashboard() {
             <div className="max-w-7xl mx-auto p-8 md:p-12 space-y-12">
                 {/* Header Skeleton */}
                 <Skeleton className="h-64 w-full rounded-3xl" />
-                
+
                 {/* Stats Grid Skeleton */}
                 <DashboardStatsSkeleton />
 
@@ -72,7 +72,7 @@ export default function OrganizerDashboard() {
 
     return (
         <MotionWrapper>
-            <header className="mb-12 relative p-8 md:p-12 group z-50">
+            <header className="mb-12 relative p-8 md:p-12 group z-10">
                 {/* Background Container with Overflow Hidden */}
                 <div className="absolute inset-0 overflow-hidden rounded-3xl bg-gradient-to-r from-purple-900/20 to-pink-900/20 border border-white/10">
                     <div className="absolute top-0 right-0 -mt-20 -mr-20 w-64 h-64 bg-purple-600/20 rounded-full blur-3xl group-hover:scale-110 transition-transform duration-1000" />
@@ -88,7 +88,7 @@ export default function OrganizerDashboard() {
                         <h1 className="text-4xl md:text-5xl font-bold mb-4">
                             {organizerName}'s <span className="bg-gradient-to-r from-purple-400 to-pink-400 bg-clip-text text-transparent">Dashboard</span>
                         </h1>
-                        <TextReveal 
+                        <TextReveal
                             text="Manage your events, track attendance, and oversee your organization's performance all in one place."
                             className="text-lg text-neutral-300 max-w-2xl"
                             delay={0.2}

@@ -36,7 +36,7 @@ export default function RootLayout({
                 <div className="relative z-10 w-full min-h-screen">
                     {children}
                 </div>
-                <Toaster />
+                <Toaster richColors position="top-center" closeButton style={{ zIndex: 99999 }} />
             </body>
         </html>
     );
