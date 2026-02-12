@@ -50,6 +50,8 @@ export default function OrganizerDashboard() {
             }
         };
         fetchData();
+        const interval = setInterval(fetchData, 5000); // Auto-refresh every 5s
+        return () => clearInterval(interval);
     }, []);
 
     if (loading) {

@@ -278,3 +278,70 @@ class Notification(Base):
     user = relationship("User", back_populates="notifications")
 
 User.notifications = relationship("Notification", back_populates="user")
+
+# --- HARDENING: AUTOMATIC SEAT RECALCULATION ---
+from sqlalchemy import event as sqlalchemy_event
+from sqlalchemy import select, func, inspect
+
+@sqlalchemy_event.listens_for(Booking, 'after_insert')
+@sqlalchemy_event.listens_for(Booking, 'after_delete')
+def update_seats_on_booking_change(mapper, connection, target):
+    """
+    Automatically recalculate seats_available whenever a booking is added or removed.
+    This ensures consistency regardless of the API endpoint used.
+    """
+    event_id = target.event_id
+    print(f"HARDENING: Booking change detected for Event {event_id}. Recalculating seats...")
+    
+    # Calculate count of bookings for this event
+    # specific to the connection to ensure we see current transaction state
+    booking_table = Booking.__table__
+    count = connection.scalar(
+        select(func.count(booking_table.c.id)).where(booking_table.c.event_id == event_id)
+    ) or 0
+    
+    # Get current capacity
+    event_table = Event.__table__
+    capacity = connection.scalar(
+        select(event_table.c.capacity).where(event_table.c.id == event_id)
+    ) or 0
+    
+    new_avail = capacity - count
+    print(f"HARDENING: Event {event_id}: Cap {capacity} - Booked {count} = Avail {new_avail}")
+    
+    # Update event
+    connection.execute(
+        event_table.update().where(event_table.c.id == event_id).values(seats_available=new_avail)
+    )
+
+@sqlalchemy_event.listens_for(Event, 'after_update')
+def update_seats_on_event_change(mapper, connection, target):
+    """
+    Automatically recalculate seats_available whenever an event is updated (e.g. capacity change).
+    """
+    # Check if capacity changed
+    state = inspect(target)
+    history = state.get_history('capacity', True)
+    
+    if history.has_changes():
+        print(f"HARDENING: Capacity change detected for Event {target.id}. Recalculating seats...")
+        
+        # We can use target.capacity directly as it matches the new value
+        new_capacity = target.capacity
+        event_id = target.id
+        
+        booking_table = Booking.__table__
+        count = connection.scalar(
+            select(func.count(booking_table.c.id)).where(booking_table.c.event_id == event_id)
+        ) or 0
+        
+        new_avail = new_capacity - count
+        print(f"HARDENING: Event {event_id}: New Cap {new_capacity} - Booked {count} = Avail {new_avail}")
+        
+        # We must perform an UPDATE query because 'target' attributes are already committed/flushed
+        # modifying target.seats_available here might loop or be ignored if not careful.
+        # Direct UPDATE is safer.
+        event_table = Event.__table__
+        connection.execute(
+            event_table.update().where(event_table.c.id == event_id).values(seats_available=new_avail)
+        )

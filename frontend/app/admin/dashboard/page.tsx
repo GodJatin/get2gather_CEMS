@@ -28,6 +28,8 @@ export default function AdminDashboard() {
             }
         };
         fetchStats();
+        const interval = setInterval(fetchStats, 5000); // Auto-refresh every 5s
+        return () => clearInterval(interval);
     }, []);
 
     const cards = [
@@ -49,7 +51,7 @@ export default function AdminDashboard() {
                         Monitor platform activity, user growth, and system health.
                     </p>
                 </div>
-                
+
                 {/* Decorative Elements */}
                 <div className="absolute top-0 right-0 -mt-20 -mr-20 w-80 h-80 bg-blue-600/10 rounded-full blur-3xl group-hover:bg-blue-600/20 transition-colors duration-1000" />
                 <div className="absolute bottom-0 left-0 -mb-20 -ml-20 w-80 h-80 bg-indigo-600/10 rounded-full blur-3xl group-hover:bg-indigo-600/20 transition-colors duration-1000" />

@@ -1,5 +1,5 @@
 
-from fastapi import APIRouter, Depends, HTTPException, status, Request
+from fastapi import APIRouter, Depends, HTTPException, status, Request, Form
 from pydantic import BaseModel
 from sqlalchemy.orm import Session
 from sqlalchemy.future import select
@@ -504,8 +504,8 @@ async def complete_organizer_signup(data: OrganizerSignupComplete, db: Session =
     return {"access_token": access_token, "token_type": "bearer", "role": "organizer"}
 
 @router.post("/token", response_model=Token)
-def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    print(f"DEBUG: Login attempt for {form_data.username}")
+def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), role: str = Form("student"), db: Session = Depends(get_db)):
+    print(f"DEBUG: Login attempt for {form_data.username} as {role}")
     try:
         # Find User
         result = db.execute(select(User).where(User.email == form_data.username))
@@ -527,18 +527,30 @@ def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestFor
                 headers={"WWW-Authenticate": "Bearer"},
             )
         
-        # Handle Role (Enum vs String safety)
-        role_val = user.role
+        # Determine actual role value (Handle Enum vs String)
+        actual_role_val = user.role
         if hasattr(user.role, 'value'):
-            role_val = user.role.value
+            actual_role_val = user.role.value
+            
+        print(f"DEBUG: User Role: {actual_role_val}, Requested Role: {role}")
+
+        # Enforce Role Restriction
+        # Normalize to lowercase for comparison
+        if str(actual_role_val).lower() != role.lower():
+             print(f"DEBUG: Role Mismatch! User is {actual_role_val} but tried logging in as {role}")
+             raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail=f"Access Denied: You are not authorized to login as {role.capitalize()}",
+                headers={"WWW-Authenticate": "Bearer"},
+            )
         
-        print(f"DEBUG: Login Success. Role={role_val}")
+        print(f"DEBUG: Login Success. Role={actual_role_val}")
         
         access_token_expires = timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES)
         access_token = create_access_token(
-            data={"sub": user.email, "role": role_val}, expires_delta=access_token_expires
+            data={"sub": user.email, "role": actual_role_val}, expires_delta=access_token_expires
         )
-        return {"access_token": access_token, "token_type": "bearer", "role": role_val}
+        return {"access_token": access_token, "token_type": "bearer", "role": actual_role_val}
     except HTTPException:
         raise
     except Exception as e:
@@ -552,5 +564,5 @@ def login_for_access_token(request: Request, form_data: OAuth2PasswordRequestFor
 
 # ALIAS for frontend compatibility
 @router.post("/auth/login", response_model=Token)
-def login_alias(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    return login_for_access_token(request, form_data, db)
+def login_alias(request: Request, form_data: OAuth2PasswordRequestForm = Depends(), role: str = Form("student"), db: Session = Depends(get_db)):
+    return login_for_access_token(request, form_data, role, db)

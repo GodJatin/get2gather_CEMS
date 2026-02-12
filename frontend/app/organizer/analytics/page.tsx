@@ -46,6 +46,8 @@ export default function AnalyticsPage() {
             }
         };
         fetchData();
+        const interval = setInterval(fetchData, 5000); // Auto-refresh every 5s
+        return () => clearInterval(interval);
     }, []);
 
     // Derived Stats
@@ -75,8 +77,8 @@ export default function AnalyticsPage() {
 
     return (
         <MotionWrapper className="max-w-7xl mx-auto pb-20">
-             {/* Header */}
-             <header className="mb-12">
+            {/* Header */}
+            <header className="mb-12">
                 <h1 className="text-4xl font-bold mb-2 flex items-center gap-3">
                     <span className="bg-gradient-to-r from-blue-400 to-indigo-400 bg-clip-text text-transparent">Analytics Dashboard</span>
                     <span className="text-3xl">📊</span>
@@ -110,11 +112,11 @@ export default function AnalyticsPage() {
                     <h2 className="text-xl font-bold mb-8 flex items-center gap-2">
                         <span>📉</span> Event Engagement (Last 5 Events)
                     </h2>
-                    
+
                     <div className="space-y-8">
                         {/* Graph */}
                         <EngagementChart events={events} />
-                        
+
                         {/* List View */}
                         {chartEvents.length === 0 ? (
                             <p className="text-center text-neutral-500 py-10">No events data available yet.</p>
@@ -122,7 +124,7 @@ export default function AnalyticsPage() {
                             chartEvents.map((event) => {
                                 const capacity = event.capacity || 1; // Avoid division by zero
                                 const percentage = Math.min(Math.round((event.attended_count / capacity) * 100), 100);
-                                
+
                                 return (
                                     <div key={event.id} className="group">
                                         <div className="flex justify-between text-sm mb-2">
@@ -131,7 +133,7 @@ export default function AnalyticsPage() {
                                         </div>
                                         {/* Bar Container - Attendees */}
                                         <div className="h-4 bg-neutral-800 rounded-full overflow-hidden w-full border border-white/5 relative mb-2">
-                                            <div 
+                                            <div
                                                 className="h-full bg-gradient-to-r from-blue-600 to-indigo-600 rounded-full relative group-hover:brightness-110 transition-all duration-1000"
                                                 style={{ width: `${Math.max(percentage, event.attended_count > 0 ? 2 : 0)}%` }}
                                             >
@@ -145,12 +147,12 @@ export default function AnalyticsPage() {
                                             <span className="text-neutral-500">{event.volunteer_count} Applied</span>
                                         </div>
                                         <div className="h-2 bg-neutral-800 rounded-full overflow-hidden w-full border border-white/5 relative">
-                                            <div 
+                                            <div
                                                 className="h-full bg-gradient-to-r from-pink-500 to-rose-500 rounded-full relative transition-all duration-1000"
-                                                style={{ 
+                                                style={{
                                                     // Assuming arbitrary volunteer capacity or just relative width for visual feedback
                                                     // Let's cap at 100% if > 10 volunteers for visual sake, or just show presence
-                                                    width: `${Math.min((event.volunteer_count / (capacity * 0.2 || 5)) * 100, 100)}%` 
+                                                    width: `${Math.min((event.volunteer_count / (capacity * 0.2 || 5)) * 100, 100)}%`
                                                 }}
                                             ></div>
                                         </div>
@@ -175,16 +177,15 @@ export default function AnalyticsPage() {
                             View All
                         </Link>
                     </div>
-                    
+
                     <div className="space-y-4 flex-1">
                         {leaderboard.map((student, i) => (
                             <div key={i} className="flex items-center gap-4 p-3 rounded-xl bg-white/5 border border-white/5 hover:bg-white/10 transition-colors">
-                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${
-                                    student.rank === 1 ? 'bg-yellow-500/20 text-yellow-400' :
-                                    student.rank === 2 ? 'bg-gray-400/20 text-gray-400' :
-                                    student.rank === 3 ? 'bg-orange-500/20 text-orange-400' :
-                                    'bg-neutral-700 text-neutral-400'
-                                }`}>
+                                <div className={`w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm ${student.rank === 1 ? 'bg-yellow-500/20 text-yellow-400' :
+                                        student.rank === 2 ? 'bg-gray-400/20 text-gray-400' :
+                                            student.rank === 3 ? 'bg-orange-500/20 text-orange-400' :
+                                                'bg-neutral-700 text-neutral-400'
+                                    }`}>
                                     #{student.rank}
                                 </div>
                                 <div className="flex-1 min-w-0">
@@ -196,7 +197,7 @@ export default function AnalyticsPage() {
                                 </div>
                             </div>
                         ))}
-                        
+
                         {leaderboard.length === 0 && (
                             <p className="text-center text-neutral-500 py-10">No leaderboard data.</p>
                         )}

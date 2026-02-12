@@ -39,7 +39,7 @@ const EventCard = ({ event, bookings, bookingsData, openReviewModal }: { event: 
 
     const isBooked = bookings.includes(event.id);
     const eventStatus = getEventStatus(event);
-    
+
     // Status Logic
     const isCompleted = eventStatus === 'Completed';
     // Booking Closed if Completed OR if < 30 mins to start?
@@ -59,7 +59,7 @@ const EventCard = ({ event, bookings, bookingsData, openReviewModal }: { event: 
                         <div className="absolute inset-0 flex items-center justify-center text-4xl opacity-30">🎉</div>
                     )}
                     <div className="absolute top-3 right-3 flex gap-2">
-                            <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-white">
+                        <span className="text-xs font-bold px-3 py-1.5 rounded-full bg-black/50 backdrop-blur-md border border-white/10 text-white">
                             {event.category}
                         </span>
                         {event.is_paid && (
@@ -77,10 +77,10 @@ const EventCard = ({ event, bookings, bookingsData, openReviewModal }: { event: 
                         <span>⏰ {event.time}</span>
                     </div>
                     <Link href={`/events/${event.id}`} className="block">
-                         <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors line-clamp-1">{event.title}</h3>
+                        <h3 className="text-lg font-bold mb-2 group-hover:text-primary transition-colors line-clamp-1">{event.title}</h3>
                     </Link>
                     <p className="text-sm text-neutral-400 mb-4 line-clamp-1">{event.venue}</p>
-                    
+
                     {event.hashtags && (
                         <div className="flex flex-wrap gap-1 mb-4">
                             {event.hashtags.split(',').map((tag, i) => (
@@ -93,19 +93,19 @@ const EventCard = ({ event, bookings, bookingsData, openReviewModal }: { event: 
                         <span className="text-xs text-neutral-500">
                             {isBookingClosed ? 'Booking Closed' : `${event.seats_available} seats left`}
                         </span>
-                        
+
                         {/* Action Buttons - NO LONGER nested in Link */}
                         {isCompleted ? (
                             (() => {
                                 const booking = bookingsData.find(b => b.event_id === event.id);
-                                
+
                                 if (booking && booking.attended) {
                                     if (booking.event_title && booking.event_title.includes('(Volunteer)')) {
                                         return <span className="text-xs font-bold bg-blue-500/20 text-blue-400 px-3 py-1.5 rounded-lg border border-blue-500/20">Volunteer Attended</span>;
                                     }
 
                                     return (
-                                        <button 
+                                        <button
                                             onClick={(e) => {
                                                 e.preventDefault();
                                                 e.stopPropagation();
@@ -178,7 +178,7 @@ export default function EventsPage() {
                 setUser(userRes.data);
                 setEvents(Array.isArray(eventsRes.data) ? eventsRes.data : []);
                 setTrendingEvents(Array.isArray(trendingRes.data) ? trendingRes.data : []);
-                
+
                 setBookingsData(bookingsRes.data);
                 setBookings(bookingsRes.data.map((b: any) => b.event_id));
 
@@ -190,6 +190,8 @@ export default function EventsPage() {
         };
 
         init();
+        const interval = setInterval(init, 5000); // Auto-refresh every 5s
+        return () => clearInterval(interval);
     }, []);
 
     const openReviewModal = (booking: any) => {
@@ -208,14 +210,14 @@ export default function EventsPage() {
                 rating: reviewModal.rating,
                 review: reviewModal.review
             });
-            
+
             // Update local state
-            setBookingsData(prev => prev.map(b => 
-                b.id === reviewModal.bookingId 
+            setBookingsData(prev => prev.map(b =>
+                b.id === reviewModal.bookingId
                     ? { ...b, rating: reviewModal.rating, review: reviewModal.review }
                     : b
             ));
-            
+
             setReviewModal(prev => ({ ...prev, isOpen: false }));
             alert('Review submitted successfully!');
         } catch (error) {
@@ -239,8 +241,8 @@ export default function EventsPage() {
         // Apply Search Filter
         if (searchTag) {
             const tag = searchTag.toLowerCase();
-            filtered = filtered.filter(e => 
-                e.title.toLowerCase().includes(tag) || 
+            filtered = filtered.filter(e =>
+                e.title.toLowerCase().includes(tag) ||
                 e.hashtags?.toLowerCase().includes(tag)
             );
         }
@@ -252,23 +254,23 @@ export default function EventsPage() {
 
         // Filter out past events for specific sections
         if (section && section !== 'Completed') { // Only hide past if not specifically asking for them (though logic below handles sort)
-             // Existing logic: specific sections hide completed
-             if (section === 'Department' || section === 'Open') {
-                 filtered = filtered.filter(e => getEventStatus(e) !== 'Completed');
-             }
+            // Existing logic: specific sections hide completed
+            if (section === 'Department' || section === 'Open') {
+                filtered = filtered.filter(e => getEventStatus(e) !== 'Completed');
+            }
         }
 
         // Sort: Upcoming (ASC) -> Completed (DESC)
         filtered.sort((a, b) => {
             const statusA = getEventStatus(a);
             const statusB = getEventStatus(b);
-            
+
             // Parse Date safely (assume yyyy-mm-dd)
             // If format is dd-mm-yyyy, new Date() might fail or be ambiguous. 
             // The backend seems to send YYYY-MM-DD based on other files.
             const timeA = new Date(`${a.date} ${a.time}`).getTime() || 0;
             const timeB = new Date(`${b.date} ${b.time}`).getTime() || 0;
-            
+
             const isCompletedA = statusA === 'Completed';
             const isCompletedB = statusB === 'Completed';
 
@@ -291,8 +293,8 @@ export default function EventsPage() {
                 <Skeleton className="h-12 w-64 mb-4" />
                 <Skeleton className="h-6 w-96 mb-8" />
                 <div className="flex flex-col md:flex-row gap-4">
-                     <Skeleton className="h-12 flex-1 rounded-xl" />
-                     <Skeleton className="h-12 w-48 rounded-xl" />
+                    <Skeleton className="h-12 flex-1 rounded-xl" />
+                    <Skeleton className="h-12 w-48 rounded-xl" />
                 </div>
             </div>
             <EventCardSkeleton />
@@ -341,9 +343,8 @@ export default function EventsPage() {
                                                 <button
                                                     key={star}
                                                     onClick={() => setReviewModal(prev => ({ ...prev, rating: star }))}
-                                                    className={`text-4xl transition-transform hover:scale-110 ${
-                                                        reviewModal.rating >= star ? 'text-yellow-400' : 'text-neutral-700 hover:text-yellow-400/50'
-                                                    }`}
+                                                    className={`text-4xl transition-transform hover:scale-110 ${reviewModal.rating >= star ? 'text-yellow-400' : 'text-neutral-700 hover:text-yellow-400/50'
+                                                        }`}
                                                 >
                                                     ★
                                                 </button>
@@ -385,23 +386,23 @@ export default function EventsPage() {
                     </div>
                 </Dialog>
             </Transition>
-            
+
             <header className="mb-12">
                 <h1 className="text-4xl font-bold mb-4">Discover Events</h1>
                 <p className="text-neutral-400">Find workshops, seminars, and fun activities happening around you.</p>
-                
+
                 <div className="mt-8 flex flex-col md:flex-row gap-4">
                     <div className="relative flex-1">
                         <span className="absolute left-4 top-1/2 -translate-y-1/2 text-neutral-500">🔍</span>
-                        <input 
-                            type="text" 
-                            placeholder="Search events by title or hashtag..." 
+                        <input
+                            type="text"
+                            placeholder="Search events by title or hashtag..."
                             value={searchTag}
                             onChange={(e) => setSearchTag(e.target.value)}
                             className="bg-neutral-900 border border-white/10 rounded-xl pl-12 pr-4 py-3 w-full focus:outline-none focus:border-primary transition-colors"
                         />
                     </div>
-                    
+
                     <select
                         value={filter}
                         onChange={(e) => setFilter(e.target.value)}
@@ -458,8 +459,8 @@ export default function EventsPage() {
                 </div>
             </section>
 
-             {/* All Events Grid */}
-             <section>
+            {/* All Events Grid */}
+            <section>
                 <h2 className="text-2xl font-bold mb-6">All Events</h2>
                 {filterEvents().length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-6">

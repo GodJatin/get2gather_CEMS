@@ -316,34 +316,49 @@ async def checkin_event_scan(
 
 @router.get("/events/trending", response_model=List[schemas.EventResponse])
 async def get_trending_events(db: Session = Depends(get_db)):
-    # Get all events
-    result = db.execute(select(Event))
-    all_events = result.scalars().all()
+    # Optimize: Filter directly in SQL
+    # We need to compare dates. Since dates are strings in this legacy schema "YYYY-MM-DD",
+    # we can use lexicographical comparison for dates.
+    # For time, it's harder, so we'll filter by Date >= Today first.
+    
+    today_str = datetime.now().strftime("%Y-%m-%d")
+    
+    # Fetch events where date >= today and seats > 0
+    # Sort by seats_available ASC (scarcity)
+    result = db.execute(
+        select(Event)
+        .where(Event.date >= today_str)
+        .where(Event.seats_available > 0)
+        .order_by(Event.seats_available.asc())
+        .limit(10) # Fetch slightly more than needed to filter by time details if necessary
+    )
+    candidates = result.scalars().all()
     
     active_events = []
+    now = datetime.now()
     
-    for e in all_events:
+    for e in candidates:
         try:
+            # Double check datetime for today's events
             dt_str = f"{e.date} {e.time}"
-            # Try parsing with AM/PM first
             try:
                 dt = datetime.strptime(dt_str, "%Y-%m-%d %I:%M %p")
             except ValueError:
                 dt = datetime.strptime(dt_str, "%Y-%m-%d %H:%M")
             
-            # Filter: Must be Future AND Have Seats (Booking Open)
-            if dt < datetime.now():
+            if dt < now:
                 continue
             
-            if e.seats_available <= 0:
-                continue
-
             active_events.append(e)
-        except Exception:
-            continue
-            
-    # Sort by seats_available ASC (scarcity)
-    active_events.sort(key=lambda x: x.seats_available)
+            if len(active_events) >= 3:
+                break
+        except:
+             # If date parse fails, assume valid if date >= today_str (which SQL ensured for future dates)
+             # But if date == today, might be past time.
+             if e.date > today_str:
+                 active_events.append(e)
+                 if len(active_events) >= 3:
+                    break
     
     return active_events[:3]
 
@@ -396,36 +411,38 @@ async def read_my_events(current_user: User = Depends(get_current_user), db: Ses
     if not organizer:
         raise HTTPException(status_code=404, detail="Organizer profile not found")
 
+    # Fetch all events for this organizer
     result = db.execute(select(Event).where(Event.organizer_id == organizer.id).order_by(Event.date.desc()))
     events = result.scalars().all()
     
-    events_with_stats = []
+    if not events:
+        return []
+
+    event_ids = [e.id for e in events]
+
+    # Optimize: Bulk fetch counts using simpler grouping
     from sqlalchemy import func
     from models import Booking, Volunteer as VolModel, Waitlist
     
-    for event in events:
-        # Count Attendees
-        attended = db.query(func.count(Booking.id)).filter(
-            Booking.event_id == event.id, 
-            Booking.attended == True
-        ).scalar() or 0
-        
-        # Count Volunteers
-        volunteers = db.query(func.count(VolModel.id)).filter(
-            VolModel.event_id == event.id,
-            VolModel.attended == True
-        ).scalar() or 0
+    # Helper to fetch counts mapped by event_id
+    def get_counts(model, filters):
+        q = db.query(model.event_id, func.count(model.id)).filter(
+            model.event_id.in_(event_ids),
+            *filters
+        ).group_by(model.event_id).all()
+        return {event_id: count for event_id, count in q}
 
-        # Count Waitlist
-        waitlisted = db.query(func.count(Waitlist.id)).filter(
-            Waitlist.event_id == event.id
-        ).scalar() or 0
-        
-        # Convert to Pydantic and enrich
+    attended_map = get_counts(Booking, [Booking.attended == True])
+    volunteer_map = get_counts(VolModel, [VolModel.attended == True])
+    waitlist_map = get_counts(Waitlist, [])
+
+    events_with_stats = []
+    
+    for event in events:
         e_resp = schemas.EventResponse.from_orm(event)
-        e_resp.attended_count = attended
-        e_resp.volunteer_count = volunteers
-        e_resp.waitlist_count = waitlisted
+        e_resp.attended_count = attended_map.get(event.id, 0)
+        e_resp.volunteer_count = volunteer_map.get(event.id, 0)
+        e_resp.waitlist_count = waitlist_map.get(event.id, 0)
         events_with_stats.append(e_resp)
         
     return events_with_stats
@@ -463,8 +480,26 @@ async def update_event(event_id: int, event_update: schemas.EventCreate, current
     for key, value in event_update.dict().items():
         setattr(event, key, value)
     
-    db.commit()
-    db.refresh(event)
+    # Recalculate seats_available (ALWAYS, as capacity is required in EventCreate)
+    print(f"DEBUG: Recalculating seats for Event {event_id}. New Capacity: {event_update.capacity}")
+    
+    from models import Booking
+    from sqlalchemy import func
+    
+    # Count confirmed bookings
+    booked_count = db.scalar(select(func.count(Booking.id)).where(Booking.event_id == event_id)) or 0
+    print(f"DEBUG: Found {booked_count} existing bookings")
+    
+    # Update seats_available
+    event.seats_available = event_update.capacity - booked_count
+    print(f"DEBUG: Set seats_available = {event.seats_available} (Cap {event_update.capacity} - Booked {booked_count})")
+
+    try:
+        db.commit()
+        db.refresh(event)
+    except Exception as e:
+        print(f"DEBUG: Commit failed! {e}")
+        raise
 
     # Send Notifications if critical fields changed
     if changes:

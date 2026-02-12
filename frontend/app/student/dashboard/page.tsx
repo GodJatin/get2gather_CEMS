@@ -49,14 +49,11 @@ export default function StudentDashboard() {
 
     useEffect(() => {
         const fetchData = async () => {
-            const minDelay = new Promise(resolve => setTimeout(resolve, 1500));
-
             try {
                 const [userRes, bookingsRes, statsRes] = await Promise.all([
                     api.get('/auth/me'),
                     api.get('/bookings/my'),
-                    api.get('/stats/student'),
-                    minDelay
+                    api.get('/stats/student')
                 ]);
 
                 setUser(userRes.data);
@@ -70,6 +67,8 @@ export default function StudentDashboard() {
         };
 
         fetchData();
+        const interval = setInterval(fetchData, 5000); // Auto-refresh every 5s
+        return () => clearInterval(interval);
     }, []);
 
 

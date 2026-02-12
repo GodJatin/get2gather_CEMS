@@ -26,6 +26,8 @@ export default function AdminEventsPage() {
 
     useEffect(() => {
         fetchEvents();
+        const interval = setInterval(fetchEvents, 5000); // Auto-refresh every 5s
+        return () => clearInterval(interval);
     }, []);
 
     const fetchEvents = async () => {
@@ -162,8 +164,8 @@ export default function AdminEventsPage() {
                                             const status = getStatus(event);
                                             return (
                                                 <span className={`px-3 py-1 rounded-full text-xs font-bold border ${status === 'Completed' ? 'bg-neutral-800 text-neutral-400 border-neutral-700' :
-                                                        status === 'Upcoming' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
-                                                            'bg-blue-500/10 text-blue-400 border-blue-500/20'
+                                                    status === 'Upcoming' ? 'bg-green-500/10 text-green-400 border-green-500/20' :
+                                                        'bg-blue-500/10 text-blue-400 border-blue-500/20'
                                                     }`}>
                                                     {status}
                                                 </span>
@@ -238,8 +240,8 @@ export default function AdminEventsPage() {
                                     <div className="bg-white/5 rounded-lg p-2 border border-white/5">
                                         <p className="text-xs text-neutral-500 uppercase">Status</p>
                                         <span className={`text-xs font-bold ${status === 'Completed' ? 'text-neutral-400' :
-                                                status === 'Upcoming' ? 'text-green-400' :
-                                                    'text-blue-400'
+                                            status === 'Upcoming' ? 'text-green-400' :
+                                                'text-blue-400'
                                             }`}>
                                             {status}
                                         </span>

@@ -1,6 +1,7 @@
 from fastapi import APIRouter, Depends, HTTPException, status
 from sqlalchemy.orm import Session
 from sqlalchemy.future import select
+from sqlalchemy import func
 from database import get_db
 from models import Booking, Event, Student, User, UserRole, Waitlist
 from email_service import send_booking_cancellation_email, send_waitlist_promotion_email
@@ -42,7 +43,13 @@ async def cancel_booking(booking_id: int, current_user: User = Depends(get_curre
 
     # DELETE BOOKING
     db.delete(booking)
-    event.seats_available += 1
+    
+    # HARDENING: Recalculate seats_available instead of blind increment
+    # We must flush first so the delete is accounted for in the count
+    db.flush() 
+    booked_count = db.scalar(select(func.count(Booking.id)).where(Booking.event_id == event.id)) or 0
+    event.seats_available = event.capacity - booked_count
+    
     db.commit()
 
     # Send Cancellation Email
@@ -75,10 +82,17 @@ async def cancel_booking(booking_id: int, current_user: User = Depends(get_curre
                 status="Confirmed"
             )
             
-            event.seats_available -= 1 # Re-occupy seat
+            
+            # Re-occupy seat (Hardened)
+            # event.seats_available -= 1 
             
             db.add(new_booking)
             db.delete(next_in_line) # Remove from waitlist
+            
+            # Recalculate
+            db.flush()
+            booked_count = db.scalar(select(func.count(Booking.id)).where(Booking.event_id == event.id)) or 0
+            event.seats_available = event.capacity - booked_count
             db.commit()
             db.refresh(new_booking)
             
@@ -154,11 +168,18 @@ async def create_booking(booking: schemas.BookingCreate, current_user: User = De
         status="Confirmed"
     )
     
-    # Decrement seats
-    event.seats_available -= 1
+    # Decrement seats (Hardened)
+    # event.seats_available -= 1
+    
+    # Add booking and recalculate
+    db.add(new_booking)
+    db.flush() # Ensure it's counted
+    
+    booked_count = db.scalar(select(func.count(Booking.id)).where(Booking.event_id == booking.event_id)) or 0
+    event.seats_available = event.capacity - booked_count
     
     try:
-        db.add(new_booking)
+        # db.add(new_booking) # Already added above
         db.commit()
         db.refresh(new_booking)
         print(f"DEBUG: Booking committed. ID: {new_booking.id}")

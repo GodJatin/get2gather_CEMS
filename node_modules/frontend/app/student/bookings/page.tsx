@@ -35,6 +35,8 @@ export default function StudentBookingsPage() {
             }
         };
         fetchBookings();
+        const interval = setInterval(fetchBookings, 5000); // Auto-refresh every 5s
+        return () => clearInterval(interval);
     }, []);
 
     const handleCancelBooking = async (id: number) => {
